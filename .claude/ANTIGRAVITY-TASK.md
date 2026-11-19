@@ -2816,7 +2816,7 @@ Reuse Task 78's data shape (copy its seed arrays so both pictures show the same 
   6. **Quality & phone fit:** Gold check toast on every action, zero blue/green/alert/confirm/prompt, stacked compare columns + scrollable tabs on phone 390px (`phOverflow: false`), `ERRORS: []`.
 
 ## Task 77 - PICTURE: Master Vault categories + sub-categories (new draft)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-19 07:15 WIB. Aldi: *"this update should also applied on each of our inventory or master vault dont forget about that"*.
 **Touch only:** `.claude/drafts/categories-pro.html` (new), this file.
 One playable page, same standard as `.claude/drafts/reports-live.html` (dual-mounted PC 1240 + phone 390, in-page dialogs, gold check toast, System/Light/Dark, Lite motion). Look = Master Vault today (read `src/` Master Vault product form first; match its words). Three frames:
@@ -2826,6 +2826,11 @@ One playable page, same standard as `.claude/drafts/reports-live.html` (dual-mou
 Nothing in `src/` changes. 0 errors in headless Chrome.
 **Done when:** 3 frames work on PC + phone, `ERRORS: []`, Result lists what you checked.
 **Result:**
+- Created `.claude/drafts/categories-pro.html` (dual-mounted PC 1240 + Phone 390, Warm Stone / Espresso System/Light/Dark, Lite motion, rolling KPI digits, self-drawing gold check toast, hairline buttons matching Master Vault's `src/App.jsx:5245-5395` wording, zero blue/green/alert/confirm/prompt).
+- Verified all 3 frames in headless Chrome (`verify-task77.mjs`, `ERRORS: []`):
+  1. **Categories manager:** Switchable **Company** toggle between `Milk Company (example)` (`Kid › Kid Silver / Kid Bronze / Kid Gold`, `Adult › Adult Chocolate / Adult Vanilla / Adult Banana Choco`, `Elder`, `Plant-based`) and `Cigarette Company (example)` (`SKT`, `SKM`, `Mild`, `Rokok Putih`, `Kretek`, `hasCigSet: true`). Categories with 0 of our products carry the **`competitors only · 0 of ours`** tag (`hasMilkCompOnly: true, hasCigCompOnly: true`). Delete **refuses** while products use a category/sub-category and names the exact count (`refusedWithCount: true` — blocked `"Kid"` with `"3 products"`), while deleting an unused category (`Plant-based`) succeeds via in-page confirm (`plantDeleted: true`). Normalized duplicate check warns/blocks (`hasDupWarn: true` on `"k.i.d"`). Add and rename work live on both categories and sub-categories.
+  2. **Master Vault product form:** Matches `src/App.jsx:5245-5395` labels (`Product name`, `Description`, `Stock`, `Low-stock warning`, `Packing`, `Prices per <unit>`: `Distributor (cost)`, `Retail`, `Grosir`, `Ecer`, `Box pictures`, `Save product`). Linked `Category` and `Sub-category` pickers update immediately (`subFollowsCat: true`), inline **`+ New sub-category`** adds and selects `"Adult › Adult Matcha"` (`inlineAdded: true`), and saving updates live data + toast (`saveToast: "Saved \"NutriKid Silver 400g (example)\" · Adult › Adult Matcha"`).
+  3. **Sales terminal product tabs:** Row 1 = `ALL` + active categories + `BUNDLES`; Row 2 = `All <Cat>` + sub-categories of the picked category (reflecting newly added `"Adult Matcha"`, `pcHasInlineSubInTerminal: true`). Both rows stay strictly single-line with sideways scroll on PC and Phone 390 (`pcRow1H: 32, pcRow2H: 28, phRow1H: 32, phRow2H: 28`, `phTermOverflow: false, phFormOverflow: false`, `ERRORS: []`).
 
 ## Task 78 - PICTURE: the global Competitors screen (new draft) - DO RIGHT AFTER TASK 75
 **Status:** DONE

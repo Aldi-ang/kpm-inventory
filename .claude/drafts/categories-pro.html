@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Master Vault Categories &amp; Sub-categories — KPM (Task 77)</title>
+<style>
+/* Warm Stone (light) / Espresso (dark) — Master Vault & Reports/Customers C palette. Zero blue, zero green, zero amber fill. */
+:root{
+  --ground:#f5f2eb; --panel:#ffffff; --raised:#faf8f3; --inset:#ede8de;
+  --line:#ded7c9; --line-2:#cbc2b0; --hair:#ebe5d8;
+  --ink:#1b1815; --ink-muted:#514a40; --ink-dim:#665e53;
+  --gold:#9a6b14; --accent-ink:#7d5409; --accent-edge:#b9882c; --wash:rgba(154,107,20,.10); --sel:rgba(154,107,20,.14);
+  --danger-ink:#b43a2f; --danger-edge:#c45147; --danger-wash:rgba(180,58,47,.08);
+  --bar-track:#dfd8ca;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme=light]){
+    --ground:#12100e; --panel:#1a1714; --raised:#231f1b; --inset:#15120f;
+    --line:#2b2621; --line-2:#3c352d; --hair:#231f1a;
+    --ink:#f2ede4; --ink-muted:#b5aca0; --ink-dim:#8b8175;
+    --gold:#d4a548; --accent-ink:#e3b659; --accent-edge:#7b6029; --wash:rgba(212,165,72,.13); --sel:rgba(212,165,72,.18);
+    --danger-ink:#e07a6f; --danger-edge:#7d3a33; --danger-wash:rgba(224,122,111,.11);
+    --bar-track:#2a2520;
+    color-scheme:dark;
+  }
+}
+:root[data-theme=dark]{
+  --ground:#12100e; --panel:#1a1714; --raised:#231f1b; --inset:#15120f;
+  --line:#2b2621; --line-2:#3c352d; --hair:#231f1a;
+  --ink:#f2ede4; --ink-muted:#b5aca0; --ink-dim:#8b8175;
+  --gold:#d4a548; --accent-ink:#e3b659; --accent-edge:#7b6029; --wash:rgba(212,165,72,.13); --sel:rgba(212,165,72,.18);
+  --danger-ink:#e07a6f; --danger-edge:#7d3a33; --danger-wash:rgba(224,122,111,.11);
+  --bar-track:#2a2520;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--ground);color:var(--ink);font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.i{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.dim{color:var(--ink-dim)}
+
+/* Top switcher board */
+.board{max-width:1240px;margin:0 auto;padding:14px 16px 8px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;font-size:11.5px;color:var(--ink-dim)}
+.board h1{margin:0;font-size:13px;font-weight:700;color:var(--ink)}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden;background:var(--panel);flex-wrap:wrap}
+.seg button{border:0;border-right:1px solid var(--line);background:transparent;padding:5px 10px;font-size:11px;color:var(--ink-dim);font-weight:600;transition:background .15s,color .15s}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--wash);color:var(--accent-ink)}
+.cap{max-width:1240px;margin:14px auto 6px;padding:0 16px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim)}
+
+/* Dual frames */
+.fr{margin:0 auto 24px;border:1px solid var(--line-2);border-radius:12px;background:var(--ground);overflow:hidden;position:relative;box-shadow:0 24px 60px -36px rgba(0,0,0,.55);display:flex;flex-direction:column}
+.fr.pc{width:min(1240px,calc(100% - 24px));min-height:760px}
+.fr.phone{width:390px;max-width:calc(100% - 24px);height:844px;border-radius:26px;border:2px solid var(--line-2)}
+
+/* Hairline buttons (zero solid amber fill) */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:31px;padding:0 11px;border-radius:7px;border:1px solid var(--accent-edge);background:transparent;color:var(--ink);font-size:12px;font-weight:600;white-space:nowrap;transition:background .12s,transform .12s}
+.btn:hover{background:var(--wash)}
+.btn:active{transform:scale(.97)}
+.btn.q{border-color:var(--line-2);color:var(--ink-muted)}
+.btn.q:hover{background:var(--inset);color:var(--ink)}
+.btn.d{border-color:var(--danger-edge);color:var(--danger-ink)}
+.btn.d:hover{background:var(--danger-wash)}
+.btn.xs{height:26px;padding:0 8px;font-size:11px;border-radius:6px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.inp{height:34px;border:1px solid var(--line-2);border-radius:7px;background:var(--inset);padding:0 10px;font-size:12.5px;color:var(--ink);outline:none;min-width:0;width:100%}
+.inp:focus{border-color:var(--accent-edge)}
+textarea.inp{height:auto;padding:8px 10px;resize:vertical}
+select.inp option{background:var(--panel);color:var(--ink)}
+.st{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;border:1px solid var(--line-2);color:var(--ink-muted);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.st.g{border-color:var(--accent-edge);color:var(--accent-ink);background:var(--wash)}
+.st.bad{border-color:var(--danger-edge);color:var(--danger-ink);background:var(--danger-wash)}
+
+/* Header & KPI strip */
+.top{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap;flex:none}
+.top .t{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.top .sub{font-size:11.5px;color:var(--ink-dim)}
+.top .sp{flex:1}
+.kpi{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line);background:var(--panel);flex:none}
+.kpi > div{padding:9px 14px;border-right:1px solid var(--line);min-width:0}
+.kpi > div:last-child{border-right:0}
+.kpi .lbl{display:block;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim)}
+.kpi .val{font-size:19px;font-weight:700;letter-spacing:-.02em}
+.kpi i{font-style:normal;font-size:10.5px;color:var(--ink-dim);margin-left:6px}
+
+/* Rolling digits */
+.roll{display:inline-flex;align-items:baseline;line-height:1.15}
+.reel{display:inline-block;height:1.15em;overflow:hidden;vertical-align:bottom}
+.reel > span{display:block;transition:transform .48s cubic-bezier(.22,.9,.28,1)}
+.reel > span > span{display:block;height:1.15em;line-height:1.15em;text-align:center}
+
+/* Main frame tabs */
+.tabs{display:flex;align-items:center;gap:18px;padding:0 16px;border-bottom:1px solid var(--line);background:var(--panel);flex:none}
+.tab{border:0;background:transparent;padding:10px 2px;font-size:12.5px;font-weight:600;color:var(--ink-dim);border-bottom:2px solid transparent;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.tab[aria-selected=true]{color:var(--ink);border-bottom-color:var(--gold)}
+.cnt{font-size:10px;padding:1px 6px;border-radius:99px;background:var(--inset);border:1px solid var(--line-2);color:var(--ink-muted)}
+.tab[aria-selected=true] .cnt{border-color:var(--accent-edge);color:var(--accent-ink);background:var(--wash)}
+
+/* Frame 1: Categories manager (2-pane on PC, stacked on phone) */
+.cat-body{display:grid;grid-template-columns:340px 1fr;flex:1;min-height:0;overflow:hidden}
+.cat-left{border-right:1px solid var(--line);background:var(--inset);display:flex;flex-direction:column;min-height:0;overflow-y:auto}
+.cat-right{background:var(--ground);padding:16px 18px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;min-height:0}
+.sec-h{padding:10px 12px 6px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);display:flex;justify-content:space-between;align-items:center}
+.cat-row{width:100%;border:0;border-bottom:1px solid var(--hair);background:transparent;padding:10px 12px;text-align:left;display:flex;align-items:center;gap:8px;transition:background .1s}
+.cat-row:hover{background:var(--panel)}
+.cat-row.sel{background:var(--sel);box-shadow:inset 3px 0 0 var(--gold)}
+.cat-row .nm{flex:1;min-width:0}
+.cat-row b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cat-row .meta{font-size:11px;color:var(--ink-dim);display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.card{border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
+.card-h{padding:9px 13px;background:var(--inset);border-bottom:1px solid var(--line);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-ink);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.sub-row{display:flex;align-items:center;gap:8px;padding:9px 13px;border-bottom:1px solid var(--hair);flex-wrap:wrap}
+.sub-row:last-child{border-bottom:0}
+.sub-row b{font-size:12.5px}
+.inline-add{display:flex;gap:8px;padding:10px 13px;background:var(--raised);border-top:1px solid var(--line);flex-wrap:wrap;align-items:center}
+.inline-add .inp{flex:1 1 180px;height:31px}
+.warn{padding:8px 11px;border-left:3px solid var(--accent-edge);background:var(--wash);border-radius:0 6px 6px 0;font-size:11.5px;color:var(--ink);margin:0 13px 10px}
+.warn b{color:var(--accent-ink)}
+.warn.err{border-left-color:var(--danger-edge);background:var(--danger-wash)}
+.warn.err b{color:var(--danger-ink)}
+
+/* Frame 2: Master Vault Product Form (matches src/App.jsx:5245-5395 wording) */
+.pf-wrap{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.pf-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.pf-bar select{width:auto;min-width:210px;height:31px}
+.pf-card{border:1px solid var(--line-2);border-radius:10px;background:var(--panel);padding:18px 20px;display:flex;flex-direction:column;gap:16px}
+.pf-card h2{margin:0;font-size:16px;font-weight:700;padding-bottom:10px;border-bottom:1px solid var(--line-2)}
+.pf-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.pf-col{display:flex;flex-direction:column;gap:12px}
+.pf-lbl{display:block;font-size:11.5px;font-weight:600;color:var(--ink-muted);margin-bottom:4px}
+.pf-head{margin:4px 0 0;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-ink);padding-bottom:4px;border-bottom:1px solid var(--hair)}
+.pf-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pf-3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sub-inline-box{padding:10px;border:1px solid var(--accent-edge);border-radius:8px;background:var(--raised);display:flex;flex-direction:column;gap:8px}
+.faces{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.face{height:44px;border:1px dashed var(--line-2);border-radius:6px;background:var(--inset);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--ink-dim);text-transform:capitalize}
+
+/* Frame 3: Sales Terminal Product Tabs (2 single-line scrollable rows, never wraps to 3 lines) */
+.st-wrap{flex:1;overflow-y:auto;display:flex;flex-direction:column;min-height:0}
+.st-rows{background:var(--panel);border-bottom:1px solid var(--line);flex:none}
+.st-row1-wrap{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--hair)}
+.st-strip{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;min-width:0;flex:1}
+.st-strip::-webkit-scrollbar{display:none}
+.st-pill{flex:0 0 auto;white-space:nowrap;height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--line-2);background:transparent;color:var(--ink-muted);font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;display:inline-flex;align-items:center;gap:5px}
+.st-pill:hover{color:var(--ink);border-color:var(--accent-edge)}
+.st-pill.on{border-color:var(--accent-edge);background:var(--wash);color:var(--ink)}
+.st-row2-wrap{display:flex;align-items:center;gap:8px;padding:7px 14px;background:var(--inset)}
+.st-row2-lbl{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-dim);white-space:nowrap;flex:none}
+.st-sub{flex:0 0 auto;white-space:nowrap;height:28px;padding:0 10px;border-radius:6px;border:1px solid var(--line-2);background:var(--panel);color:var(--ink-muted);font-size:11.5px;font-weight:600}
+.st-sub.on{border-color:var(--accent-edge);background:var(--wash);color:var(--accent-ink)}
+.st-search{width:210px;height:32px;flex:none}
+.wares{padding:14px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-content:start}
+.ware{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:12px;display:flex;flex-direction:column;gap:5px}
+.ware b{font-size:13.5px}
+.ware .pr{font-size:16px;font-weight:700;color:var(--accent-ink);margin-top:2px}
+.ware .foot{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:4px;padding-top:6px;border-top:1px solid var(--hair);font-size:11px;color:var(--ink-dim)}
+
+/* Modal */
+.ov{position:absolute;inset:0;background:rgba(12,10,8,.68);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;padding:14px;z-index:30}
+.dlg{width:min(440px,100%);background:var(--raised);border:1px solid var(--line-2);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 24px 60px -20px rgba(0,0,0,.7)}
+.dlg h4{margin:0;font-size:14px}
+.dlg p{margin:0;font-size:12px;color:var(--ink-muted);line-height:1.45}
+.dlg .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;padding-top:4px}
+
+/* Self-drawing gold check toast */
+.toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,20px);opacity:0;pointer-events:none;
+  display:flex;align-items:center;gap:10px;background:var(--raised);border:1px solid var(--accent-edge);border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;
+  box-shadow:0 18px 40px -16px rgba(0,0,0,.6);transition:opacity .2s,transform .25s cubic-bezier(.2,.7,.2,1);z-index:50;max-width:calc(100% - 32px)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.toast svg{width:18px;height:18px;flex:none;stroke:var(--gold);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.toast path{stroke-dasharray:24;stroke-dashoffset:24}
+.toast.on path{animation:draw .45s .1s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+
+/* Phone frame overrides (390px, zero horizontal overflow) */
+.sb{height:24px;display:flex;justify-content:space-between;align-items:center;padding:0 18px;font-size:11px;color:var(--ink-dim);background:var(--panel);flex:none}
+.phone .top{padding:8px 12px;gap:6px}
+.phone .top .sub{display:none}
+.phone .kpi{grid-template-columns:1fr 1fr}
+.phone .kpi > div{padding:6px 10px;border-bottom:1px solid var(--line)}
+.phone .kpi > div:nth-child(2n){border-right:0}
+.phone .kpi > div:nth-child(n+3){border-bottom:0}
+.phone .kpi i{display:block;margin:1px 0 0;font-size:10px}
+.phone .tabs{padding:0 10px;gap:10px;overflow-x:auto}
+.phone .tab{font-size:11.5px;gap:4px}
+.phone .cat-body{grid-template-columns:1fr}
+.phone .cat-left{border-right:0}
+.phone .cat-right{padding:12px}
+.phone .pf-wrap{padding:12px}
+.phone .pf-card{padding:14px}
+.phone .pf-grid{grid-template-columns:1fr;gap:14px}
+.phone .pf-2,.phone .pf-3{grid-template-columns:1fr 1fr}
+.phone .st-row1-wrap{flex-direction:column;align-items:stretch;gap:6px;padding:8px 10px}
+.phone .st-row2-wrap{padding:6px 10px}
+.phone .st-search{width:100%}
+.phone .wares{grid-template-columns:1fr;padding:10px}
+.ph-back{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--inset);border-bottom:1px solid var(--line);flex:none}
+@media (max-width:760px){.fr.pc,.pcap{display:none}}
+.nomotion *,.nomotion *::before,.nomotion *::after{animation:none!important;transition:none!important}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="edit" viewBox="0 0 24 24"><path d="M14 4l6 6-10 10H4v-6z"/></symbol>
+  <symbol id="trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13"/></symbol>
+  <symbol id="chk" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="back" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
+  <symbol id="tag" viewBox="0 0 24 24"><path d="M20 13l-7 7-9-9V4h7z"/><circle cx="8.5" cy="8.5" r="1.5"/></symbol>
+  <symbol id="box" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></symbol>
+  <symbol id="shop" viewBox="0 0 24 24"><path d="M3 9l2-5h14l2 5M4 9v11h16V9M9 20v-6h6v6"/></symbol>
+</svg>
+
+<div class="board">
+  <h1>Master Vault · Categories &amp; Sub-categories (Task 77)</h1>
+  <span>Company <span class="seg" id="company">
+    <button type="button" aria-pressed="true" data-v="milk">Milk Company (example)</button>
+    <button type="button" aria-pressed="false" data-v="cig">Cigarette Company (example)</button>
+  </span></span>
+  <span>Theme <span class="seg" id="theme"><button type="button" aria-pressed="true" data-v="">System</button><button type="button" aria-pressed="false" data-v="light">Light</button><button type="button" aria-pressed="false" data-v="dark">Dark</button></span></span>
+  <span>Motion <span class="seg" id="motion"><button type="button" aria-pressed="true" data-v="on">On</button><button type="button" aria-pressed="false" data-v="off">Lite</button></span></span>
+  <span style="flex-basis:100%">Three playable frames: (1) Master Vault Categories manager with delete protection &amp; duplicate warning, (2) Master Vault Product form with linked Category › Sub-category + inline "+ New sub-category", (3) Sales Terminal 2-row single-line tabs. All sample sets are labeled "(example)".</span>
+</div>
+
+<p class="cap pcap">PC · 1240 px</p>
+<div class="fr pc" id="pc"></div>
+<p class="cap">Phone · 390 px (same app mounted live)</p>
+<div class="fr phone" id="ph"></div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span id="toastT"></span></div>
+
+<script>
+const COMPANIES = {
+  milk: {
+    label: 'Milk Company (example)',
+    unit: 'Box', packLabels: ['Packs per Box', 'Box per Carton', 'Carton per Pallet'],
+    cats: [
+      { id: 'kid', name: 'Kid', subs: [{ id: 'kid-silver', name: 'Kid Silver' }, { id: 'kid-bronze', name: 'Kid Bronze' }, { id: 'kid-gold', name: 'Kid Gold' }], rivals: 2 },
+      { id: 'adult', name: 'Adult', subs: [{ id: 'adult-choc', name: 'Adult Chocolate' }, { id: 'adult-van', name: 'Adult Vanilla' }, { id: 'adult-ban', name: 'Adult Banana Choco' }], rivals: 3 },
+      { id: 'elder', name: 'Elder', subs: [{ id: 'elder-calc', name: 'Elder Calcium' }], rivals: 1 },
+      { id: 'plant', name: 'Plant-based', subs: [{ id: 'plant-oat', name: 'Oat Milk' }], rivals: 2 },
+    ],
+    products: [
+      { id: 'm1', name: 'NutriKid Silver 400g (example)', desc: 'Daily growth formula for ages 1-3', catId: 'kid', subId: 'kid-silver', stock: 180, minStock: 40, p1: 12, p2: 6, p3: 4, cost: 34000, retail: 42000, grosir: 39000, ecer: 45000 },
+      { id: 'm2', name: 'NutriKid Bronze 400g (example)', desc: 'Value pack for local warungs', catId: 'kid', subId: 'kid-bronze', stock: 220, minStock: 50, p1: 12, p2: 6, p3: 4, cost: 28000, retail: 35000, grosir: 32500, ecer: 38000 },
+      { id: 'm3', name: 'NutriKid Gold 800g (example)', desc: 'Premium DHA tin', catId: 'kid', subId: 'kid-gold', stock: 95, minStock: 30, p1: 6, p2: 6, p3: 4, cost: 68000, retail: 82000, grosir: 77000, ecer: 86000 },
+      { id: 'm4', name: 'DailyFit Choco 500g (example)', desc: 'Low-fat adult chocolate milk', catId: 'adult', subId: 'adult-choc', stock: 140, minStock: 30, p1: 10, p2: 6, p3: 4, cost: 41000, retail: 50000, grosir: 47000, ecer: 53000 },
+      { id: 'm5', name: 'DailyFit Vanilla 500g (example)', desc: 'Classic vanilla blend', catId: 'adult', subId: 'adult-van', stock: 115, minStock: 30, p1: 10, p2: 6, p3: 4, cost: 40000, retail: 49000, grosir: 46000, ecer: 52000 },
+      { id: 'm6', name: 'DailyFit Banana Choco 500g (example)', desc: 'Banana chocolate seasonal blend', catId: 'adult', subId: 'adult-ban', stock: 24, minStock: 30, p1: 10, p2: 6, p3: 4, cost: 43000, retail: 52000, grosir: 49000, ecer: 55000 },
+      { id: 'm7', name: 'SeniorCare Plus 600g (example)', desc: 'High calcium senior milk', catId: 'elder', subId: 'elder-calc', stock: 64, minStock: 20, p1: 8, p2: 6, p3: 4, cost: 54000, retail: 65000, grosir: 61000, ecer: 69000 },
+    ],
+  },
+  cig: {
+    label: 'Cigarette Company (example)',
+    unit: 'Bks', packLabels: ['Bks per Slop', 'Slop per Bal', 'Bal per Karton'],
+    cats: [
+      { id: 'skt', name: 'SKT', subs: [{ id: 'skt-12', name: 'SKT 12' }, { id: 'skt-16', name: 'SKT 16' }], rivals: 1 },
+      { id: 'skm', name: 'SKM', subs: [{ id: 'skm-12', name: 'SKM 12' }, { id: 'skm-16', name: 'SKM 16' }, { id: 'skm-flav', name: 'SKM Flavour' }], rivals: 2 },
+      { id: 'mild', name: 'Mild', subs: [{ id: 'mild-16', name: 'Mild 16' }, { id: 'mild-menthol', name: 'Mild Menthol' }], rivals: 2 },
+      { id: 'putih', name: 'Rokok Putih', subs: [{ id: 'putih-12', name: 'Putih 12' }, { id: 'putih-20', name: 'Putih 20' }], rivals: 1 },
+      { id: 'kretek', name: 'Kretek', subs: [{ id: 'kretek-12', name: 'Kretek 12' }], rivals: 0 },
+    ],
+    products: [
+      { id: 'c1', name: 'Cello Coffee & Caramel (example)', desc: 'Signature flavour SKM', catId: 'skm', subId: 'skm-flav', stock: 4200, minStock: 600, p1: 10, p2: 20, p3: 4, cost: 7200, retail: 8500, grosir: 8000, ecer: 9500 },
+      { id: 'c2', name: 'Cello Chocolate (example)', desc: 'Rich chocolate aroma SKM', catId: 'skm', subId: 'skm-flav', stock: 2900, minStock: 600, p1: 10, p2: 20, p3: 4, cost: 8500, retail: 10000, grosir: 9500, ecer: 11000 },
+      { id: 'c3', name: 'Cello Mmrapi (example)', desc: 'Smooth mild 16', catId: 'mild', subId: 'mild-16', stock: 3100, minStock: 600, p1: 10, p2: 20, p3: 4, cost: 7100, retail: 8500, grosir: 8000, ecer: 9500 },
+      { id: 'c4', name: 'Cello Green (example)', desc: 'Menthol mild blend', catId: 'mild', subId: 'mild-menthol', stock: 480, minStock: 600, p1: 10, p2: 20, p3: 4, cost: 5800, retail: 7000, grosir: 6500, ecer: 8000 },
+      { id: 'c5', name: 'Cello Teh Manis (example)', desc: 'Hand-rolled SKT 12', catId: 'skt', subId: 'skt-12', stock: 1850, minStock: 600, p1: 10, p2: 20, p3: 4, cost: 6700, retail: 8000, grosir: 7500, ecer: 9000 },
+      { id: 'c6', name: 'Cello Nusantara 12 (example)', desc: 'Classic clove kretek', catId: 'kretek', subId: 'kretek-12', stock: 1100, minStock: 400, p1: 10, p2: 20, p3: 4, cost: 6400, retail: 7500, grosir: 7100, ecer: 8500 },
+    ],
+  },
+};
+
+const G = { co: 'milk', motion: true };
+const curCo = () => COMPANIES[G.co];
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const rp = (n) => 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID');
+const normName = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+function findCatMatch(name, skipCatId) {
+  const k = normName(name);
+  if (!k) return null;
+  for (const c of curCo().cats) {
+    if (c.id !== skipCatId && (normName(c.name) === k || normName(c.name).includes(k) || k.includes(normName(c.name)))) {
+      return { exact: normName(c.name) === k, label: c.name };
+    }
+  }
+  return null;
+}
+function findSubMatch(cat, name, skipSubId) {
+  const k = normName(name);
+  if (!k || !cat) return null;
+  for (const s of cat.subs) {
+    if (s.id !== skipSubId && (normName(s.name) === k || normName(s.name).includes(k) || k.includes(normName(s.name)))) {
+      return { exact: normName(s.name) === k, label: `${cat.name} › ${s.name}` };
+    }
+  }
+  return null;
+}
+const catLabel = (catId, subId) => {
+  const c = curCo().cats.find((x) => x.id === catId);
+  const s = c?.subs.find((x) => x.id === subId);
+  return c ? (s ? `${c.name} › ${s.name}` : c.name) : '—';
+};
+const productsInCat = (catId) => curCo().products.filter((p) => p.catId === catId);
+const productsInSub = (subId) => curCo().products.filter((p) => p.subId === subId);
+
+/* ---------- rolling digits + gold check toast ---------- */
+function rollHTML(text, prevText) {
+  const out = [], pt = prevText || '', off = text.length - pt.length;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (/\d/.test(c)) {
+      const old = pt[i - off], from = /\d/.test(old || '') ? +old : 0;
+      out.push(`<span class="reel"><span data-to="${c}" style="transform:translateY(-${from * 1.15}em)">${'0123456789'.split('').map((x) => `<span>${x}</span>`).join('')}</span></span>`);
+    } else out.push(`<span>${esc(c)}</span>`);
+  }
+  return `<span class="roll" aria-label="${esc(text)}">${out.join('')}</span>`;
+}
+function R(st, key, text) { const h = rollHTML(text, st.prev[key]); st.prev[key] = text; return h; }
+function settleRolls(root) {
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    root.querySelectorAll('.reel > span[data-to]').forEach((s) => { s.style.transform = `translateY(-${+s.dataset.to * 1.15}em)`; });
+  }));
+}
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.classList.remove('on'); void t.offsetWidth;
+  document.getElementById('toastT').textContent = msg;
+  t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('on'), 2800);
+}
+
+/* ---------- dual-mounted state ---------- */
+const apps = [];
+function initForm(prod) {
+  const co = curCo();
+  if (prod) return { ...prod };
+  const c0 = co.cats[0];
+  return { id: '', name: '', desc: '', catId: c0?.id || '', subId: c0?.subs[0]?.id || '', stock: 0, minStock: 30, p1: 10, p2: 6, p3: 4, cost: '', retail: '', grosir: '', ecer: '' };
+}
+const freshState = (mode) => ({
+  mode, tab: 'cats', selCat: curCo().cats[0].id, phDetail: false,
+  newCatName: '', newSubName: '',
+  pfId: curCo().products[0].id, pfForm: initForm(curCo().products[0]), pfInlineSubOpen: false, pfInlineSubName: '',
+  stCat: 'ALL', stSub: 'ALL', stQ: '',
+  prev: {}, modal: null, modalVal: '',
+});
+
+function mount(el, mode) {
+  const st = freshState(mode);
+  apps.push({ el, st });
+  el.addEventListener('click', (e) => onClick(e, el, st));
+  el.addEventListener('input', (e) => onInput(e, el, st));
+  el.addEventListener('change', (e) => onInput(e, el, st));
+  render(el, st);
+}
+function rerenderAll() { apps.forEach((a) => render(a.el, a.st)); }
+
+function render(el, st) {
+  const co = curCo(), ph = st.mode === 'phone';
+  if (!co.cats.some((c) => c.id === st.selCat)) st.selCat = co.cats[0]?.id || '';
+  const activeCat = co.cats.find((c) => c.id === st.selCat) || co.cats[0];
+  const totalSubs = co.cats.reduce((n, c) => n + c.subs.length, 0);
+  const compOnly = co.cats.filter((c) => productsInCat(c.id).length === 0).length;
+  const lowCount = co.products.filter((p) => Number(p.stock) < Number(p.minStock)).length;
+
+  let html = ph ? `<div class="sb"><span>09:41</span><span>5G · 92%</span></div>` : '';
+  html += `<div class="top">
+    <b class="t">Master Vault</b>
+    <span class="sub">${esc(co.label)} · shared categories with Competitors</span>
+    <span class="sp"></span>
+    <button type="button" class="btn q" data-act="open-add-cat"><svg class="i"><use href="#plus"/></svg>${ph ? 'Category' : 'Add category'}</button>
+    <button type="button" class="btn" data-act="goto-new-prod"><svg class="i"><use href="#plus"/></svg>${ph ? 'Product' : 'Add product'}</button>
+  </div>
+
+  <div class="kpi">
+    <div><span class="lbl">Categories</span><b class="val">${R(st, 'k-c', String(co.cats.length))}</b><i>shared list</i></div>
+    <div><span class="lbl">Sub-categories</span><b class="val">${R(st, 'k-s', String(totalSubs))}</b><i>2 levels fixed</i></div>
+    <div><span class="lbl">Our products</span><b class="val">${R(st, 'k-p', String(co.products.length))}</b><i>${lowCount} low stock</i></div>
+    <div><span class="lbl">Competitors only</span><b class="val" style="color:var(--accent-ink)">${R(st, 'k-co', String(compOnly))}</b><i>0 of ours yet</i></div>
+  </div>
+
+  <nav class="tabs" role="tablist">
+    <button type="button" class="tab" role="tab" data-tab="cats" aria-selected="${st.tab === 'cats'}"><svg class="i"><use href="#tag"/></svg>Categories <span class="cnt">${co.cats.length}</span></button>
+    <button type="button" class="tab" role="tab" data-tab="form" aria-selected="${st.tab === 'form'}"><svg class="i"><use href="#box"/></svg>Product form</button>
+    <button type="button" class="tab" role="tab" data-tab="terminal" aria-selected="${st.tab === 'terminal'}"><svg class="i"><use href="#shop"/></svg>Sales terminal</button>
+  </nav>`;
+
+  if (st.tab === 'cats') html += renderCatsFrame(co, st, activeCat, ph);
+  else if (st.tab === 'form') html += renderProductFormFrame(co, st);
+  else html += renderSalesTerminalFrame(co, st);
+
+  if (st.modal) html += st.modal(st, co);
+  el.innerHTML = html;
+  settleRolls(el);
+}
+
+/* ---------- Frame 1: Categories Manager ---------- */
+function renderCatsFrame(co, st, activeCat, ph) {
+  const newMatch = findCatMatch(st.newCatName, null);
+  const left = `<div class="cat-left">
+    <div class="sec-h"><span>All categories (${co.cats.length})</span><span>tap to manage</span></div>
+    ${co.cats.map((c) => {
+      const nProd = productsInCat(c.id).length;
+      return `<button type="button" class="cat-row ${activeCat && c.id === activeCat.id ? 'sel' : ''}" data-pick-cat="${c.id}">
+        <div class="nm">
+          <b>${esc(c.name)}</b>
+          <div class="meta">
+            <span>${c.subs.length} sub-categor${c.subs.length === 1 ? 'y' : 'ies'}</span>
+            <span>·</span>
+            <span>${nProd} product${nProd === 1 ? '' : 's'}</span>
+          </div>
+        </div>
+        ${nProd === 0 ? `<span class="st g">competitors only · 0 of ours</span>` : `<span class="st">${nProd} ours</span>`}
+      </button>`;
+    }).join('')}
+    <div class="inline-add">
+      <input class="inp" data-f="newCatName" id="nc-${st.mode}" value="${esc(st.newCatName)}" placeholder="Add new category...">
+      <button type="button" class="btn xs" data-act="add-cat"><svg class="i"><use href="#plus"/></svg>Add</button>
+    </div>
+    ${newMatch ? `<div class="warn ${newMatch.exact ? 'err' : ''}"><b>${newMatch.exact ? 'Already exists:' : 'Duplicate warning:'}</b> Looks like "${esc(newMatch.label)}". ${newMatch.exact ? 'Exact duplicates are blocked.' : 'Check before adding.'}</div>` : ''}
+  </div>`;
+
+  let right = '';
+  if (activeCat) {
+    const prods = productsInCat(activeCat.id);
+    const subMatch = findSubMatch(activeCat, st.newSubName, null);
+    right = `<div class="cat-right">
+      ${ph ? `<div class="ph-back" style="margin:-12px -12px 4px"><button type="button" class="btn xs q" data-act="ph-back"><svg class="i"><use href="#back"/></svg>Categories</button><b style="font-size:13px">${esc(activeCat.name)}</b></div>` : ''}
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div>
+          <h2 style="margin:0;font-size:17px">${esc(activeCat.name)}</h2>
+          <div class="dim" style="font-size:12px;margin-top:2px">${prods.length} of our products · ${activeCat.rivals} rival product${activeCat.rivals === 1 ? '' : 's'} in Competitors ${prods.length === 0 ? '· <span class="st g">competitors only · 0 of ours</span>' : ''}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button type="button" class="btn xs q" data-act="open-ren-cat" data-cid="${activeCat.id}"><svg class="i"><use href="#edit"/></svg>Rename</button>
+          <button type="button" class="btn xs d" data-act="try-del-cat" data-cid="${activeCat.id}"><svg class="i"><use href="#trash"/></svg>Delete category</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><span>Sub-categories inside ${esc(activeCat.name)} (${activeCat.subs.length})</span><span>one level below category</span></div>
+        ${activeCat.subs.length ? activeCat.subs.map((s) => {
+          const sp = productsInSub(s.id);
+          return `<div class="sub-row">
+            <div style="flex:1;min-width:140px"><b>${esc(s.name)}</b><div class="dim" style="font-size:11px">${sp.length} product${sp.length === 1 ? '' : 's'} using this sub-category</div></div>
+            <button type="button" class="btn xs q" data-act="open-ren-sub" data-cid="${activeCat.id}" data-sid="${s.id}"><svg class="i"><use href="#edit"/></svg>Rename</button>
+            <button type="button" class="btn xs d" data-act="try-del-sub" data-cid="${activeCat.id}" data-sid="${s.id}"><svg class="i"><use href="#trash"/></svg>Delete</button>
+          </div>`;
+        }).join('') : `<div class="sub-row dim">No sub-categories yet. Add one below.</div>`}
+        <div class="inline-add">
+          <input class="inp" data-f="newSubName" id="ns-${st.mode}" value="${esc(st.newSubName)}" placeholder="Add sub-category inside ${esc(activeCat.name)}...">
+          <button type="button" class="btn xs" data-act="add-sub" data-cid="${activeCat.id}"><svg class="i"><use href="#plus"/></svg>Add sub-category</button>
+        </div>
+        ${subMatch ? `<div class="warn ${subMatch.exact ? 'err' : ''}"><b>${subMatch.exact ? 'Already exists:' : 'Duplicate warning:'}</b> Looks like "${esc(subMatch.label)}".</div>` : ''}
+      </div>
+
+      <div class="card">
+        <div class="card-h"><span>Products in ${esc(activeCat.name)} (${prods.length})</span><span>delete is blocked while any product uses this category</span></div>
+        ${prods.length ? prods.map((p) => `<div class="sub-row">
+          <div style="flex:1;min-width:140px"><b>${esc(p.name)}</b><div class="dim" style="font-size:11px">${esc(catLabel(p.catId, p.subId))} · Stock ${p.stock} ${esc(co.unit)}</div></div>
+          <b>${rp(p.retail)}</b>
+          <button type="button" class="btn xs q" data-act="edit-in-form" data-pid="${p.id}">Edit</button>
+        </div>`).join('') : `<div class="sub-row dim">No products in ${esc(activeCat.name)} yet — safe to delete, or assign one in Product form.</div>`}
+      </div>
+    </div>`;
+  }
+  if (ph) return `<div class="cat-body">${st.phDetail ? right : left}</div>`;
+  return `<div class="cat-body">${left}${right}</div>`;
+}
+
+/* ---------- Frame 2: Master Vault Product Form ---------- */
+function renderProductFormFrame(co, st) {
+  const f = st.pfForm;
+  const cat = co.cats.find((c) => c.id === f.catId) || co.cats[0];
+  const subs = cat ? cat.subs : [];
+  const inSubMatch = findSubMatch(cat, st.pfInlineSubName, null);
+
+  return `<div class="pf-wrap">
+    <div class="pf-bar">
+      <span class="dim" style="font-size:11.5px;font-weight:600">Previewing product:</span>
+      <select class="inp" data-f="pfPick" aria-label="Pick product to edit">
+        <option value="__new__" ${!f.id ? 'selected' : ''}>+ New product</option>
+        ${co.products.map((p) => `<option value="${p.id}" ${f.id === p.id ? 'selected' : ''}>${esc(p.name)} · ${esc(catLabel(p.catId, p.subId))}</option>`).join('')}
+      </select>
+      <span class="st g">${esc(catLabel(f.catId, f.subId))}</span>
+    </div>
+
+    <div class="pf-card">
+      <h2>${f.id ? `Edit product · ${esc(f.name)}` : 'New product'}</h2>
+      <div class="pf-grid">
+        <div class="pf-col">
+          <div><label class="pf-lbl">Product name</label><input class="inp" data-pf="name" value="${esc(f.name)}" placeholder="e.g. NutriKid Gold 800g"></div>
+          <div><label class="pf-lbl">Description</label><textarea class="inp" data-pf="desc" rows="2">${esc(f.desc)}</textarea></div>
+
+          <div class="pf-2">
+            <div>
+              <label class="pf-lbl">Category</label>
+              <select class="inp" data-pf="catId" aria-label="Category">
+                ${co.cats.map((c) => `<option value="${c.id}" ${f.catId === c.id ? 'selected' : ''}>${esc(c.name)}${productsInCat(c.id).length === 0 ? ' (competitors only)' : ''}</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                <label class="pf-lbl" style="margin:0">Sub-category</label>
+                <button type="button" class="btn xs q" style="height:22px;font-size:10.5px;padding:0 6px" data-act="toggle-inline-sub">+ New sub-category</button>
+              </div>
+              <select class="inp" data-pf="subId" aria-label="Sub-category">
+                <option value="">None (top-level only)</option>
+                ${subs.map((s) => `<option value="${s.id}" ${f.subId === s.id ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+
+          ${st.pfInlineSubOpen && cat ? `<div class="sub-inline-box">
+            <div style="font-size:11px;font-weight:700;color:var(--accent-ink)">New sub-category inside "${esc(cat.name)}"</div>
+            <div style="display:flex;gap:6px">
+              <input class="inp" style="height:30px;flex:1" data-f="pfInlineSubName" id="isub-${st.mode}" value="${esc(st.pfInlineSubName)}" placeholder="e.g. ${G.co === 'milk' ? 'Kid Platinum' : 'SKM Berry'}">
+              <button type="button" class="btn xs" data-act="save-inline-sub"><svg class="i"><use href="#chk"/></svg>Add &amp; pick</button>
+              <button type="button" class="btn xs q" data-act="toggle-inline-sub">Cancel</button>
+            </div>
+            ${inSubMatch ? `<div class="warn ${inSubMatch.exact ? 'err' : ''}" style="margin:0"><b>${inSubMatch.exact ? 'Already exists:' : 'Duplicate warning:'}</b> Looks like "${esc(inSubMatch.label)}".</div>` : ''}
+          </div>` : ''}
+
+          <div class="pf-2">
+            <div><label class="pf-lbl">Stock (${esc(co.unit)})</label><input class="inp" type="number" data-pf="stock" value="${esc(f.stock)}"></div>
+            <div><label class="pf-lbl">Low-stock warning (${esc(co.unit)})</label><input class="inp" type="number" data-pf="minStock" value="${esc(f.minStock)}"></div>
+          </div>
+
+          <h3 class="pf-head">Packing</h3>
+          <div class="pf-3">
+            <div><label class="pf-lbl">${esc(co.packLabels[0])}</label><input class="inp" type="number" data-pf="p1" value="${esc(f.p1)}"></div>
+            <div><label class="pf-lbl">${esc(co.packLabels[1])}</label><input class="inp" type="number" data-pf="p2" value="${esc(f.p2)}"></div>
+            <div><label class="pf-lbl">${esc(co.packLabels[2])}</label><input class="inp" type="number" data-pf="p3" value="${esc(f.p3)}"></div>
+          </div>
+        </div>
+
+        <div class="pf-col">
+          <h3 class="pf-head" style="margin-top:0">Prices per ${esc(co.unit)}</h3>
+          <div><label class="pf-lbl">Distributor (cost)</label><input class="inp" type="number" data-pf="cost" value="${esc(f.cost)}"></div>
+          <div><label class="pf-lbl">Retail</label><input class="inp" type="number" data-pf="retail" value="${esc(f.retail)}"></div>
+          <div><label class="pf-lbl">Grosir</label><input class="inp" type="number" data-pf="grosir" value="${esc(f.grosir)}"></div>
+          <div><label class="pf-lbl">Ecer</label><input class="inp" type="number" data-pf="ecer" value="${esc(f.ecer)}"></div>
+
+          <h3 class="pf-head">Box pictures</h3>
+          <div class="faces">${['front', 'back', 'left', 'right', 'top', 'bottom'].map((fc) => `<div class="face">${fc}</div>`).join('')}</div>
+
+          <div style="margin-top:auto;padding-top:10px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px">
+            <button type="button" class="btn" style="width:100%;height:38px" data-act="save-product"><svg class="i"><use href="#chk"/></svg>Save product</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------- Frame 3: Sales Terminal Product Tabs ---------- */
+function renderSalesTerminalFrame(co, st) {
+  const activeCats = co.cats.filter((c) => productsInCat(c.id).length > 0);
+  if (st.stCat !== 'ALL' && st.stCat !== 'BUNDLES' && !activeCats.some((c) => c.id === st.stCat)) { st.stCat = 'ALL'; st.stSub = 'ALL'; }
+  const pickedCat = activeCats.find((c) => c.id === st.stCat) || null;
+  if (pickedCat && st.stSub !== 'ALL' && !pickedCat.subs.some((s) => s.id === st.stSub)) st.stSub = 'ALL';
+
+  const q = st.stQ.trim().toLowerCase();
+  const wares = st.stCat === 'BUNDLES' ? [] : co.products.filter((p) => {
+    if (pickedCat && p.catId !== pickedCat.id) return false;
+    if (pickedCat && st.stSub !== 'ALL' && p.subId !== st.stSub) return false;
+    if (q && !p.name.toLowerCase().includes(q) && !catLabel(p.catId, p.subId).toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  return `<div class="st-wrap">
+    <div class="st-rows">
+      <div class="st-row1-wrap">
+        <div class="st-strip" role="tablist" aria-label="Categories (row 1)" id="row1-${st.mode}">
+          <button type="button" class="st-pill ${st.stCat === 'ALL' ? 'on' : ''}" data-st-cat="ALL">ALL</button>
+          ${activeCats.map((c) => `<button type="button" class="st-pill ${st.stCat === c.id ? 'on' : ''}" data-st-cat="${c.id}">${esc(c.name)}</button>`).join('')}
+          <button type="button" class="st-pill ${st.stCat === 'BUNDLES' ? 'on' : ''}" data-st-cat="BUNDLES">BUNDLES</button>
+        </div>
+        <input class="inp st-search" data-f="stQ" id="stq-${st.mode}" value="${esc(st.stQ)}" placeholder="Search wares...">
+      </div>
+
+      <div class="st-row2-wrap">
+        <span class="st-row2-lbl">Sub-category</span>
+        <div class="st-strip" role="tablist" aria-label="Sub-categories (row 2)" id="row2-${st.mode}">
+          ${pickedCat ? `
+            <button type="button" class="st-sub ${st.stSub === 'ALL' ? 'on' : ''}" data-st-sub="ALL">All ${esc(pickedCat.name)}</button>
+            ${pickedCat.subs.map((s) => `<button type="button" class="st-sub ${st.stSub === s.id ? 'on' : ''}" data-st-sub="${s.id}">${esc(s.name)}</button>`).join('')}
+          ` : `<span class="dim" style="font-size:11.5px;white-space:nowrap">${st.stCat === 'BUNDLES' ? 'Promo bundles active for this region' : 'Pick a category on row 1 to filter sub-categories (always 1 line)'}</span>`}
+        </div>
+      </div>
+    </div>
+
+    <div class="wares">
+      ${wares.length ? wares.map((p) => `<div class="ware">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
+          <span class="st">${esc(catLabel(p.catId, p.subId))}</span>
+          ${Number(p.stock) < Number(p.minStock) ? `<span class="st bad">Low stock</span>` : ''}
+        </div>
+        <b>${esc(p.name)}</b>
+        <span class="dim" style="font-size:11.5px">${esc(p.desc)}</span>
+        <span class="pr">${rp(p.retail)} <span class="dim" style="font-size:11px;font-weight:400">/ ${esc(co.unit)}</span></span>
+        <div class="foot"><span>Stock: ${p.stock} ${esc(co.unit)}</span><span>Grosir ${rp(p.grosir)}</span></div>
+      </div>`).join('') : `<div class="dim" style="grid-column:1/-1;padding:28px;text-align:center">${st.stCat === 'BUNDLES' ? 'Active promo bundles appear here.' : 'No products match this filter.'}</div>`}
+    </div>
+  </div>`;
+}
+
+/* ---------- In-page Modals ---------- */
+const M = {
+  addCat: () => (st) => {
+    const match = findCatMatch(st.modalVal, null);
+    return `<div class="ov"><div class="dlg" role="dialog" aria-label="Add category">
+      <h4>Add category</h4>
+      <p>Shared by Master Vault and Competitors. Duplicate check ignores case, spaces, dots, and dashes.</p>
+      <input class="inp" data-f="modalVal" id="mv-${st.mode}" value="${esc(st.modalVal)}" placeholder="Category name">
+      ${match ? `<div class="warn ${match.exact ? 'err' : ''}" style="margin:0"><b>${match.exact ? 'Already exists:' : 'Duplicate warning:'}</b> Looks like "${esc(match.label)}".</div>` : ''}
+      <div class="row"><button type="button" class="btn q" data-act="close">Cancel</button><button type="button" class="btn" data-act="confirm-add-cat" ${match?.exact ? 'disabled' : ''}><svg class="i"><use href="#chk"/></svg>Create category</button></div>
+    </div></div>`;
+  },
+  renCat: (cat) => (st) => {
+    const match = findCatMatch(st.modalVal, cat.id);
+    return `<div class="ov"><div class="dlg" role="dialog" aria-label="Rename category">
+      <h4>Rename "${esc(cat.name)}"</h4>
+      <p>Updates the label on every product and competitor entry linked to this category.</p>
+      <input class="inp" data-f="modalVal" id="mv-${st.mode}" value="${esc(st.modalVal)}">
+      ${match ? `<div class="warn ${match.exact ? 'err' : ''}" style="margin:0"><b>${match.exact ? 'Already exists:' : 'Duplicate warning:'}</b> Looks like "${esc(match.label)}".</div>` : ''}
+      <div class="row"><button type="button" class="btn q" data-act="close">Cancel</button><button type="button" class="btn" data-act="confirm-ren-cat" data-cid="${cat.id}" ${match?.exact ? 'disabled' : ''}><svg class="i"><use href="#chk"/></svg>Save name</button></div>
+    </div></div>`;
+  },
+  renSub: (cat, sub) => (st) => {
+    const match = findSubMatch(cat, st.modalVal, sub.id);
+    return `<div class="ov"><div class="dlg" role="dialog" aria-label="Rename sub-category">
+      <h4>Rename "${esc(sub.name)}"</h4>
+      <p>Inside category <b>${esc(cat.name)}</b>.</p>
+      <input class="inp" data-f="modalVal" id="mv-${st.mode}" value="${esc(st.modalVal)}">
+      ${match ? `<div class="warn ${match.exact ? 'err' : ''}" style="margin:0"><b>${match.exact ? 'Already exists:' : 'Duplicate warning:'}</b> Looks like "${esc(match.label)}".</div>` : ''}
+      <div class="row"><button type="button" class="btn q" data-act="close">Cancel</button><button type="button" class="btn" data-act="confirm-ren-sub" data-cid="${cat.id}" data-sid="${sub.id}" ${match?.exact ? 'disabled' : ''}><svg class="i"><use href="#chk"/></svg>Save name</button></div>
+    </div></div>`;
+  },
+  delBlocked: (kind, name, prods) => () => `<div class="ov"><div class="dlg" role="alertdialog" aria-label="Cannot delete">
+    <h4 style="color:var(--danger-ink)">Cannot delete ${esc(kind)} "${esc(name)}"</h4>
+    <p><b>${prods.length} product${prods.length === 1 ? '' : 's'}</b> currently use${prods.length === 1 ? 's' : ''} it. Move ${prods.length === 1 ? 'that product' : 'them'} to another ${esc(kind)} first:</p>
+    <div style="border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--panel);font-size:12px;display:flex;flex-direction:column;gap:4px">
+      ${prods.map((p) => `<div>• <b>${esc(p.name)}</b></div>`).join('')}
+    </div>
+    <div class="row"><button type="button" class="btn" data-act="close">Understood</button></div>
+  </div></div>`,
+  delConfirm: (kind, name, cid, sid) => () => `<div class="ov"><div class="dlg" role="alertdialog" aria-label="Confirm delete">
+    <h4>Delete ${esc(kind)} "${esc(name)}"?</h4>
+    <p>0 of our products use this ${esc(kind)}, so removing it is safe.</p>
+    <div class="row"><button type="button" class="btn q" data-act="close">Keep it</button><button type="button" class="btn d" data-act="${sid ? 'confirm-del-sub' : 'confirm-del-cat'}" data-cid="${cid}" ${sid ? `data-sid="${sid}"` : ''}><svg class="i"><use href="#trash"/></svg>Delete</button></div>
+  </div></div>`,
+};
+
+/* ---------- Events ---------- */
+function refocus(el, id) {
+  const i = el.querySelector('#' + id);
+  if (i) { i.focus(); if (i.setSelectionRange) i.setSelectionRange(i.value.length, i.value.length); }
+}
+
+function onInput(e, el, st) {
+  const tg = e.target, f = tg.dataset.f, pf = tg.dataset.pf, co = curCo();
+  if (pf) {
+    st.pfForm[pf] = tg.value;
+    if (pf === 'catId') {
+      const cat = co.cats.find((c) => c.id === tg.value);
+      st.pfForm.subId = cat?.subs[0]?.id || '';
+      st.pfInlineSubOpen = false;
+      render(el, st);
+    }
+    return;
+  }
+  if (!f) return;
+  if (f === 'newCatName') { st.newCatName = tg.value; render(el, st); return refocus(el, `nc-${st.mode}`); }
+  if (f === 'newSubName') { st.newSubName = tg.value; render(el, st); return refocus(el, `ns-${st.mode}`); }
+  if (f === 'pfInlineSubName') { st.pfInlineSubName = tg.value; render(el, st); return refocus(el, `isub-${st.mode}`); }
+  if (f === 'modalVal') { st.modalVal = tg.value; render(el, st); return refocus(el, `mv-${st.mode}`); }
+  if (f === 'stQ') { st.stQ = tg.value; render(el, st); return refocus(el, `stq-${st.mode}`); }
+  if (f === 'pfPick' && e.type === 'change') {
+    const p = tg.value === '__new__' ? null : co.products.find((x) => x.id === tg.value);
+    st.pfId = p ? p.id : '';
+    st.pfForm = initForm(p);
+    st.pfInlineSubOpen = false;
+    return render(el, st);
+  }
+}
+
+function onClick(e, el, st) {
+  const b = e.target.closest('button, .ov');
+  if (!b) return;
+  if (b.classList.contains('ov')) { if (e.target === b) { st.modal = null; render(el, st); } return; }
+  const d = b.dataset, co = curCo();
+
+  if (d.tab) { st.tab = d.tab; return render(el, st); }
+  if (d.pickCat) { st.selCat = d.pickCat; st.phDetail = true; return render(el, st); }
+  if (d.stCat) { st.stCat = d.stCat; st.stSub = 'ALL'; return render(el, st); }
+  if (d.stSub) { st.stSub = d.stSub; return render(el, st); }
+
+  switch (d.act) {
+    case 'close': st.modal = null; return render(el, st);
+    case 'ph-back': st.phDetail = false; return render(el, st);
+    case 'goto-new-prod':
+      st.tab = 'form'; st.pfId = ''; st.pfForm = initForm(null); st.pfInlineSubOpen = false;
+      render(el, st); return toast('Ready to add a new product');
+    case 'edit-in-form': {
+      const p = co.products.find((x) => x.id === d.pid);
+      if (!p) return;
+      st.tab = 'form'; st.pfId = p.id; st.pfForm = initForm(p); st.pfInlineSubOpen = false;
+      render(el, st); return toast(`Editing ${p.name}`);
+    }
+    case 'open-add-cat': st.modalVal = ''; st.modal = M.addCat(); return render(el, st);
+    case 'add-cat':
+    case 'confirm-add-cat': {
+      const name = (d.act === 'add-cat' ? st.newCatName : st.modalVal).trim();
+      if (!name) return toast('Type a category name first');
+      const m = findCatMatch(name, null);
+      if (m?.exact) return toast(`"${m.label}" already exists`);
+      const id = 'cat-' + Date.now();
+      co.cats.push({ id, name, subs: [], rivals: 0 });
+      st.selCat = id; st.newCatName = ''; st.modalVal = ''; st.modal = null;
+      rerenderAll(); return toast(`Category "${name}" added`);
+    }
+    case 'open-ren-cat': {
+      const cat = co.cats.find((c) => c.id === d.cid);
+      if (!cat) return;
+      st.modalVal = cat.name; st.modal = M.renCat(cat); return render(el, st);
+    }
+    case 'confirm-ren-cat': {
+      const cat = co.cats.find((c) => c.id === d.cid);
+      const name = st.modalVal.trim();
+      if (!cat || !name) return toast('Type a category name');
+      const m = findCatMatch(name, cat.id);
+      if (m?.exact) return toast(`"${m.label}" already exists`);
+      const old = cat.name; cat.name = name; st.modal = null;
+      rerenderAll(); return toast(`Renamed "${old}" to "${name}"`);
+    }
+    case 'try-del-cat': {
+      const cat = co.cats.find((c) => c.id === d.cid);
+      if (!cat) return;
+      const used = productsInCat(cat.id);
+      if (used.length > 0) {
+        st.modal = M.delBlocked('category', cat.name, used);
+        render(el, st);
+        return toast(`Cannot delete: ${used.length} product${used.length === 1 ? '' : 's'} use ${cat.name}`);
+      }
+      st.modal = M.delConfirm('category', cat.name, cat.id, null);
+      return render(el, st);
+    }
+    case 'confirm-del-cat': {
+      const idx = co.cats.findIndex((c) => c.id === d.cid);
+      if (idx < 0) return;
+      const name = co.cats[idx].name;
+      co.cats.splice(idx, 1);
+      st.selCat = co.cats[0]?.id || ''; st.phDetail = false; st.modal = null;
+      rerenderAll(); return toast(`Deleted category "${name}"`);
+    }
+    case 'add-sub': {
+      const cat = co.cats.find((c) => c.id === d.cid);
+      const name = st.newSubName.trim();
+      if (!cat || !name) return toast('Type a sub-category name first');
+      const m = findSubMatch(cat, name, null);
+      if (m?.exact) return toast(`"${m.label}" already exists`);
+      cat.subs.push({ id: 'sub-' + Date.now(), name });
+      st.newSubName = '';
+      rerenderAll(); return toast(`Sub-category "${cat.name} › ${name}" added`);
+    }
+    case 'open-ren-sub': {
+      const cat = co.cats.find((c) => c.id === d.cid);
+      const sub = cat?.subs.find((s) => s.id === d.sid);
+      if (!cat || !sub) return;
+      st.modalVal = sub.name; st.modal = M.renSub(cat, sub); return render(el, st);
+    }
+    case 'confirm-ren-sub': {
+      const cat = co.cats.find((c) => c.id === d.cid);
+      const sub = cat?.subs.find((s) => s.id === d.sid);
+      const name = st.modalVal.trim();
+      if (!cat || !sub || !name) return toast('Type a sub-category name');
+      const m = findSubMatch(cat, name, sub.id);
+      if (m?.exact) return toast(`"${m.label}" already exists`);
+      const old = sub.name; sub.name = name; st.modal = null;
+      rerenderAll(); return toast(`Renamed "${old}" to "${name}"`);
+    }
+    case 'try-del-sub': {
+      const cat = co.cats.find((c) => c.id === d.cid);
+      const sub = cat?.subs.find((s) => s.id === d.sid);
+      if (!cat || !sub) return;
+      const used = productsInSub(sub.id);
+      if (used.length > 0) {
+        st.modal = M.delBlocked('sub-category', `${cat.name} › ${sub.name}`, used);
+        render(el, st);
+        return toast(`Cannot delete: ${used.length} product${used.length === 1 ? '' : 's'} use ${sub.name}`);
+      }
+      st.modal = M.delConfirm('sub-category', `${cat.name} › ${sub.name}`, cat.id, sub.id);
+      return render(el, st);
+    }
+    case 'confirm-del-sub': {
+      const cat = co.cats.find((c) => c.id === d.cid);
+      if (!cat) return;
+      const idx = cat.subs.findIndex((s) => s.id === d.sid);
+      if (idx < 0) return;
+      const name = cat.subs[idx].name;
+      cat.subs.splice(idx, 1);
+      st.modal = null;
+      rerenderAll(); return toast(`Deleted sub-category "${name}"`);
+    }
+    case 'toggle-inline-sub':
+      st.pfInlineSubOpen = !st.pfInlineSubOpen; st.pfInlineSubName = '';
+      render(el, st);
+      if (st.pfInlineSubOpen) refocus(el, `isub-${st.mode}`);
+      return;
+    case 'save-inline-sub': {
+      const cat = co.cats.find((c) => c.id === st.pfForm.catId);
+      const name = st.pfInlineSubName.trim();
+      if (!cat || !name) return toast('Type the new sub-category name first');
+      const m = findSubMatch(cat, name, null);
+      if (m?.exact) return toast(`"${m.label}" already exists`);
+      const id = 'sub-' + Date.now();
+      cat.subs.push({ id, name });
+      st.pfForm.subId = id; st.pfInlineSubOpen = false; st.pfInlineSubName = '';
+      rerenderAll(); return toast(`Added and selected "${cat.name} › ${name}"`);
+    }
+    case 'save-product': {
+      const f = st.pfForm;
+      const name = (f.name || '').trim();
+      if (!name) return toast('Product name is required');
+      if (f.id) {
+        const orig = co.products.find((p) => p.id === f.id);
+        if (orig) Object.assign(orig, { ...f, name, stock: Number(f.stock) || 0, minStock: Number(f.minStock) || 0, retail: Number(f.retail) || 0, grosir: Number(f.grosir) || 0, ecer: Number(f.ecer) || 0, cost: Number(f.cost) || 0 });
+        rerenderAll(); return toast(`Saved "${name}" · ${catLabel(f.catId, f.subId)}`);
+      } else {
+        const id = 'p-' + Date.now();
+        const created = { ...f, id, name, stock: Number(f.stock) || 0, minStock: Number(f.minStock) || 0, retail: Number(f.retail) || 0, grosir: Number(f.grosir) || 0, ecer: Number(f.ecer) || 0, cost: Number(f.cost) || 0 };
+        co.products.push(created);
+        st.pfId = id; st.pfForm = initForm(created);
+        rerenderAll(); return toast(`Added "${name}" to ${catLabel(created.catId, created.subId)}`);
+      }
+    }
+  }
+}
+
+/* ---------- Top board controls ---------- */
+const segs = (id, fn) => document.getElementById(id).addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  b.parentElement.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', x === b));
+  fn(b.dataset.v);
+});
+segs('company', (v) => {
+  G.co = v;
+  apps.forEach((a) => {
+    const co = curCo();
+    a.st.selCat = co.cats[0].id; a.st.phDetail = false; a.st.modal = null;
+    a.st.pfId = co.products[0].id; a.st.pfForm = initForm(co.products[0]); a.st.pfInlineSubOpen = false;
+    a.st.stCat = 'ALL'; a.st.stSub = 'ALL'; a.st.stQ = '';
+  });
+  rerenderAll();
+  toast(`Switched to ${curCo().label}`);
+});
+segs('theme', (v) => { if (v) document.documentElement.dataset.theme = v; else delete document.documentElement.dataset.theme; });
+segs('motion', (v) => { G.motion = v === 'on'; document.body.classList.toggle('nomotion', !G.motion); });
+
+mount(document.getElementById('pc'), 'pc');
+mount(document.getElementById('ph'), 'phone');
+</script>
+</body>
+</html>
