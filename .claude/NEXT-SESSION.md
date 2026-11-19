@@ -14,7 +14,8 @@
 - Competitors screen: https://claude.ai/artifact/GWkemihM9zrbz9rbj8WQZg (`.claude/drafts/competitors-pro.html`)
 - Customers shop tab v5: https://claude.ai/artifact/UswPMbzKRGFXRah4esaGiU (`.claude/drafts/customers-c.html`)
 - Master Vault categories: https://claude.ai/artifact/QoUMaUYEnbijNUaHAWyVj2 (`.claude/drafts/categories-pro.html`)
-- Antigravity Task 79 fixes 5 faults Claude found (region-price leak on approve/add, report form, categories page palette, cut hint on phone, invented example names). Re-publish both files after it, same paths.
+- 2026-11-19 09:55 he reviewed them: Antigravity **Task 81** = his round-2 changes (collapsed category groups, change pair anywhere with same-category first, searchable pickers instead of native selects, clear outlined segment tabs, "Report a rival" as a blurred front panel, card spacing, bigger outlined buttons, Master Vault = our products only with "Our / Competitor-only" category sections, rename the preview tab so there is no second Sales terminal) + Claude's 6 faults (Task 79, merged). Claude: read the diffs whole, render PC + phone, re-publish all 3 at the same paths.
+- OPEN question to him: does Master Vault also show other warehouses, or only the main one (branches already have their own Branch Warehouse screen, `src/App.jsx:64`, and Stock Opname)?
 
 ## Next, in order
 1. His ok on the 3 pictures (or changes -> Antigravity picture task).

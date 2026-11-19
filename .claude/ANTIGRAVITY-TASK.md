@@ -2968,7 +2968,7 @@ One playable page, same standard as `.claude/drafts/reports-live.html` (dual-mou
   6. **Quality & phone fit:** Zero blue/green/alert/confirm/prompt, phone detail back navigation works (`phHasBack: true`), `phOverflow: false`, `ERRORS: []`.
 
 ## Task 79 - PICTURE FIXES from Claude's review of Tasks 77 + 78 (draft only)
-**Status:** OPEN
+**Status:** NONE - merged into Task 81 (do its 6 points there).
 **Written:** 2026-11-19 09:04 WIB. Claude read both files whole and rendered them; these are the faults found.
 **Touch only:** `.claude/drafts/competitors-pro.html`, `.claude/drafts/categories-pro.html`, this file.
 1. `competitors-pro.html` `confirm-approve` (new product) and `save-rival`: they write prices into ALL 3 regions and invent Grosir (= price - 500) and Ecer (= price + 1000). Fix: set ONLY the report's region x customer type (approve) or the approver's visible regions (add rival: T4 = JAWA BARAT only); every other cell stays empty and shows "—" with "not set yet". No made-up numbers.
@@ -2990,4 +2990,22 @@ One playable page, same standard as `.claude/drafts/reports-live.html` (dual-mou
 4. The permission-matrix row(s) to add in `src/config/permissions.js` with the `matrixKnowsKey` fallback (L422-430) so old companies get the default.
 5. The `logicFixes.selfcheck.mjs` lines that would guard it (one regression guard + one real-numbers check).
 **Done when:** Result has parts 1-5 with `file:line` on every claim and a `could not check:` line.
+**Result:**
+
+## Task 81 - PICTURES round 2: Aldi's review of the 3 pictures + Task 79's 6 faults (drafts only) - DO THIS FIRST, then 80
+**Status:** OPEN
+**Written:** 2026-11-19 09:58 WIB. Aldi, verbatim: *"make sure its category can be expanded and retract, but retract on default because there will be so many products out there, make sure we can change the pair here even on default it shows our product that have the same category, make sure the segment button is clear because looks like it is similar with other button and too blend inside the UI that its hard to see those button if not pressed. make sure u add search button when comparing or finding the products here . for customer reports a rival should have different section instead of combined with all of the customer info because it is too much information there i rather u add button and the panel of adding customer shows up infront of u and blur other. i also want u to make the spacing better here because looks like all the panel just combined into one u can make some border or anything use design skills to improve this, make sure buttons little bit bigger especially for phone and outline it for easier and faster navigation. for the master vault i think that master vault should only showed our own products here and differentiates category for our product and competitors. and sales terminal button should be change so that there is no 2 sales terminal inside this app"*.
+**Touch only:** `.claude/drafts/competitors-pro.html`, `.claude/drafts/customers-c.html`, `.claude/drafts/categories-pro.html`, this file.
+**First do Task 79's points 1-6** (they are still valid), then:
+A. **Competitors - rival list:** each Category › Sub group header is a toggle (chevron, count) and starts COLLAPSED; "Expand all / Collapse all" link at the top; the group of the selected rival opens itself.
+B. **Change the pair anywhere** (list detail, Compare, Manage, approval): the pair picker shows "Same category" products first, then "Other categories" below a divider - any product can be picked; saving reports with a toast.
+C. **Search inside pickers:** replace the native `<select>` for products (our product, rival product, pair, report's rival) with a searchable picker: a button showing the current name -> an in-page popover with a search box on top and the list grouped by Category › Sub; typing filters live; Esc / outside tap closes. (Also kills the browser's BLUE option highlight Aldi saw - palette law.) Add a search box above the rival list too (it exists - keep it, make it bigger).
+D. **Segment buttons clear:** the top tabs (Rival products / Compare / Reports waiting / Manage) and the shop tabs (Shop info / Location / Competitor intelligence) and the Master Vault tabs must look like a SEGMENTED CONTROL: one outlined container, each option a clear outlined cell, the selected one filled with `--wash` + `--accent-edge` border + bold; unselected still clearly a button (visible border), never plain text.
+E. **Customers - "Report a rival" leaves the shop tab:** remove the inline form; put one clear button "Report a rival" at the top of the Competitor intelligence tab; it opens a centred panel (in-page dialog) with the backdrop BLURRED (`backdrop-filter: blur(4px)` + scrim) - same for every dialog in the 3 files. The "Waiting for approval" list stays in the tab.
+F. **Spacing:** each block in the shop pane and the Competitors detail is its own card (1px `--line` border, 10-12px radius, 12-14px padding) with 12-16px gaps between cards; section headers sit OUTSIDE the cards; no two panels touch.
+G. **Bigger, outlined buttons:** every button outlined (1px border, never borderless text); min height 36px on PC, 44px on the phone frame (tap size); icon + label.
+H. **Master Vault (`categories-pro.html`):** shows OUR products only. The Categories manager has two sections: "Our categories" (used by our products) and "Competitor-only categories" (made from Competitors, 0 of ours) - the second collapsed by default and clearly labelled. Product form pickers list our categories first, competitor-only ones under a divider.
+I. **No second "Sales terminal":** rename the Master Vault third tab to "Preview: terminal tabs" and add one line under it: "Shows how the real Sales Terminal tabs will look - not a second terminal."
+J. Same standards as Task 71: every action reports (gold check toast), no blue, no green, no `alert/confirm/prompt`, PC 1240 + phone 390 nothing cut off, System/Light/Dark, Lite motion, headless `ERRORS: []` for all 3 files.
+**Done when:** Task 79 1-6 + A-J done; the Result lists each letter with what you checked.
 **Result:**
