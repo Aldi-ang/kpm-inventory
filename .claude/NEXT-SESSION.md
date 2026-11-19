@@ -1,7 +1,7 @@
 # The one job - Categories + Competitors: from approved pictures to the build (step 0 + step 1)
 
 
-**Status 2026-11-19 18:55 WIB (Claude, quota 95%):** Antigravity 86-92 reviewed OK, local. Undo for shop delete built (5b178ee0, gates re-run by Claude: undef clean, selfcheck 3031/0, build 0, audit 726/0) but NOT pushed - not rendered yet: render the "Deleted X · UNDO" bar on PC + phone, then push. Console steps READY in `.claude/drafts/console-change-29.md` (Aldi publishes). Step 1 checklist = Task 92 in ANTIGRAVITY-TASK.md; Task 94 builds its pre-Console steps; Task 93 checks other screens still showing a deleted shop.
+**Status 2026-11-19 18:55 WIB (Claude, quota 95%):** Antigravity 86-92 reviewed OK, local. Undo for shop delete built (5b178ee0, gates re-run by Claude: undef clean, selfcheck 3031/0, build 0, audit 726/0) LIVE d2b04b51 (pushed 2026-11-19 on his "u can push it now", unrendered - he tests it live). Console steps READY in `.claude/drafts/console-change-29.md` (Aldi publishes). Step 1 checklist = Task 92 in ANTIGRAVITY-TASK.md; Task 94 builds its pre-Console steps; Task 93 checks other screens still showing a deleted shop.
 **Written 2026-11-19 09:05 WIB (Claude).** Design is DECIDED. Full note with his words: A-Brain `Brainstorm/2026-11-19_categories-subcategories-and-rival-catalog.md` (DECISION section).
 
 ## What he decided (2026-11-19)
