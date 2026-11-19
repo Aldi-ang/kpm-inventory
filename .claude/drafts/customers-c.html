@@ -298,6 +298,11 @@ button.crow:hover,button.crow.on{background:var(--sel)}
 .phone .tools{grid-template-columns:1fr}
 .phone .form{grid-template-columns:1fr 1fr}
 .phone .form .w2,.phone .form .w3,.phone .form .w6{grid-column:span 2}
+.phone .stabs{gap:8px;overflow-x:auto}
+.phone .stab{font-size:11px;gap:4px;white-space:nowrap;flex-shrink:0}
+.phone .dcols{grid-template-columns:1fr}
+.phone .crow{grid-template-columns:1fr auto}
+.phone .crow .cb{display:none}
 
 @media (max-width:760px){.fr.pc,.pcap{display:none}}
 .nomotion *,.nomotion *::before,.nomotion *::after{animation:none!important;transition:none!important}
@@ -323,11 +328,17 @@ button.crow:hover,button.crow.on{background:var(--sel)}
 </svg>
 
 <div class="board">
-  <h1>Customers · Layout C (area tree)</h1>
-  <span>View as <span class="seg" id="role"><button type="button" aria-pressed="true" data-v="boss">T1/T2 Boss</button><button type="button" aria-pressed="false" data-v="regional">T3/T4 Regional</button><button type="button" aria-pressed="false" data-v="view">T5 View Only</button></span></span>
+  <h1>Customers · Layout C v5 (shop reads from Competitors)</h1>
+  <span>View as <span class="seg" id="role">
+    <button type="button" aria-pressed="true" data-v="T2">T2 Owner</button>
+    <button type="button" aria-pressed="false" data-v="T3">T3 HQ Sales Manager</button>
+    <button type="button" aria-pressed="false" data-v="T4">T4 Regional Admin</button>
+    <button type="button" aria-pressed="false" data-v="T5">T5 Sales Canvas</button>
+    <button type="button" aria-pressed="false" data-v="T6">T6 Sales Motorist</button>
+  </span></span>
   <span>Theme <span class="seg" id="theme"><button type="button" aria-pressed="true" data-v="">System</button><button type="button" aria-pressed="false" data-v="light">Light</button><button type="button" aria-pressed="false" data-v="dark">Dark</button></span></span>
   <span>Motion <span class="seg" id="motion"><button type="button" aria-pressed="true" data-v="on">On</button><button type="button" aria-pressed="false" data-v="off">Lite</button></span></span>
-  <span style="flex-basis:100%">Three panes: (1) folder tree Prov › Kab › Kec with shop counts, red late bars, and "Needs action" on top; (2) the picked area's 4 numbers and its shops; (3) the full shop. On the phone the three panes stack (Tree → Area → Shop) with a Back key.</span>
+  <span style="flex-basis:100%">Three panes: (1) area tree; (2) picked area &amp; shops; (3) shop tabs. The shop's Competitor intelligence tab only READS region prices from the global Competitors screen (Task 78); field reports go to approval first.</span>
 </div>
 
 <p class="cap pcap">PC · 1240 px (Three Panes: Folder Tree · Picked Area · Full Shop)</p>
@@ -353,29 +364,44 @@ const FOLDERS = [
 
 const SHOPS = [
   { id: 's1', name: 'AMANAH BARU', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Budi Santoso', noo: 'Agus Prasetyo', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-08', state: '10d late', late: true, wa: '0812-3456-7890', gps: '-6.9654, 107.5759', addr: 'Jl. Kopo Bihbul No. 42, next to the minimarket · Folder 1', embed: '', hasPhoto: false, logs: [
-    { id: 'l1', d: '2026-11-15', p: 'Rival Kretek 12', n: 'owner says it sells first', v: 'Fast', rp: 7500, shelf: 'Eye level', promo: 'Poster', rid: 'r1' },
-    { id: 'l2', d: '2026-11-08', p: 'Rival Mild 16', n: 'new stock this week', v: 'Medium', rp: 9000, shelf: 'Counter / till', promo: 'Discount', rid: 'r2' },
-    { id: 'l3', d: '2026-11-01', p: 'Rival Filter 12', n: 'dusty packs', v: 'Slow', rp: 8800, shelf: 'Bottom shelf', promo: 'None', rid: 'r3' },
-  ] },
+    { id: 'l1', d: '2026-11-16', n: 'owner says it sells first', v: 'Fast', shelf: 'Eye level', promo: 'Poster', rid: 'r1' },
+    { id: 'l2', d: '2026-11-14', n: 'new stock this week', v: 'Medium', shelf: 'Counter / till', promo: 'Discount', rid: 'r2' },
+    { id: 'l3', d: '2026-11-12', n: 'dusty packs', v: 'Slow', shelf: 'Bottom shelf', promo: 'None', rid: 'r3' },
+  ], pendingReports: [] },
   { id: 's2', name: 'ANEKA BARU PANJI', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Budi Santoso', noo: 'Dika Saputra', tier: 'Unranked', price: 'Retail', grosirAsk: true, freq: 7, last: '2026-11-15', state: '4d left', late: false, wa: '0813-2209-1122', gps: '-6.9695, 107.5752', addr: 'Jl. Taman Kopo Indah II No. 14', embed: '', hasPhoto: false, logs: [
-    { id: 'l4', d: '2026-11-14', p: 'Rival Kretek 16', n: 'counter display', v: 'Fast', rp: 8000, shelf: 'Counter / till', promo: 'Free gift', rid: 'r4' },
-    { id: 'l5', d: '2026-11-12', p: 'Rival Kretek 12', n: '', v: 'Fast', rp: 7000, shelf: 'Eye level', promo: 'Discount', rid: 'r1' },
-  ] },
-  { id: 's3', name: 'WARUNG BU DARMI', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Agus Prasetyo', noo: 'Agus Prasetyo', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-12', state: '1d left', late: false, wa: '0812-9001-2233', gps: '-6.9618, 107.5711', addr: 'Gg. Masjid Al-Huda No. 3', embed: '', hasPhoto: false, logs: [] },
-  { id: 's4', name: 'TOKO JAYA ABADI', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Agus Prasetyo', noo: 'Agus Prasetyo', tier: 'Silver', price: 'Grosir', grosirAsk: false, freq: 7, last: '2026-11-13', state: '2d left', late: false, wa: '0813-8811-4455', gps: '-6.9640, 107.5802', addr: 'Jl. Raya Kopo No. 118', embed: '', hasPhoto: false, logs: [] },
-  { id: 's5', name: 'MINIMARKET SARI', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Budi Santoso', noo: 'Budi Santoso', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-08', state: '3d late', late: true, wa: '0812-3344-5566', gps: '-6.9671, 107.5764', addr: 'Jl. Sadang Sari No. 9', embed: '', hasPhoto: false, logs: [] },
-  { id: 's6', name: 'KIOS BAROKAH', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Agus Prasetyo', noo: 'Agus Prasetyo', tier: 'Unranked', price: 'Ecer', grosirAsk: false, freq: 7, last: '2026-11-17', state: '6d left', late: false, wa: '0856-1122-3344', gps: '-6.9688, 107.5790', addr: 'Pasar Segar Kopo Blok A', embed: '', hasPhoto: false, logs: [] },
-  { id: 's7', name: 'CEMERLANG', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'SOREANG', status: 'PENDING', pic: 'Unassigned', noo: 'Sri Rahayu', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-09', state: '2d late', late: true, wa: '0857-9901-3344', gps: '-7.0241, 107.5198', addr: 'Pasar Soreang Blok B No. 12', embed: '', hasPhoto: false, logs: [] },
-  { id: 's8', name: 'TOKO SUMBER REJEKI', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'SOREANG', status: 'Approved', pic: 'Dika Saputra', noo: 'Dika Saputra', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 14, last: '2026-11-17', state: '13d left', late: false, wa: '0812-6655-4433', gps: '-7.0285, 107.5210', addr: 'Jl. Raya Soreang-Banjaran', embed: '', hasPhoto: false, logs: [] },
-  { id: 's9', name: 'ARIF CILILIN', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'CILILIN', status: 'Approved', pic: 'Agus Prasetyo', noo: 'Agus Prasetyo', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-15', state: '4d left', late: false, wa: '0813-7766-5544', gps: '-6.9512, 107.4590', addr: 'Alun-Alun Cililin Barat', embed: '', hasPhoto: false, logs: [] },
-  { id: 's10', name: 'HQ (RETAIL) 1', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'CILILIN', status: 'Approved', pic: 'Ujang Pratama', noo: 'Admin', tier: 'Unranked', price: 'Grosir', grosirAsk: false, freq: 14, last: '2026-11-14', state: '10d left', late: false, wa: '0812-8877-6655', gps: '-6.9491, 107.4581', addr: 'Jl. Raya Cililin No. 9', embed: '', hasPhoto: false, logs: [] },
-  { id: 's11', name: 'LARIS JAYA', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'BALEENDAH', status: 'Approved', pic: 'Agus Prasetyo', noo: 'Agus Prasetyo', tier: 'Silver', price: 'Grosir', grosirAsk: false, freq: 7, last: '2026-11-16', state: '5d left', late: false, wa: '0812-4433-2211', gps: '-7.0050, 107.6310', addr: 'Jl. Adipati Agung No. 29', embed: '', hasPhoto: false, logs: [] },
-  { id: 's12', name: 'ANUGRAH 17', prov: 'JAWA BARAT', kab: 'KOTA CIMAHI', kec: 'CIMAHI TENGAH', status: 'Approved', pic: 'Ari Wibowo', noo: 'Ari Wibowo', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-14', state: '3d left', late: false, wa: '0813-9988-7766', gps: '-6.8721, 107.5425', addr: 'Jl. Gandawijaya No. 17', embed: '', hasPhoto: false, logs: [] },
-  { id: 's13', name: 'HJ EUIS', prov: 'JAWA BARAT', kab: 'KOTA CIMAHI', kec: 'CIMAHI SELATAN', status: 'Approved', pic: 'Ari Wibowo', noo: 'Ari Wibowo', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-07', state: '4d late', late: true, wa: '0812-5544-3322', gps: '-6.9012, 107.5390', addr: 'Jl. Melong Asih No. 8', embed: '', hasPhoto: false, logs: [] },
-  { id: 's14', name: 'ASYIFA MART MADURA', prov: 'JAWA TENGAH', kab: 'KAB. MAGELANG', kec: 'MUNTILAN', status: 'Approved', pic: 'Dika Saputra', noo: 'Dika Saputra', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '', state: 'Never visited', late: true, wa: '0812-7788-9900', gps: '-7.5812, 110.2894', addr: 'Jl. Pemuda No. 18, Muntilan', embed: '', hasPhoto: false, logs: [] },
-  { id: 's15', name: 'ENDANG CELL', prov: 'JAWA TENGAH', kab: 'KAB. MAGELANG', kec: 'MUNTILAN', status: 'Approved', pic: 'Budi Santoso', noo: 'Budi Santoso', tier: 'Epic', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-02', state: '9d late', late: true, wa: '0811-2233-4455', gps: '-7.5801, 110.2910', addr: 'Jl. Talun Km 1, Muntilan', embed: '', hasPhoto: false, logs: [] },
-  { id: 's16', name: 'TOKO HARAPAN JAYA', prov: 'JAWA TENGAH', kab: 'KAB. MAGELANG', kec: 'MUNTILAN', status: 'Approved', pic: 'Unassigned', noo: 'Agus Prasetyo', tier: 'Silver', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-16', state: '5d left', late: false, wa: '0813-4455-6677', gps: '-7.5844, 110.2932', addr: 'Jl. Kartini No. 7, Muntilan', embed: '', hasPhoto: false, logs: [] },
-  { id: 's17', name: 'TOKO SRI REJEKI', prov: 'JAWA TENGAH', kab: 'KAB. MAGELANG', kec: 'MERTOYUDAN', status: 'Approved', pic: 'Budi Santoso', noo: 'Budi Santoso', tier: 'Unranked', price: 'Grosir', grosirAsk: false, freq: 7, last: '2026-11-15', state: '4d left', late: false, wa: '0812-6677-8899', gps: '-7.5230, 110.2241', addr: 'Jl. Mayjen Bambang Soegeng', embed: '', hasPhoto: false, logs: [] },
+    { id: 'l4', d: '2026-11-15', n: 'counter display', v: 'Fast', shelf: 'Counter / till', promo: 'Free gift', rid: 'r4' },
+    { id: 'l5', d: '2026-11-13', n: 'steady movement', v: 'Medium', shelf: 'Eye level', promo: 'Discount', rid: 'r1' },
+  ], pendingReports: [] },
+  { id: 's3', name: 'WARUNG BU DARMI', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Agus Prasetyo', noo: 'Agus Prasetyo', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-12', state: '1d left', late: false, wa: '0812-9001-2233', gps: '-6.9618, 107.5711', addr: 'Gg. Masjid Al-Huda No. 3', embed: '', hasPhoto: false, logs: [
+    { id: 'l6', d: '2026-11-15', n: 'regular shelf', v: 'Medium', shelf: 'Eye level', promo: 'None', rid: 'r1' },
+    { id: 'l7', d: '2026-11-14', n: 'slow after price rise', v: 'Slow', shelf: 'Top shelf', promo: 'None', rid: 'r2' },
+  ], pendingReports: [] },
+  { id: 's4', name: 'TOKO JAYA ABADI', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Agus Prasetyo', noo: 'Agus Prasetyo', tier: 'Silver', price: 'Grosir', grosirAsk: false, freq: 7, last: '2026-11-13', state: '2d left', late: false, wa: '0813-8811-4455', gps: '-6.9640, 107.5802', addr: 'Jl. Raya Kopo No. 118', embed: '', hasPhoto: false, logs: [
+    { id: 'l8', d: '2026-11-16', n: 'bulk carton display', v: 'Medium', shelf: 'Top shelf', promo: 'Discount', rid: 'r1' },
+    { id: 'l9', d: '2026-11-16', n: 'moves well at grosir', v: 'Fast', shelf: 'Eye level', promo: 'Poster', rid: 'r5' },
+  ], pendingReports: [] },
+  { id: 's5', name: 'MINIMARKET SARI', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Budi Santoso', noo: 'Budi Santoso', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-08', state: '3d late', late: true, wa: '0812-3344-5566', gps: '-6.9671, 107.5764', addr: 'Jl. Sadang Sari No. 9', embed: '', hasPhoto: false, logs: [
+    { id: 'l10', d: '2026-11-11', n: 'near checkout', v: 'Medium', shelf: 'Counter / till', promo: 'None', rid: 'r1' },
+    { id: 'l11', d: '2026-11-11', n: 'slow turnover', v: 'Slow', shelf: 'Bottom shelf', promo: 'None', rid: 'r3' },
+  ], pendingReports: [] },
+  { id: 's6', name: 'KIOS BAROKAH', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Agus Prasetyo', noo: 'Agus Prasetyo', tier: 'Unranked', price: 'Ecer', grosirAsk: false, freq: 7, last: '2026-11-17', state: '6d left', late: false, wa: '0856-1122-3344', gps: '-6.9688, 107.5790', addr: 'Pasar Segar Kopo Blok A', embed: '', hasPhoto: false, logs: [
+    { id: 'l12', d: '2026-11-17', n: 'ecer buyers ask for clove', v: 'Fast', shelf: 'Counter / till', promo: 'None', rid: 'r6' },
+  ], pendingReports: [] },
+  { id: 's7', name: 'CEMERLANG', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'SOREANG', status: 'PENDING', pic: 'Unassigned', noo: 'Sri Rahayu', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-09', state: '2d late', late: true, wa: '0857-9901-3344', gps: '-7.0241, 107.5198', addr: 'Pasar Soreang Blok B No. 12', embed: '', hasPhoto: false, logs: [], pendingReports: [] },
+  { id: 's8', name: 'TOKO SUMBER REJEKI', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'SOREANG', status: 'Approved', pic: 'Dika Saputra', noo: 'Dika Saputra', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 14, last: '2026-11-17', state: '13d left', late: false, wa: '0812-6655-4433', gps: '-7.0285, 107.5210', addr: 'Jl. Raya Soreang-Banjaran', embed: '', hasPhoto: false, logs: [
+    { id: 'l13', d: '2026-11-16', n: 'medium demand', v: 'Medium', shelf: 'Eye level', promo: 'Poster', rid: 'r2' },
+  ], pendingReports: [] },
+  { id: 's9', name: 'ARIF CILILIN', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'CILILIN', status: 'Approved', pic: 'Agus Prasetyo', noo: 'Agus Prasetyo', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-15', state: '4d left', late: false, wa: '0813-7766-5544', gps: '-6.9512, 107.4590', addr: 'Alun-Alun Cililin Barat', embed: '', hasPhoto: false, logs: [], pendingReports: [] },
+  { id: 's10', name: 'HQ (RETAIL) 1', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'CILILIN', status: 'Approved', pic: 'Ujang Pratama', noo: 'Admin', tier: 'Unranked', price: 'Grosir', grosirAsk: false, freq: 14, last: '2026-11-14', state: '10d left', late: false, wa: '0812-8877-6655', gps: '-6.9491, 107.4581', addr: 'Jl. Raya Cililin No. 9', embed: '', hasPhoto: false, logs: [], pendingReports: [] },
+  { id: 's11', name: 'LARIS JAYA', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'BALEENDAH', status: 'Approved', pic: 'Agus Prasetyo', noo: 'Agus Prasetyo', tier: 'Silver', price: 'Grosir', grosirAsk: false, freq: 7, last: '2026-11-16', state: '5d left', late: false, wa: '0812-4433-2211', gps: '-7.0050, 107.6310', addr: 'Jl. Adipati Agung No. 29', embed: '', hasPhoto: false, logs: [], pendingReports: [] },
+  { id: 's12', name: 'ANUGRAH 17', prov: 'JAWA BARAT', kab: 'KOTA CIMAHI', kec: 'CIMAHI TENGAH', status: 'Approved', pic: 'Ari Wibowo', noo: 'Ari Wibowo', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-14', state: '3d left', late: false, wa: '0813-9988-7766', gps: '-6.8721, 107.5425', addr: 'Jl. Gandawijaya No. 17', embed: '', hasPhoto: false, logs: [], pendingReports: [] },
+  { id: 's13', name: 'HJ EUIS', prov: 'JAWA BARAT', kab: 'KOTA CIMAHI', kec: 'CIMAHI SELATAN', status: 'Approved', pic: 'Ari Wibowo', noo: 'Ari Wibowo', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-07', state: '4d late', late: true, wa: '0812-5544-3322', gps: '-6.9012, 107.5390', addr: 'Jl. Melong Asih No. 8', embed: '', hasPhoto: false, logs: [], pendingReports: [] },
+  { id: 's14', name: 'ASYIFA MART MADURA', prov: 'JAWA TENGAH', kab: 'KAB. MAGELANG', kec: 'MUNTILAN', status: 'Approved', pic: 'Dika Saputra', noo: 'Dika Saputra', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '', state: 'Never visited', late: true, wa: '0812-7788-9900', gps: '-7.5812, 110.2894', addr: 'Jl. Pemuda No. 18, Muntilan', embed: '', hasPhoto: false, logs: [
+    { id: 'l14', d: '2026-11-17', n: 'matches Cello Green in Muntilan', v: 'Fast', shelf: 'Eye level', promo: 'None', rid: 'r5' },
+  ], pendingReports: [] },
+  { id: 's15', name: 'ENDANG CELL', prov: 'JAWA TENGAH', kab: 'KAB. MAGELANG', kec: 'MUNTILAN', status: 'Approved', pic: 'Budi Santoso', noo: 'Budi Santoso', tier: 'Epic', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-02', state: '9d late', late: true, wa: '0811-2233-4455', gps: '-7.5801, 110.2910', addr: 'Jl. Talun Km 1, Muntilan', embed: '', hasPhoto: false, logs: [], pendingReports: [] },
+  { id: 's16', name: 'TOKO HARAPAN JAYA', prov: 'JAWA TENGAH', kab: 'KAB. MAGELANG', kec: 'MUNTILAN', status: 'Approved', pic: 'Unassigned', noo: 'Agus Prasetyo', tier: 'Silver', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-16', state: '5d left', late: false, wa: '0813-4455-6677', gps: '-7.5844, 110.2932', addr: 'Jl. Kartini No. 7, Muntilan', embed: '', hasPhoto: false, logs: [], pendingReports: [] },
+  { id: 's17', name: 'TOKO SRI REJEKI', prov: 'JAWA TENGAH', kab: 'KAB. MAGELANG', kec: 'MERTOYUDAN', status: 'Approved', pic: 'Budi Santoso', noo: 'Budi Santoso', tier: 'Unranked', price: 'Grosir', grosirAsk: false, freq: 7, last: '2026-11-15', state: '4d left', late: false, wa: '0812-6677-8899', gps: '-7.5230, 110.2241', addr: 'Jl. Mayjen Bambang Soegeng', embed: '', hasPhoto: false, logs: [], pendingReports: [] },
 ];
 
 const DUPS = [
@@ -389,7 +415,12 @@ const DUPS = [
   ] },
 ];
 
-const G = { role: 'boss', motion: true, tierBroken: 2, scrubbed: false, ignoredDups: new Set(), showIgnoredDups: false };
+const G = { role: 'T2', motion: true, tierBroken: 2, scrubbed: false, ignoredDups: new Set(), showIgnoredDups: false };
+const isBoss = () => G.role === 'T2';
+const isRegionalOnly = () => G.role === 'T4' || G.role === 'T5' || G.role === 'T6';
+const isFieldTier = () => G.role === 'T5' || G.role === 'T6';
+const canApproveAsks = () => G.role === 'T2' || G.role === 'T3' || G.role === 'T4';
+const roleSubtitle = () => ({ T2: 'T2 Owner · every region', T3: 'T3 HQ Sales Manager · every region', T4: 'T4 Regional Admin · JAWA BARAT', T5: 'T5 Sales Canvas · JAWA BARAT', T6: 'T6 Sales Motorist · JAWA BARAT' }[G.role]);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const rp = (n) => 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID');
 const iniOf = (name) => String(name || 'ST').replace(/[^A-Za-z0-9 ]+/g, ' ').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || 'ST';
@@ -429,8 +460,9 @@ function toast(msg) {
 const apps = [];
 const freshState = (mode) => ({
   mode, q: '', node: 'kec:MARGAHAYU', sel: 's1', phoneStep: 'tree', locMode: 'both',
-  bRival: 'r1', bNote: '', bPrice: '', bShelf: 'Eye level', bPromo: 'None', bSpeed: 'Medium', shopTab: 'shop', cmpCat: '', cmpRival: '', cmpOurs: '',
-  rvName: '', rvCat: 'SKM', rvPair: '', newCat: '', ownerPick: {}, prev: {}, grown: false,
+  bRival: 'r1', bNewName: '', bNote: '', bPrice: '', bShelf: 'Eye level', bPromo: 'None', bSpeed: 'Medium', bPhoto: false,
+  shopTab: 'shop', cmpRival: '', cmpOurs: '',
+  ownerPick: {}, prev: {}, grown: false,
   modal: null, form: null, promptVal: '', folderLevel: 'Kecamatan',
 });
 
@@ -445,7 +477,7 @@ function mount(el, mode) {
 function rerenderAll() { apps.forEach((a) => render(a.el, a.st)); }
 
 function scopedShops() {
-  return G.role === 'regional' ? SHOPS.filter((s) => s.prov === 'JAWA BARAT') : SHOPS;
+  return isRegionalOnly() ? SHOPS.filter((s) => s.prov === 'JAWA BARAT') : SHOPS;
 }
 
 function kpiOf() {
@@ -490,9 +522,9 @@ function nodeTitle(node) {
 }
 
 function render(el, st) {
-  const ph = st.mode === 'phone', ro = G.role === 'view', boss = G.role === 'boss';
-  if (G.role === 'regional' && st.node.includes('JAWA TENGAH')) st.node = 'kec:MARGAHAYU';
-  if (ro && st.node === 'NEEDS_ACTION') st.node = 'kec:MARGAHAYU';
+  const ph = st.mode === 'phone', ro = isFieldTier(), boss = isBoss();
+  if (isRegionalOnly() && st.node.includes('JAWA TENGAH')) st.node = 'kec:MARGAHAYU';
+  if (!canApproveAsks() && st.node === 'NEEDS_ACTION') st.node = 'kec:MARGAHAYU';
   const kpi = kpiOf();
   const W = (x) => st.grown ? `style="width:${x}"` : `data-w="${x}"`;
   const areaList = shopsForNode(st.node, st.q);
@@ -503,7 +535,7 @@ function render(el, st) {
   let html = ph ? `<div class="sb"><span>09:41</span><span>5G · 92%</span></div>` : '';
   html += `<div class="top">
     <b class="t">Customers</b>
-    <span class="sub">${G.role === 'boss' ? 'Master HQ · every region' : G.role === 'regional' ? 'JAWA BARAT · Hendra Gunawan' : 'View-only · T5 Operative'}</span>
+    <span class="sub">${roleSubtitle()}</span>
     <label class="search"><svg class="i"><use href="#srch"/></svg><input data-f="q" id="q-${st.mode}" value="${esc(st.q)}" placeholder="Shop, area, or salesman..." aria-label="Search"></label>
     <span class="sp"></span>
     ${boss ? `<button type="button" class="btn q" data-act="add-folder"><svg class="i"><use href="#plus"/></svg>Folder</button>` : ''}
@@ -514,10 +546,10 @@ function render(el, st) {
   <div class="kpi">
     <div><span class="lbl">Shops filed</span><b class="val">${R(st, 'k-tot', String(kpi.total))}</b><i>${kpi.provs} provinces · ${kpi.kecs} kecamatan</i></div>
     <div><span class="lbl">Overdue visits</span><b class="val bad">${R(st, 'k-late', String(kpi.late))}</b><i>past their rhythm</i></div>
-    <div class="${!ro ? 'click' : ''}" ${!ro ? 'data-node="NEEDS_ACTION"' : ''}><span class="lbl">Needs action</span><b class="val" style="color:var(--accent-ink)">${R(st, 'k-act', String(kpi.needs))}</b><i>${kpi.grosirAsks.length} Grosir ask · ${kpi.noSalesman.length} no salesman</i></div>
+    <div class="${canApproveAsks() ? 'click' : ''}" ${canApproveAsks() ? 'data-node="NEEDS_ACTION"' : ''}><span class="lbl">Needs action</span><b class="val" style="color:var(--accent-ink)">${R(st, 'k-act', String(kpi.needs))}</b><i>${kpi.grosirAsks.length} Grosir ask · ${kpi.noSalesman.length} no salesman</i></div>
     <div><span class="lbl">Price mix</span><div class="mix"><span class="g" ${W(kpi.gPct + '%')}></span><span class="r" ${W(kpi.rPct + '%')}></span><span class="e" ${W(kpi.ePct + '%')}></span></div><i style="margin:0">Grosir ${kpi.gPct}% · Retail ${kpi.rPct}% · Ecer ${kpi.ePct}%</i></div>
   </div>
-  ${ro ? `<div class="ro-bar"><svg class="i"><use href="#shield"/></svg><span>View Only mode: browse the area tree and inspect shops; adding or editing is disabled.</span></div>` : ''}`;
+  ${ro ? `<div class="ro-bar"><svg class="i"><use href="#shield"/></svg><span>${esc(G.role)} view: browse shops and submit competitor field reports for admin approval.</span></div>` : ''}`;
 
   if (ph) {
     html += `<div class="ph-nav">
@@ -548,7 +580,7 @@ function renderTreePane(st, kpi, W, ro) {
   const all = scopedShops();
   const provMap = new Map();
   FOLDERS.forEach((f) => {
-    if (G.role === 'regional' && f.prov !== 'JAWA BARAT') return;
+    if (isRegionalOnly() && f.prov !== 'JAWA BARAT') return;
     if (!provMap.has(f.prov)) provMap.set(f.prov, new Map());
     const kabMap = provMap.get(f.prov);
     if (!kabMap.has(f.kab)) kabMap.set(f.kab, []);
@@ -665,83 +697,156 @@ function renderMidPane(st, nt, areaList, kpi, ro, boss) {
   </section>`;
 }
 
+/* ---------- Shared Catalog (identical seed arrays to Task 78 competitors-pro.html) ---------- */
+const REGIONS = ['JAWA BARAT', 'JAWA TENGAH', 'JAWA TIMUR'];
+const CUST_TYPES = ['Retail', 'Grosir', 'Ecer'];
+const CAT_TREE = [
+  { id: 'skm', name: 'SKM', subs: [{ id: 'skm-12', name: 'SKM 12' }, { id: 'skm-16', name: 'SKM 16' }, { id: 'skm-flav', name: 'SKM Flavour' }] },
+  { id: 'mild', name: 'Mild', subs: [{ id: 'mild-16', name: 'Mild 16' }, { id: 'mild-menthol', name: 'Mild Menthol' }] },
+  { id: 'skt', name: 'SKT', subs: [{ id: 'skt-12', name: 'SKT 12' }, { id: 'skt-16', name: 'SKT 16' }] },
+  { id: 'putih', name: 'Rokok Putih', subs: [{ id: 'putih-12', name: 'Putih 12' }, { id: 'putih-20', name: 'Putih 20' }], competitorsOnly: true },
+  { id: 'kretek', name: 'Kretek', subs: [{ id: 'kretek-12', name: 'Kretek 12' }] },
+];
 const OURS = [
-  { id: 'cof', name: 'Cello Coffee & Caramel', rp: 8500, cat: 'SKM' }, { id: 'mm', name: 'Cello Mmrapi', rp: 8500, cat: 'Mild' },
-  { id: 'choc', name: 'Cello Chocolate', rp: 10000, cat: 'SKM' }, { id: 'green', name: 'Cello Green', rp: 7000, cat: 'Mild' }, { id: 'teh', name: 'Cello Teh Manis', rp: 8000, cat: 'SKT' },
+  { id: 'cof', name: 'Cello Coffee & Caramel', catId: 'skm', subId: 'skm-flav', prices: { Retail: 8500, Grosir: 8000, Ecer: 9500 } },
+  { id: 'choc', name: 'Cello Chocolate', catId: 'skm', subId: 'skm-flav', prices: { Retail: 10000, Grosir: 9500, Ecer: 11000 } },
+  { id: 'mm', name: 'Cello Mmrapi', catId: 'mild', subId: 'mild-16', prices: { Retail: 8500, Grosir: 8000, Ecer: 9500 } },
+  { id: 'green', name: 'Cello Green', catId: 'mild', subId: 'mild-menthol', prices: { Retail: 7000, Grosir: 6500, Ecer: 8000 } },
+  { id: 'teh', name: 'Cello Teh Manis', catId: 'skt', subId: 'skt-12', prices: { Retail: 8000, Grosir: 7500, Ecer: 9000 } },
 ];
-/* One category list for our products AND rival products (demo names from his message; the real list is his) */
-const CATS = ['SKT', 'SKM', 'Mild', 'Rokok Putih', 'Kretek'];
-/* Rival catalog, set by us: each rival sits in a category and has the Cello product WE chose to compare it with */
 const RIVALS = [
-  { id: 'r1', name: 'Rival Kretek 12', cat: 'SKM', pair: 'cof' },
-  { id: 'r2', name: 'Rival Mild 16', cat: 'Mild', pair: 'green' },
-  { id: 'r3', name: 'Rival Filter 12', cat: 'Rokok Putih', pair: '' },
-  { id: 'r4', name: 'Rival Kretek 16', cat: 'SKM', pair: 'choc' },
+  { id: 'r1', name: 'Rival Kretek 12 (example)', catId: 'skm', subId: 'skm-12', pair: 'cof', prices: {
+    'JAWA BARAT':  { Retail: 11000, Grosir: 10400, Ecer: 12000, by: 'Hendra (T4)', date: '2026-11-16' },
+    'JAWA TENGAH': { Retail: 10500, Grosir: 10000, Ecer: 11500, by: 'Hartono (T3)', date: '2026-11-15' },
+    'JAWA TIMUR':  { Retail: 10800, Grosir: 10200, Ecer: 12000, by: 'Hartono (T3)', date: '2026-11-14' },
+  } },
+  { id: 'r2', name: 'Rival Mild 16 (example)', catId: 'mild', subId: 'mild-16', pair: 'mm', prices: {
+    'JAWA BARAT':  { Retail: 18500, Grosir: 17800, Ecer: 20000, by: 'Hendra (T4)', date: '2026-11-17' },
+    'JAWA TENGAH': { Retail: 18500, Grosir: 17800, Ecer: 20000, by: 'Hartono (T3)', date: '2026-11-16' },
+    'JAWA TIMUR':  { Retail: 19000, Grosir: 18200, Ecer: 20500, by: 'Hartono (T3)', date: '2026-11-12' },
+  } },
+  { id: 'r3', name: 'Rival Filter 12 (example)', catId: 'putih', subId: 'putih-12', pair: 'cof', prices: {
+    'JAWA BARAT':  { Retail: 14000, Grosir: 13300, Ecer: 15000, by: 'Hendra (T4)', date: '2026-11-14' },
+    'JAWA TENGAH': { Retail: 13500, Grosir: 12900, Ecer: 14500, by: 'Hartono (T3)', date: '2026-11-13' },
+    'JAWA TIMUR':  { Retail: 13500, Grosir: 12900, Ecer: 14500, by: 'Hartono (T3)', date: '2026-11-11' },
+  } },
+  { id: 'r4', name: 'Rival Kretek 16 (example)', catId: 'skm', subId: 'skm-16', pair: 'choc', prices: {
+    'JAWA BARAT':  { Retail: 9500,  Grosir: 9000,  Ecer: 10500, by: 'Hendra (T4)', date: '2026-11-17' },
+    'JAWA TENGAH': { Retail: 9200,  Grosir: 8800,  Ecer: 10000, by: 'Hartono (T3)', date: '2026-11-15' },
+    'JAWA TIMUR':  { Retail: 9500,  Grosir: 9000,  Ecer: 10500, by: 'Hartono (T3)', date: '2026-11-15' },
+  } },
+  { id: 'r5', name: 'Rival Green Menthol (example)', catId: 'mild', subId: 'mild-menthol', pair: 'green', prices: {
+    'JAWA BARAT':  { Retail: 7500,  Grosir: 7000,  Ecer: 8500,  by: 'Hendra (T4)', date: '2026-11-18' },
+    'JAWA TENGAH': { Retail: 7200,  Grosir: 6800,  Ecer: 8000,  by: 'Hartono (T3)', date: '2026-11-17' },
+    'JAWA TIMUR':  { Retail: 7500,  Grosir: 7000,  Ecer: 8500,  by: 'Hartono (T3)', date: '2026-11-15' },
+  } },
+  { id: 'r6', name: 'Rival Teh Clove 12 (example)', catId: 'skt', subId: 'skt-12', pair: 'teh', prices: {
+    'JAWA BARAT':  { Retail: 7800,  Grosir: 7400,  Ecer: 8500,  by: 'Hendra (T4)', date: '2026-11-16' },
+    'JAWA TENGAH': { Retail: 7600,  Grosir: 7200,  Ecer: 8500,  by: 'Hartono (T3)', date: '2026-11-14' },
+    'JAWA TIMUR':  { Retail: 7800,  Grosir: 7400,  Ecer: 8500,  by: 'Hartono (T3)', date: '2026-11-13' },
+  } },
 ];
-const rivalOf = (l) => RIVALS.find((x) => x.id === l.rid) || { id: '', name: l.p, cat: '—', pair: '' };
-const pairOf = (l) => OURS.find((x) => x.id === rivalOf(l).pair) || null;
-const rivalOptions = (sel) => CATS.filter((c) => RIVALS.some((r) => r.cat === c)).map((c) => `<optgroup label="${esc(c)}">${RIVALS.filter((r) => r.cat === c).map((r) => `<option value="${r.id}" ${sel === r.id ? 'selected' : ''}>${esc(r.name)}</option>`).join('')}</optgroup>`).join('');
+const catLabel = (catId, subId) => {
+  const c = CAT_TREE.find((x) => x.id === catId);
+  const sub = c?.subs.find((x) => x.id === subId);
+  return c ? (sub ? `${c.name} › ${sub.name}` : c.name) : '—';
+};
+const rivalOf = (l) => RIVALS.find((x) => x.id === l.rid) || null;
+const pairOf = (l) => { const rv = rivalOf(l); return rv ? (OURS.find((x) => x.id === rv.pair) || null) : null; };
+const rivalPrice = (rv, prov, priceType) => rv?.prices?.[prov]?.[priceType] ?? rv?.prices?.['JAWA BARAT']?.[priceType] ?? 0;
+const rivalMeta = (rv, prov) => rv?.prices?.[prov] || rv?.prices?.['JAWA BARAT'] || { by: '—', date: '' };
+const ourPrice = (o, priceType) => o?.prices?.[priceType] ?? o?.prices?.Retail ?? 0;
+const rivalOptions = (sel) =>
+  CAT_TREE.filter((c) => RIVALS.some((r) => r.catId === c.id)).map((c) =>
+    `<optgroup label="${esc(c.name)}">${RIVALS.filter((r) => r.catId === c.id).map((r) =>
+      `<option value="${r.id}" ${sel === r.id ? 'selected' : ''}>${esc(r.name)} · ${esc(catLabel(r.catId, r.subId))}</option>`
+    ).join('')}</optgroup>`
+  ).join('') + `<option value="__new__" ${sel === '__new__' ? 'selected' : ''}>+ New product (not on list yet)</option>`;
 const SHELF = ['Eye level', 'Top shelf', 'Bottom shelf', 'Counter / till'];
 const PROMO = ['None', 'Poster', 'Discount', 'Free gift'];
 const SPEED = ['Fast', 'Medium', 'Slow'];
+const SPEED_RANK = { Fast: 3, Medium: 2, Slow: 1 };
 const fmtD = (d) => { if (!d) return '—'; const [y, m, dd] = d.split('-'); return +dd + ' ' + ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+m - 1]; };
 
-/* Side by side: one category at a time; the rival opens next to the Cello product WE paired it with; the user can still pick another Cello in the same category */
-function compareCard(s, st, ro) {
+function regionSpeedCompare(s, l) {
+  const peers = SHOPS.filter((x) => x.id !== s.id && x.prov === s.prov)
+    .map((x) => x.logs.find((xl) => xl.rid === l.rid))
+    .filter(Boolean);
+  if (!peers.length) return { summary: `${l.v} here · only shop reporting it in ${s.prov}`, peersCount: 0, badge: 'Only here', cls: '' };
+  const counts = { Fast: 0, Medium: 0, Slow: 0 };
+  peers.forEach((p) => { if (counts[p.v] !== undefined) counts[p.v]++; });
+  const topSpeed = ['Fast', 'Medium', 'Slow'].sort((a, b) => counts[b] - counts[a])[0];
+  const diff = (SPEED_RANK[l.v] || 2) - (SPEED_RANK[topSpeed] || 2);
+  const badge = diff > 0 ? 'Sells faster here' : diff < 0 ? 'Slower here' : 'Same as region';
+  const cls = diff > 0 ? 'bad' : diff < 0 ? 'g' : '';
+  return {
+    summary: `${l.v} here · ${topSpeed} in ${peers.length} other shop${peers.length === 1 ? '' : 's'} in ${s.prov}`,
+    peersCount: peers.length,
+    badge,
+    cls,
+  };
+}
+
+/* Side by side (read-only from global Competitors): region price for THIS shop's customer type; any Cello vs any rival; cross-category allowed & tagged */
+function compareCard(s, st) {
   const logs = s.logs;
   if (!logs.length) return '';
-  const cats = CATS.filter((c) => logs.some((l) => rivalOf(l).cat === c));
-  const cat = cats.includes(st.cmpCat) ? st.cmpCat : rivalOf(logs.find((l) => l.id === st.cmpRival) || logs[0]).cat;
-  const inCat = logs.filter((l) => rivalOf(l).cat === cat);
-  const r = inCat.find((l) => l.id === st.cmpRival) || inCat[0];
+  const r = logs.find((l) => l.id === st.cmpRival) || logs[0];
   const rv = rivalOf(r);
-  const oursIn = OURS.filter((x) => x.cat === cat);
-  const o = oursIn.find((x) => x.id === st.cmpOurs) || oursIn.find((x) => x.id === rv.pair) || oursIn[0] || null;
-  const older = inCat.find((l) => l.rid === r.rid && l.d < r.d);
-  const away = SHOPS.filter((x) => x.id !== s.id).flatMap((x) => x.logs.filter((l) => l.rid === r.rid).map((l) => l.rp));
-  const lad = [{ n: r.p, rp: r.rp, k: 'pick' }], seen = new Set([r.rid]);
-  inCat.forEach((l) => { if (!seen.has(l.rid)) { seen.add(l.rid); lad.push({ n: l.p, rp: l.rp, k: '' }); } });
-  if (o) lad.push({ n: o.name, rp: o.rp, k: 'me' });
+  if (!rv) return '';
+  const o = OURS.find((x) => x.id === st.cmpOurs) || OURS.find((x) => x.id === rv.pair) || OURS[0];
+  const rRp = rivalPrice(rv, s.prov, s.price);
+  const oRp = ourPrice(o, s.price);
+  const meta = rivalMeta(rv, s.prov);
+  const diffCat = o.catId !== rv.catId;
+  const gap = rRp - oRp;
+  const pct = oRp ? Math.round((Math.abs(gap) / oRp) * 100) : 0;
+  const top = Math.max(rRp, oRp, 1);
+  const verdict = gap < 0 ? `Rival ${rp(-gap)} cheaper · ${pct}%` : gap > 0 ? `Cello ${rp(gap)} cheaper · ${pct}%` : 'Same price';
+  const peer = regionSpeedCompare(s, r);
+
+  // Price ladder in the rival's sub-category using this shop's region + customer type
+  const lad = [];
+  RIVALS.filter((x) => x.subId === rv.subId).forEach((x) => {
+    lad.push({ n: x.name, rp: rivalPrice(x, s.prov, s.price), k: x.id === rv.id ? 'pick' : '' });
+  });
+  OURS.filter((x) => x.subId === rv.subId).forEach((x) => {
+    lad.push({ n: x.name, rp: ourPrice(x, s.price), k: 'me' });
+  });
+  if (!lad.some((x) => x.k === 'me')) lad.push({ n: o.name, rp: oRp, k: 'me' });
   lad.sort((a, b) => a.rp - b.rp || (a.k === 'me' ? -1 : b.k === 'me' ? 1 : 0));
   const rank = lad.findIndex((x) => x.k === 'me') + 1;
-  let mine, mid = '';
-  if (!o) {
-    mine = `<div class="dcol mine"><span class="fl">Our product · ${esc(cat)}</span><div class="dempty">No Cello product in ${esc(cat)} yet.<br>Add one in Master Vault to compare.</div></div>`;
-  } else {
-    const isPair = o.id === rv.pair;
-    const gap = r.rp - o.rp, pct = Math.round((Math.abs(gap) / o.rp) * 100), top = Math.max(r.rp, o.rp);
-    const verdict = gap < 0 ? `Rival ${rp(-gap)} cheaper · ${pct}%` : gap > 0 ? `Cello ${rp(gap)} cheaper · ${pct}%` : 'Same price';
-    mine = `<div class="dcol mine">
-          <span class="fl">Our product · ${esc(cat)}</span>
-          <label class="pk"><span>${esc(o.name)}</span><i>▾</i><select data-f="cmpOurs" aria-label="Our product to compare">${oursIn.map((x) => `<option value="${x.id}" ${x.id === o.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>
-          <span class="big">${rp(o.rp)}</span>
-          <span class="sub">our price list · this shop buys ${esc(s.price)}</span>
-          ${isPair ? `<span class="st g" style="align-self:flex-start">✓ Our pair for this rival</span>` : !ro ? `<button type="button" class="link-btn" style="align-self:flex-start;text-align:left" data-act="set-pair" data-rid="${rv.id}" data-ours="${o.id}">Save as the pair for ${esc(r.p)}</button>` : `<span class="sub">not the saved pair</span>`}
-        </div>`;
-    mid = `<div class="bfly">
-        <div class="l"><span class="bar us" style="width:${Math.round((o.rp / top) * 100)}%"></span></div>
-        <span class="st ${gap < 0 ? 'bad' : 'g'}">${verdict}</span>
-        <div><span class="bar them" style="width:${Math.round((r.rp / top) * 100)}%"></span></div>
-      </div>`;
-  }
-  return `<div class="ch"><span>Side by side</span><span>same category · pairs set by us</span></div>
+
+  return `<div class="ch"><span>Side by side · ${esc(s.prov)} · ${esc(s.price)}</span><button type="button" class="link-btn" data-act="open-competitors">Open Competitors ›</button></div>
     <div class="duel">
-      <div class="cchips" role="group" aria-label="Category">${cats.map((c) => `<button type="button" class="cchip ${c === cat ? 'on' : ''}" aria-pressed="${c === cat}" data-act="cmp-cat" data-cat="${esc(c)}">${esc(c)}<span>${logs.filter((l) => rivalOf(l).cat === c).length}</span></button>`).join('')}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+        <span class="dim" style="font-size:11px">Read-only prices from Competitors screen (${esc(s.prov)} · ${esc(s.price)})</span>
+        ${diffCat ? `<span class="st g">Different category</span>` : `<span class="st">Same category</span>`}
+      </div>
       <div class="dcols">
-        ${mine}
+        <div class="dcol mine">
+          <span class="fl">Our product · ${esc(catLabel(o.catId, o.subId))}</span>
+          <label class="pk"><span>${esc(o.name)}</span><i>▾</i><select data-f="cmpOurs" aria-label="Our product to compare">${OURS.map((x) => `<option value="${x.id}" ${x.id === o.id ? 'selected' : ''}>${esc(x.name)} · ${esc(catLabel(x.catId, x.subId))}</option>`).join('')}</select></label>
+          <span class="big">${rp(oRp)}</span>
+          <span class="sub">our ${esc(s.price)} price list</span>
+          ${o.id === rv.pair ? `<span class="st g" style="align-self:flex-start">Default pair</span>` : `<span class="sub">comparing freely</span>`}
+        </div>
         <div class="dcol">
-          <span class="fl">Rival product · ${esc(cat)}</span>
-          <label class="pk"><span>${esc(r.p)}</span><i>▾</i><select data-f="cmpRival" aria-label="Rival product to compare">${inCat.map((l) => `<option value="${l.id}" ${l.id === r.id ? 'selected' : ''}>${esc(l.p)} · ${rp(l.rp)} · ${fmtD(l.d)}</option>`).join('')}</select></label>
-          <span class="big" style="color:var(--danger-ink)">${rp(r.rp)}</span>
-          <span class="sub">logged ${fmtD(r.d)}${older ? ` · was ${rp(older.rp)} on ${fmtD(older.d)}` : ''}</span>
+          <span class="fl">Rival product · ${esc(catLabel(rv.catId, rv.subId))}</span>
+          <label class="pk"><span>${esc(rv.name)}</span><i>▾</i><select data-f="cmpRival" aria-label="Rival product to compare">${logs.map((l) => { const rx = rivalOf(l); return rx ? `<option value="${l.id}" ${l.id === r.id ? 'selected' : ''}>${esc(rx.name)} · ${rp(rivalPrice(rx, s.prov, s.price))}</option>` : ''; }).join('')}</select></label>
+          <span class="big" style="color:var(--danger-ink)">${rp(rRp)}</span>
+          <span class="sub">${esc(s.prov)} ${esc(s.price)} · by ${esc(meta.by)} · ${fmtD(meta.date)}</span>
           <div class="chips"><span class="st">${esc(r.shelf)}</span><span class="st">${r.promo === 'None' ? 'No promo' : esc(r.promo)}</span><span class="st ${r.v === 'Fast' ? 'bad' : ''}">${esc(r.v)} selling</span></div>
         </div>
       </div>
-      ${mid}
-      ${r.n ? `<div class="dim" style="font-size:11px">Note: ${esc(r.n)}</div>` : ''}
-      ${away.length ? `<div class="dim" style="font-size:11px">Same rival at ${away.length} other shop${away.length === 1 ? '' : 's'}: ${rp(Math.min(...away))}${away.length > 1 ? ' – ' + rp(Math.max(...away)) : ''}</div>` : ''}
+      <div class="bfly">
+        <div class="l"><span class="bar us" style="width:${Math.round((oRp / top) * 100)}%"></span></div>
+        <span class="st ${gap < 0 ? 'bad' : 'g'}">${verdict}</span>
+        <div><span class="bar them" style="width:${Math.round((rRp / top) * 100)}%"></span></div>
+      </div>
+      <div class="dim" style="font-size:11px"><b>In this shop:</b> ${esc(peer.summary)}${r.n ? ' · Note: ' + esc(r.n) : ''}</div>
       <div class="ladder">
-        <div class="ch" style="padding:0 6px 4px"><span>Price ladder · ${esc(cat)}, cheapest first</span><span>${o ? `Cello is #${rank} of ${lad.length}` : 'no Cello here'}</span></div>
+        <div class="ch" style="padding:0 6px 4px"><span>Price ladder · ${esc(catLabel(rv.catId, rv.subId))} (${esc(s.prov)} ${esc(s.price)})</span><span>Cello is #${rank} of ${lad.length}</span></div>
         ${lad.map((x, i) => `<div class="lad ${x.k}"><span class="dim">${i + 1}</span><span class="n">${esc(x.n)}${x.k === 'me' ? ' (ours)' : ''}</span><b>${rp(x.rp)}</b></div>`).join('')}
       </div>
     </div>`;
@@ -763,6 +868,7 @@ function renderRightPane(s, st, ro, boss) {
   let body = '';
 
   if (tab === 'shop') {
+    const minRv = s.logs.length ? Math.min(...s.logs.map((l) => rivalPrice(rivalOf(l), s.prov, s.price))) : 0;
     body = `<div class="facts">
         <div><span class="fl">Salesman (PIC)</span><b class="fv">${esc(s.pic)}</b></div>
         <div><span class="fl">Opened by (NOO)</span><b class="fv">${esc(s.noo)}</b></div>
@@ -777,7 +883,7 @@ function renderRightPane(s, st, ro, boss) {
       </div>
       <div class="glance">
         <button type="button" class="gl" data-stab="loc"><span class="fl">Location</span><b>${esc(s.kec)}</b><span class="dim">${esc(s.gps)} · open map &amp; Street View ›</span></button>
-        <button type="button" class="gl" data-stab="comp"><span class="fl">Competitors</span><b>${s.logs.length} price${s.logs.length === 1 ? '' : 's'} logged</b><span class="dim">${s.logs.length ? 'cheapest ' + rp(Math.min(...s.logs.map((l) => l.rp))) + ' · last ' + fmtD(s.logs[0].d) : 'none yet'} ›</span></button>
+        <button type="button" class="gl" data-stab="comp"><span class="fl">Competitors</span><b>${s.logs.length} rival${s.logs.length === 1 ? '' : 's'} seen here</b><span class="dim">${s.logs.length ? 'from ' + rp(minRv) + ' (' + esc(s.price) + ') · last ' + fmtD(s.logs[0].d) : 'none reported yet'} ›</span></button>
       </div>
       <div class="addr">${esc(s.addr)}</div>
       <div class="acts">
@@ -817,53 +923,58 @@ function renderRightPane(s, st, ro, boss) {
       </div>`;
   } else {
     const logs = s.logs;
-    const brands = new Set(logs.map((l) => l.p.split(' ')[0])).size;
-    const cheapest = logs.length ? logs.reduce((a, b) => (b.rp < a.rp ? b : a)) : null;
-    const paired = logs.filter((l) => pairOf(l));
-    const under = paired.filter((l) => l.rp < pairOf(l).rp).length;
+    const pending = s.pendingReports || [];
+    const cheapestLog = logs.length ? logs.reduce((a, b) => (rivalPrice(rivalOf(b), s.prov, s.price) < rivalPrice(rivalOf(a), s.prov, s.price) ? b : a)) : null;
+    const cheapestRv = cheapestLog ? rivalOf(cheapestLog) : null;
+    const fastHere = logs.filter((l) => l.v === 'Fast').length;
     const picked = (logs.find((x) => x.id === st.cmpRival) || logs[0] || {}).id;
     body = `<div class="csum">
-        <div><span class="fl">Prices logged</span><b>${R(st, 'c-n' + s.id, String(logs.length))}</b></div>
-        <div><span class="fl">Brands seen</span><b>${R(st, 'c-b' + s.id, String(brands))}</b></div>
-        <div><span class="fl">Cheapest rival</span><b>${cheapest ? rp(cheapest.rp) : '—'}</b><span class="dim">${cheapest ? esc(cheapest.p) : ''}</span></div>
-        <div><span class="fl">Cheaper than its pair</span><b style="${under ? 'color:var(--danger-ink)' : ''}">${R(st, 'c-u' + s.id, String(under))}</b><span class="dim">of ${paired.length} paired</span></div>
+        <div><span class="fl">Rivals seen here</span><b>${R(st, 'c-n' + s.id, String(logs.length))}</b><span class="dim">approved reports</span></div>
+        <div><span class="fl">Fast-selling here</span><b style="${fastHere ? 'color:var(--danger-ink)' : ''}">${R(st, 'c-f' + s.id, String(fastHere))}</b><span class="dim">of ${logs.length} seen</span></div>
+        <div><span class="fl">Cheapest (${esc(s.price)})</span><b>${cheapestRv ? rp(rivalPrice(cheapestRv, s.prov, s.price)) : '—'}</b><span class="dim">${cheapestRv ? esc(cheapestRv.name) : 'none yet'}</span></div>
+        <div><span class="fl">Waiting approval</span><b style="color:var(--accent-ink)">${R(st, 'c-p' + s.id, String(pending.length))}</b><span class="dim">sent to admin</span></div>
       </div>
-      ${compareCard(s, st, ro)}
-      <div class="ch"><span>Every rival vs its Cello pair</span>${!ro ? `<button type="button" class="link-btn" data-act="open-rivals">Rival list &amp; pairs ›</button>` : '<span>tap to compare</span>'}</div>
-      <div class="cmp">${logs.length ? logs.map((l) => { const rv = rivalOf(l), o = pairOf(l), on = l.id === picked;
-        if (!o) return `<button type="button" class="crow ${on ? 'on' : ''}" data-act="cmp-pick" data-lid="${l.id}" aria-pressed="${on}">
-          <div class="cn"><b>${esc(l.p)}</b><span class="dim">${esc(rv.cat)} · no Cello pair set</span></div>
-          <div class="cb"></div>
-          <div class="cp"><b>${rp(l.rp)}</b><span class="dim">—</span></div>
-          <span class="st">No pair</span>
-        </button>`;
-        const gap = l.rp - o.rp, top = Math.max(l.rp, o.rp), w = Math.round((l.rp / top) * 100), w2 = Math.round((o.rp / top) * 100);
+      ${compareCard(s, st)}
+      <div class="ch"><span>How it sells here vs other shops</span><span>${esc(s.prov)} · tap a rival to compare</span></div>
+      <div class="cmp">${logs.length ? logs.map((l) => {
+        const rv = rivalOf(l); if (!rv) return '';
+        const o = pairOf(l), on = l.id === picked;
+        const rRp = rivalPrice(rv, s.prov, s.price);
+        const oRp = o ? ourPrice(o, s.price) : 0;
+        const peer = regionSpeedCompare(s, l);
+        const top = Math.max(rRp, oRp, 1), w = Math.round((rRp / top) * 100), w2 = o ? Math.round((oRp / top) * 100) : 0;
         return `<button type="button" class="crow ${on ? 'on' : ''}" data-act="cmp-pick" data-lid="${l.id}" aria-pressed="${on}">
-          <div class="cn"><b>${esc(l.p)}</b><span class="dim">${esc(rv.cat)} · vs ${esc(o.name)}</span></div>
-          <div class="cb"><div class="cbar"><span class="them" style="width:${w}%"></span></div><div class="cbar"><span class="us" style="width:${w2}%"></span></div></div>
-          <div class="cp"><b>${rp(l.rp)}</b><span class="dim">${rp(o.rp)}</span></div>
-          <span class="st ${gap < 0 ? 'bad' : 'g'}">${gap < 0 ? rp(-gap) + ' cheaper' : gap > 0 ? rp(gap) + ' dearer' : 'same'}</span>
-        </button>`; }).join('') : `<div class="dim" style="padding:12px;text-align:center">No rival prices logged at this shop yet.</div>`}
-        <div class="legend"><span><i class="them"></i>Rival</span><span><i class="us"></i>Cello</span></div></div>
-      ${!ro ? `<div class="ch"><span>Log a rival price</span><span>pick from our rival list</span></div>
+          <div class="cn"><b>${esc(rv.name)}</b><span class="dim" style="display:block">${esc(peer.summary)}</span><span class="dim" style="display:block">${esc(catLabel(rv.catId, rv.subId))} · ${esc(l.shelf)} · ${l.promo === 'None' ? 'no promo' : esc(l.promo)}</span></div>
+          <div class="cb"><div class="cbar"><span class="them" style="width:${w}%"></span></div>${o ? `<div class="cbar"><span class="us" style="width:${w2}%"></span></div>` : ''}</div>
+          <div class="cp"><b>${rp(rRp)}</b><span class="dim">${o ? rp(oRp) : '—'}</span></div>
+          <span class="st ${peer.cls}">${esc(peer.badge)}</span>
+        </button>`;
+      }).join('') : `<div class="dim" style="padding:12px;text-align:center">No approved rival sightings at this shop yet. Report one below or open Competitors.</div>`}
+        <div class="legend"><span><i class="them"></i>Rival (${esc(s.prov)} ${esc(s.price)})</span><span><i class="us"></i>Cello (${esc(s.price)})</span></div></div>
+      <div class="ch"><span>Report a rival</span><span>goes to ${esc(s.prov)} admin for approval</span></div>
       <div class="cform">
         <select class="inp w2" data-f="bRival" aria-label="Rival product">${rivalOptions(st.bRival)}</select>
-        <input class="inp" data-f="bPrice" id="br-${st.mode}" value="${esc(st.bPrice)}" type="number" placeholder="Price Rp">
+        <input class="inp" data-f="bPrice" id="br-${st.mode}" value="${esc(st.bPrice)}" type="number" placeholder="Price seen (Rp)">
+        ${st.bRival === '__new__' ? `<input class="inp w2" data-f="bNewName" id="bnw-${st.mode}" value="${esc(st.bNewName)}" placeholder="New rival product name (e.g. Rival Berry 16)">` : ''}
         <select class="inp" data-f="bShelf" aria-label="Shelf">${SHELF.map((x) => `<option ${st.bShelf === x ? 'selected' : ''}>${x}</option>`).join('')}</select>
         <select class="inp" data-f="bPromo" aria-label="Promo">${PROMO.map((x) => `<option value="${x}" ${st.bPromo === x ? 'selected' : ''}>${x === 'None' ? 'No promo' : x}</option>`).join('')}</select>
         <select class="inp" data-f="bSpeed" aria-label="Selling">${SPEED.map((x) => `<option value="${x}" ${st.bSpeed === x ? 'selected' : ''}>${x} selling</option>`).join('')}</select>
         <input class="inp w2" data-f="bNote" id="bn-${st.mode}" value="${esc(st.bNote)}" placeholder="Note (stock level, what the owner said)">
-        <button type="button" class="btn q" data-act="open-rivals"><svg class="i"><use href="#plus"/></svg>New rival product</button>
-        <button type="button" class="btn q" data-act="bench-photo"><svg class="i"><use href="#cam"/></svg>Shelf photo</button>
-        <button type="button" class="btn" data-act="add-bench" data-id="${s.id}"><svg class="i"><use href="#plus"/></svg>Log price</button>
-      </div>` : ''}
-      <div class="ch"><span>History at this shop</span><span>${logs.length} entries</span></div>
-      <div class="tl">${logs.length ? logs.map((l) => `<div class="tli">
+        <button type="button" class="btn ${st.bPhoto ? '' : 'q'}" data-act="bench-photo"><svg class="i"><use href="#cam"/></svg>${st.bPhoto ? 'Photo attached' : 'Shelf photo'}</button>
+        <button type="button" class="btn" data-act="report-rival" data-id="${s.id}"><svg class="i"><use href="#chk"/></svg>Send report</button>
+      </div>
+      ${pending.length ? `<div class="ch"><span>Waiting for approval</span><span>${pending.length} pending · not in comparison yet</span></div>
+      <div class="tl">${pending.map((p) => `<div class="tli">
+        <span class="td">${fmtD(p.d)}</span>
+        <div class="tb"><b>${esc(p.name)} · ${rp(p.rp)}</b><span class="dim">${p.isNew ? 'New product · ' : ''}${esc(p.shelf)} · ${p.promo === 'None' ? 'no promo' : esc(p.promo)} · ${esc(p.v)} selling${p.photo ? ' · photo' : ''}${p.n ? ' · ' + esc(p.n) : ''}</span></div>
+        <span class="st g">Waiting approval</span>
+      </div>`).join('')}</div>` : ''}
+      <div class="ch"><span>Approved sightings at this shop</span><span>${logs.length} entries · managed in Competitors</span></div>
+      <div class="tl">${logs.length ? logs.map((l) => { const rv = rivalOf(l); if (!rv) return ''; return `<div class="tli">
         <span class="td">${fmtD(l.d)}</span>
-        <div class="tb"><b>${esc(l.p)} · ${rp(l.rp)}</b><span class="dim">${esc(rivalOf(l).cat)} · ${esc(l.shelf)} · ${l.promo === 'None' ? 'no promo' : esc(l.promo)} · ${esc(l.v)} selling${l.n ? ' · ' + esc(l.n) : ''}</span></div>
-        <span class="st ${l.v === 'Slow' ? 'bad' : ''}">${esc(l.v)}</span>
-        ${!ro ? `<button type="button" class="xbtn" data-act="del-bench" data-id="${s.id}" data-lid="${l.id}" aria-label="Delete this price">×</button>` : ''}
-      </div>`).join('') : `<div class="dim" style="padding:10px">Nothing yet.</div>`}</div>`;
+        <div class="tb"><b>${esc(rv.name)} · ${rp(rivalPrice(rv, s.prov, s.price))}</b><span class="dim">${esc(catLabel(rv.catId, rv.subId))} · ${esc(l.shelf)} · ${l.promo === 'None' ? 'no promo' : esc(l.promo)} · ${esc(l.v)} selling${l.n ? ' · ' + esc(l.n) : ''}</span></div>
+        <span class="st ${l.v === 'Fast' ? 'bad' : ''}">${esc(l.v)}</span>
+      </div>`; }).join('') : `<div class="dim" style="padding:10px">No approved sightings yet.</div>`}</div>`;
   }
   return `<section class="right" aria-label="Shop">
     <div class="det">${head}${tabs}<div class="fade tabbody">${body}</div></div>
@@ -955,34 +1066,6 @@ const M = {
     <p>Moves ${count} shop(s) into <b>Unknown kecamatan</b>. No shop profile or sales history is deleted.</p>
     <div class="row"><button type="button" class="btn q" data-act="close">Keep folder</button><button type="button" class="btn d" data-act="confirm-del-folder" data-name="${esc(name)}"><svg class="i"><use href="#trash"/></svg>Reset to Unknown</button></div>
   </div></div>`,
-  rivals: () => (st) => {
-    const pairOpts = (cat, sel) => `<option value="" ${!sel ? 'selected' : ''}>No pair yet</option>` + OURS.filter((o) => o.cat === cat).map((o) => `<option value="${o.id}" ${sel === o.id ? 'selected' : ''}>vs ${esc(o.name)}</option>`).join('');
-    const used = (rid) => SHOPS.reduce((n, x) => n + x.logs.filter((l) => l.rid === rid).length, 0);
-    return `<div class="ov"><div class="dlg" role="dialog" aria-label="Rival products and pairs">
-    <h4>Rival products &amp; pairs</h4>
-    <p>Set by us, once. Every rival product sits in a category and is compared with the Cello product we choose, so every comparison is like with like. Salesmen only pick from this list.</p>
-    <div class="box"><div class="bh"><span>Categories (${CATS.length})</span><span>shared with Master Vault</span></div>
-      <div class="br">${CATS.map((c) => `<span class="st">${esc(c)} · ${OURS.filter((o) => o.cat === c).length} ours · ${RIVALS.filter((r) => r.cat === c).length} rival</span>`).join('')}</div>
-      <div class="br"><input class="inp" style="flex:1 1 160px;height:30px" data-f="newCat" id="nc-${st.mode}" value="${esc(st.newCat)}" placeholder="New category name"><button type="button" class="btn" data-act="add-cat"><svg class="i"><use href="#plus"/></svg>Add category</button></div>
-    </div>
-    <div class="box"><div class="bh"><span>Add a rival product</span><span>category first, then its Cello pair</span></div>
-      <div class="br">
-        <input class="inp" style="flex:2 1 160px;height:30px" data-f="rvName" id="rn-${st.mode}" value="${esc(st.rvName)}" placeholder="Rival brand &amp; product">
-        <select class="inp" style="flex:1 1 110px;height:30px" data-f="rvCat" aria-label="Category">${CATS.map((c) => `<option ${st.rvCat === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
-        <select class="inp" style="flex:1 1 150px;height:30px" data-f="rvPair" aria-label="Compare with">${pairOpts(st.rvCat, st.rvPair)}</select>
-        <button type="button" class="btn" data-act="add-rival"><svg class="i"><use href="#plus"/></svg>Add</button>
-      </div></div>
-    <div class="box"><div class="bh"><span>All rival products (${RIVALS.length})</span><span>change a pair any time</span></div>
-      ${CATS.filter((c) => RIVALS.some((r) => r.cat === c)).map((c) => `<div class="qsec"><span>${esc(c)}</span><span>${OURS.filter((o) => o.cat === c).length} Cello in this category</span></div>` + RIVALS.filter((r) => r.cat === c).map((r) => `<div class="br"><b style="flex:1 1 140px;font-size:12px">${esc(r.name)}</b><span class="dim" style="font-size:11px">${used(r.id)} price${used(r.id) === 1 ? '' : 's'}</span><select class="inp" style="flex:0 1 190px;height:28px" data-f="pair-edit" data-rid="${r.id}" aria-label="Cello pair for ${esc(r.name)}">${pairOpts(c, r.pair)}</select></div>`).join('')).join('')}
-    </div>
-    <div class="row"><button type="button" class="btn q" data-act="close">Done</button></div>
-  </div></div>`;
-  },
-  delBench: (s, l) => () => `<div class="ov"><div class="dlg sm" role="alertdialog" aria-label="Delete competitor price">
-    <h4>Remove competitor price?</h4>
-    <p><b>${esc(l.p)}</b> (${esc(l.n)}) · <b>${rp(l.rp)}</b> at ${esc(s.name)}.</p>
-    <div class="row"><button type="button" class="btn q" data-act="close">Keep it</button><button type="button" class="btn d" data-act="confirm-del-bench" data-id="${s.id}" data-lid="${l.id}"><svg class="i"><use href="#trash"/></svg>Delete</button></div>
-  </div></div>`,
   delShop: (s) => () => `<div class="ov"><div class="dlg sm" role="alertdialog" aria-label="Delete shop">
     <h4>Delete ${esc(s.name)}?</h4>
     <p>${esc(s.kec)} · ${esc(s.kab)} · handled by <b>${esc(s.pic)}</b>. Its sales history stays in the ledger, and this removal is written to the audit log.</p>
@@ -1021,19 +1104,9 @@ function onInput(e, el, st) {
   if (!f) return;
   if (f === 'q') { st.q = tg.value; render(el, st); return refocus(el, `q-${st.mode}`); }
   if (f === 'cmpRival' || f === 'cmpOurs') { if (st[f] === tg.value) return; st[f] = tg.value; if (f === 'cmpRival') st.cmpOurs = ''; return render(el, st); }
-  if (f === 'rvCat') { if (st.rvCat === tg.value) return; st.rvCat = tg.value; st.rvPair = ''; return render(el, st); }
-  if (f === 'pair-edit') {
-    if (e.type !== 'change') return;
-    const r = RIVALS.find((x) => x.id === tg.dataset.rid);
-    if (!r) return;
-    r.pair = tg.value;
-    rerenderAll();
-    const o = OURS.find((x) => x.id === r.pair);
-    return toast(o ? `Pair saved: ${r.name} ↔ ${o.name}` : `${r.name} has no Cello pair now`);
-  }
-  if (['bRival', 'bNote', 'bPrice', 'promptVal', 'bShelf', 'bSpeed', 'rvName', 'rvPair', 'newCat'].includes(f)) { st[f] = tg.value; return; }
+  if (f === 'bRival') { if (st.bRival === tg.value) return; st.bRival = tg.value; return render(el, st); }
+  if (['bNewName', 'bNote', 'bPrice', 'promptVal', 'bShelf', 'bSpeed'].includes(f)) { st[f] = tg.value; return; }
   if (f === 'bPromo') { st.bPromo = tg.value === 'No promo' ? 'None' : tg.value; return; }
-  if (f === 'bSpeed') { st.bSpeed = tg.value.replace(' selling', ''); return; }
   if (f === 'owner-pick') { st.ownerPick[tg.dataset.id] = tg.value; return; }
   if (f === 'move-kec' && e.type === 'change') {
     const s = SHOPS.find((x) => x.id === tg.dataset.id);
@@ -1082,66 +1155,37 @@ function onClick(e, el, st) {
     case 'open-map': return toast(`Map Mission Control centered on ${s ? s.name : 'shop'}`);
     case 'wa-chat': return toast(`WhatsApp chat opened for ${s ? s.name : 'shop'} (${s ? s.wa : ''})`);
     case 'directions': return toast(`Route to ${s ? s.name : 'shop'} opened in Google Maps`);
-    case 'cmp-cat': st.cmpCat = d.cat; st.cmpRival = ''; st.cmpOurs = ''; return render(el, st);
+    case 'open-competitors': return toast('Opens the Competitors screen');
     case 'cmp-pick': {
       const l = s && s.logs.find((x) => x.id === d.lid);
       if (!l) return;
-      st.cmpRival = l.id; st.cmpCat = rivalOf(l).cat; st.cmpOurs = '';
+      const rv = rivalOf(l);
+      st.cmpRival = l.id; st.cmpOurs = '';
       render(el, st);
       const o = pairOf(l);
-      return toast(o ? `Comparing ${l.p} with ${o.name}` : `${l.p} has no Cello pair yet`);
+      return toast(rv ? (o ? `Comparing ${rv.name} with ${o.name}` : `Comparing ${rv.name}`) : 'Updated comparison');
     }
-    case 'set-pair': {
-      const r = RIVALS.find((x) => x.id === d.rid), o = OURS.find((x) => x.id === d.ours);
-      if (!r || !o) return;
-      r.pair = o.id;
-      rerenderAll();
-      return toast(`Pair saved: ${r.name} ↔ ${o.name}`);
-    }
-    case 'open-rivals': st.modal = M.rivals(); return render(el, st);
-    case 'add-cat': {
-      const c = (st.newCat || '').trim();
-      if (!c) return toast('Type the category name first');
-      if (CATS.some((x) => x.toLowerCase() === c.toLowerCase())) return toast(`${c} is already a category`);
-      CATS.push(c); st.newCat = '';
-      rerenderAll();
-      return toast(`Category ${c} added`);
-    }
-    case 'add-rival': {
-      const name = (st.rvName || '').trim();
-      if (!name) return toast('Type the rival product name first');
-      if (RIVALS.some((x) => x.name.toLowerCase() === name.toLowerCase())) return toast(`${name} is already on the list`);
-      const id = 'r' + Date.now(), o = OURS.find((x) => x.id === st.rvPair);
-      RIVALS.push({ id, name, cat: st.rvCat, pair: o ? o.id : '' });
-      st.rvName = ''; st.bRival = id;
-      rerenderAll();
-      return toast(`${name} added to ${st.rvCat}${o ? ' · compared with ' + o.name : ''}`);
-    }
-    case 'bench-photo': return toast('Shelf photo attached to this price');
+    case 'bench-photo': st.bPhoto = !st.bPhoto; render(el, st); return toast(st.bPhoto ? 'Shelf photo attached' : 'Shelf photo removed');
     case 'copy-gps': { const t = s ? s.gps : ''; const done = () => toast(`GPS ${t} copied`); try { navigator.clipboard.writeText(t).then(done, done); } catch (_) { done(); } return; }
-    case 'add-bench': {
+    case 'report-rival': {
       if (!s) return;
-      const rv = RIVALS.find((x) => x.id === st.bRival);
+      const isNew = st.bRival === '__new__';
+      const rv = isNew ? null : RIVALS.find((x) => x.id === st.bRival);
+      const newName = (st.bNewName || '').trim();
       const price = parseInt(st.bPrice, 10);
-      if (!rv) return toast('Pick the rival product first');
-      if (!price || price < 100) return toast('Type the rival price in Rupiah');
-      s.logs.unshift({ id: 'l' + Date.now(), d: '2026-11-19', p: rv.name, rid: rv.id, n: (st.bNote || '').trim(), v: st.bSpeed.replace(' selling', ''), rp: price, shelf: st.bShelf, promo: st.bPromo });
-      st.bNote = ''; st.bPrice = '';
+      if (isNew && !newName) return toast('Type the new rival product name first');
+      if (!isNew && !rv) return toast('Pick the rival product first');
+      if (!price || price < 100) return toast('Type the price seen in Rupiah');
+      if (!s.pendingReports) s.pendingReports = [];
+      s.pendingReports.unshift({
+        id: 'pr' + Date.now(), d: '2026-11-19', isNew,
+        rid: rv ? rv.id : '', name: isNew ? newName : rv.name,
+        rp: price, shelf: st.bShelf, promo: st.bPromo, v: st.bSpeed,
+        photo: !!st.bPhoto, n: (st.bNote || '').trim(),
+      });
+      st.bNewName = ''; st.bNote = ''; st.bPrice = ''; st.bPhoto = false;
       rerenderAll();
-      return toast(`Competitor price added for ${s.name}`);
-    }
-    case 'del-bench': {
-      if (!s) return;
-      const l = s.logs.find((x) => x.id === d.lid);
-      if (l) { st.modal = M.delBench(s, l); render(el, st); }
-      return;
-    }
-    case 'confirm-del-bench': {
-      if (!s) return;
-      s.logs = s.logs.filter((x) => x.id !== d.lid);
-      st.modal = null;
-      rerenderAll();
-      return toast('Competitor price removed');
+      return toast('Sent to your admin for approval');
     }
     case 'verify-noo': {
       if (!s) return;
@@ -1282,8 +1326,8 @@ function onClick(e, el, st) {
     case 'import-kml': st.modal = M.kml(); return render(el, st);
     case 'confirm-kml': {
       SHOPS.push(
-        { id: 'kml1', name: 'KIOS BERKAH', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'BALEENDAH', status: 'Approved', pic: 'Unassigned', noo: 'KML Import', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '', state: 'Never visited', late: true, wa: '—', gps: '-7.0051, 107.6312', addr: 'Imported from Map Marker KML', embed: '', hasPhoto: false, logs: [] },
-        { id: 'kml2', name: 'WARUNG BU NENG', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'BALEENDAH', status: 'Approved', pic: 'Unassigned', noo: 'KML Import', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '', state: 'Never visited', late: true, wa: '—', gps: '-7.0068, 107.6335', addr: 'Imported from Map Marker KML', embed: '', hasPhoto: false, logs: [] }
+        { id: 'kml1', name: 'KIOS BERKAH', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'BALEENDAH', status: 'Approved', pic: 'Unassigned', noo: 'KML Import', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '', state: 'Never visited', late: true, wa: '—', gps: '-7.0051, 107.6312', addr: 'Imported from Map Marker KML', embed: '', hasPhoto: false, logs: [], pendingReports: [] },
+        { id: 'kml2', name: 'WARUNG BU NENG', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'BALEENDAH', status: 'Approved', pic: 'Unassigned', noo: 'KML Import', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '', state: 'Never visited', late: true, wa: '—', gps: '-7.0068, 107.6335', addr: 'Imported from Map Marker KML', embed: '', hasPhoto: false, logs: [], pendingReports: [] }
       );
       st.node = 'kec:BALEENDAH';
       st.modal = null;
@@ -1327,7 +1371,7 @@ function onClick(e, el, st) {
         return toast(`${name} updated`);
       } else {
         const nid = 's' + (SHOPS.length + 10);
-        SHOPS.push({ ...f, id: nid, name, prov, kab, kec, status: 'Approved', noo: 'Admin', grosirAsk: false, late: !f.last, state: f.last ? '7d left' : 'Never visited', logs: [] });
+        SHOPS.push({ ...f, id: nid, name, prov, kab, kec, status: 'Approved', noo: 'Admin', grosirAsk: false, late: !f.last, state: f.last ? '7d left' : 'Never visited', logs: [], pendingReports: [] });
         st.node = 'kec:' + kec;
         st.sel = nid;
         st.modal = null; st.form = null;
@@ -1359,7 +1403,7 @@ segs('role', (v) => {
   G.role = v;
   apps.forEach((a) => { a.st.modal = null; a.st.form = null; });
   rerenderAll();
-  toast(v === 'boss' ? 'T1/T2 Boss: every region, Needs action, and Admin tools' : v === 'regional' ? 'T3/T4 Regional: JAWA BARAT tree and Needs action queue' : 'T5 View Only: browse tree and shops only');
+  toast(roleSubtitle());
 });
 segs('theme', (v) => { if (v) document.documentElement.dataset.theme = v; else delete document.documentElement.dataset.theme; });
 segs('motion', (v) => { G.motion = v === 'on'; document.body.classList.toggle('nomotion', !G.motion); });

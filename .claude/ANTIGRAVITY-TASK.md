@@ -2794,7 +2794,7 @@ Aldi wants a second opinion, not a copy of Claude's. In the Result:
 **could not check:** Live production Firestore data (never touched per rules; checked code + `firestore.rules` + `demo/seed.json` shape only).
 
 ## Task 76 - PICTURE: Customers C v5 - the shop's competitor tab only READS from the global Competitors screen (draft only) - DO AFTER TASK 78
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-19 07:20 WIB (rewritten after Aldi's new direction): *"we make the competitor segment as its own segment and the competitor inside each of the stores is just some comparison, data taken from the competitor own segment just to see if that product is perform the best in that stores compare to other, all the option to see competitor as a whole, adding or seeing all the competitors just available inside the competitor segment this should be outside of each stores"*.
 **Touch only:** `.claude/drafts/customers-c.html`, this file.
 Reuse Task 78's data shape (copy its seed arrays so both pictures show the same products and prices). In the shop's "Competitor intelligence" tab (read `compareCard`, `M.rivals`, `RIVALS`, `CATS` first):
@@ -2806,6 +2806,14 @@ Reuse Task 78's data shape (copy its seed arrays so both pictures show the same 
 6. Same standards as Task 71: every action reports (gold check toast), no blue, no green, no `alert/confirm/prompt`, PC 1240 + phone 390 with nothing cut off, System/Light/Dark, Lite motion, 0 errors in headless Chrome (script, not clicking by hand).
 **Done when:** the 6 points work, headless check `ERRORS: []`, and the Result lists each point with what you checked.
 **Result:**
+- Updated `.claude/drafts/customers-c.html` to share the exact `REGIONS`, `CUST_TYPES`, `CAT_TREE`, `OURS`, and `RIVALS` seed arrays from Task 78 (`.claude/drafts/competitors-pro.html`) and wired the shop's **Competitor intelligence** tab to read prices strictly from the global catalog.
+- Verified all 6 points in headless Chrome (`verify-task76.mjs`, `ERRORS: []`):
+  1. **Removed catalog edits from shop:** Removed `M.rivals`, `open-rivals`, `add-cat`, `add-rival`, `set-pair`, `pair-edit`, `del-bench`, and admin price edits (`hasOpenRivals: false, hasDelBench: false, hasSetPair: false`). Left one **`Open Competitors ›`** link (`openCompToast: "Opens the Competitors screen"`).
+  2. **Side by side (read-only):** Uses `s.prov` × `s.price` (`Retail / Grosir / Ecer`) for both our product and the rival — verified `AMANAH BARU` (`JAWA BARAT · Retail`: `Rp 11.000` vs `Rp 8.500`, `s1HasRetailPrices: true`) and `TOKO JAYA ABADI` (`JAWA BARAT · Grosir`: `Rp 10.400` vs `Rp 8.000`, `s4HasGrosirPrices: true`). Shows `Category › Sub` on both sides, allows cross-category picks freely, and tags **`Different category`** (`hasDiffCatTag: true`).
+  3. **How it sells here vs other shops:** Computes each rival's selling speed at this shop against other shops in the same region (`hasRegionSpeed: true` — verified `"Fast here · Medium in 4 other shops in JAWA BARAT"` on `AMANAH BARU`), with `Sells faster here` / `Same as region` / `Slower here` badges.
+  4. **Report a rival (T5/T6 and up):** Supports picking an existing rival OR `+ New product`, price seen, shelf, promo, selling speed, note, and shelf photo toggle. Submitting as `T6` fires `"Sent to your admin for approval"` (`reportToast`), appends to **`Waiting for approval`** (`hasWaitingApproval: true`), and leaves the comparison untouched (`logsUnchanged: true`).
+  5. **Real tiers switch:** Role switcher uses `T2 Owner`, `T3 HQ Sales Manager`, `T4 Regional Admin (Jawa Barat)`, `T5 Sales Canvas`, `T6 Sales Motorist` (`tiers: ["T2","T3","T4","T5","T6"]`, `t4Sub: "T4 Regional Admin · JAWA BARAT"`).
+  6. **Quality & phone fit:** Gold check toast on every action, zero blue/green/alert/confirm/prompt, stacked compare columns + scrollable tabs on phone 390px (`phOverflow: false`), `ERRORS: []`.
 
 ## Task 77 - PICTURE: Master Vault categories + sub-categories (new draft)
 **Status:** OPEN
