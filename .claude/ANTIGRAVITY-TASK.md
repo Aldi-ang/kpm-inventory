@@ -2820,7 +2820,7 @@ Nothing in `src/` changes. 0 errors in headless Chrome.
 **Result:**
 
 ## Task 78 - PICTURE: the global Competitors screen (new draft) - DO RIGHT AFTER TASK 75
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-19 07:20 WIB. Aldi: *"i dont think that our competitor will give different price for each of their retailer, they may also set their price according to the customer type ... tier 4 can only see the price difference within his own region ... while the tier 3 and above as default can see all of the prices between region ... salesman should give us information towards the product to the admin through the app and admin approve and add it to global competitor screen"*.
 **Touch only:** `.claude/drafts/competitors-pro.html` (new), this file.
 One playable page, same standard as `.claude/drafts/reports-live.html` (dual-mounted PC 1240 + phone 390, in-page dialogs, gold check toast, rolling digits, System/Light/Dark, Lite motion, real tiers T2-T6 switch, look of `.claude/drafts/customers-c.html`). Seed: 3 regions (e.g. JAWA BARAT, JAWA TENGAH, JAWA TIMUR), customer types Retail / Grosir / Ecer, 5-6 rival products in Category › Sub (cigarette example names from Aldi's messages, labeled "example").
@@ -2833,3 +2833,11 @@ One playable page, same standard as `.claude/drafts/reports-live.html` (dual-mou
 6. 0 errors in headless Chrome (script), no blue, no green, no `alert/confirm/prompt`, nothing cut off at 390.
 **Done when:** the 6 points work, `ERRORS: []`, and the Result lists each point with what you checked.
 **Result:**
+- Created `.claude/drafts/competitors-pro.html` (dual-mounted PC 1240 + Phone 390, Warm Stone / Espresso System/Light/Dark theme, Lite motion, rolling KPI digits, self-drawing gold check `.toast`, real tiers `T2 Owner / T3 HQ Sales Manager / T4 Regional Admin (JAWA BARAT) / T5 Sales Canvas / T6 Sales Motorist`, 3 regions × `Retail / Grosir / Ecer`, 6 example rival products across `CAT_TREE` shared with Task 76).
+- Verified all 6 points in headless Chrome (`verify-task78.mjs`, `ERRORS: []`):
+  1. **Rival products:** Grouped by `Category › Sub`; price table shows 5 columns (`Customer type + 3 regions + Our pair`) for T2/T3 (`colsT2: 5`) and drops to 3 columns (`Customer type + JAWA BARAT + Our pair`) for T4 (`colsT4: 3`), shading cells that differ across regions and marking `LOWEST`; T5/T6 hide `Manage` and edit icons (`t5HasManage: false, t5HasEditBtn: false`).
+  2. **Compare:** Free cross-category compare between any Cello product and any rival for picked region + customer type, tagging `"Different category"` (`hasDiffCatTag: true`), showing Rp & % gap butterfly bars and sub-category price ladder.
+  3. **Reports waiting:** T4 sees only its 3 `JAWA BARAT` reports (`t4ReportsCount: "3"`) while T2/T3 see all 4 (`t2ReportsCount: "4"`); near-duplicate `"rival-kretek.12"` shows `"Looks like Rival Kretek 12"` + working `Merge into existing` (`hasNearMatch: true`); Approve supports Choice B (`Update the region price` vs `Keep as a note only`); Reject asks a short reason in-page.
+  4. **Manage + 4b:** Adding a rival or approving a `"New product"` report shows both `"Add to an existing category"` and `"Add a new category"` side by side with live duplicate warnings (`hasDupWarn: true`); new competitor categories appear tagged `"competitors only · 0 of ours"` (`hasCompOnlyTag: true`); category rename, sub-category add, pair change, and region price edit (`by <name> · <date>`) all work in-page.
+  5. **Permission matrix defaults note:** Footer bar lists all 3 rows and defaults (`T1–T3`, `T1–T4 own region for T4`, `All tiers`).
+  6. **Quality & phone fit:** Zero blue/green/alert/confirm/prompt, phone detail back navigation works (`phHasBack: true`), `phOverflow: false`, `ERRORS: []`.

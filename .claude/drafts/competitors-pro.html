@@ -1,0 +1,991 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>KPM Competitors · Global Screen</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* layout: KPM Global Competitors screen (Task 78, matching customers-c.html & reports-live.html) */
+:root{
+  --ground:#D6CEBA;--panel:#E3DCCB;--raised:#EAE4D6;--inset:#DCD4C1;--line:#B8AF9C;--line-2:#9F9785;--hair:rgba(19,18,17,.10);
+  --ink:#131211;--ink-muted:#3A3733;--ink-dim:#5E584F;--gold:#8A5A12;--accent-ink:#5A3B05;--accent-edge:#8A6420;--danger-ink:#7A2118;
+  --page:#C9C0AA;--sel:rgba(138,90,18,.09);--wash:rgba(138,90,18,.13);--scrim:rgba(19,18,17,.42);
+  --f:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0B0A09;--panel:#121110;--raised:#171513;--inset:#0E0D0C;--line:#24211D;--line-2:#3A3631;--hair:rgba(232,228,222,.06);
+  --ink:#ECE7E0;--ink-muted:#A9A196;--ink-dim:#7C756C;--gold:#D08A2E;--accent-ink:#E0A04A;--accent-edge:#9C6924;--danger-ink:#E7907F;
+  --page:#050504;--sel:rgba(208,138,46,.07);--wash:rgba(208,138,46,.12);--scrim:rgba(0,0,0,.64);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --ground:#0B0A09;--panel:#121110;--raised:#171513;--inset:#0E0D0C;--line:#24211D;--line-2:#3A3631;--hair:rgba(232,228,222,.06);
+  --ink:#ECE7E0;--ink-muted:#A9A196;--ink-dim:#7C756C;--gold:#D08A2E;--accent-ink:#E0A04A;--accent-edge:#9C6924;--danger-ink:#E7907F;
+  --page:#050504;--sel:rgba(208,138,46,.07);--wash:rgba(208,138,46,.12);--scrim:rgba(0,0,0,.64);color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:13px/1.42 var(--f);font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 64px}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+svg.i{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:-2px}
+
+.board{max-width:1240px;margin:0 auto 14px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;font-size:12.5px;color:var(--ink-muted)}
+.board h1{font-size:13px;margin:0;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim)}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:5px 10px;font-size:12px;color:var(--ink-dim)}
+.seg button[aria-pressed="true"]{background:var(--wash);color:var(--ink);font-weight:600}
+.cap{max-width:1240px;margin:22px auto 10px;color:var(--ink-dim);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+
+.fr{background:var(--ground);border:1px solid var(--line-2);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;margin:0 auto;position:relative;box-shadow:0 18px 40px -24px rgba(0,0,0,.55)}
+.fr.pc{max-width:1240px;height:800px}
+.fr.phone{width:390px;max-width:100%;height:844px;border-radius:24px}
+
+.top{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap;flex:none}
+.top b.t{font-size:15.5px;margin-right:4px}
+.top .sub{font-size:11.5px;color:var(--ink-dim)}
+.top .sp{flex:1}
+.search{height:28px;padding:0 9px;border:1px solid var(--line-2);border-radius:7px;display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-muted);background:var(--inset);min-width:0}
+.search input{border:0;background:transparent;outline:0;color:var(--ink);width:170px;font-size:11.5px}
+
+/* Edge buttons: zero solid amber fills */
+.btn{height:29px;border:1px solid var(--accent-edge);border-radius:7px;background:transparent;color:var(--ink);font-weight:600;font-size:11.5px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap;transition:background .15s,transform .1s}
+.btn:hover{background:var(--sel)}
+.btn:active{transform:scale(.97)}
+.btn.q{border-color:var(--line-2);color:var(--ink-muted)}
+.btn.d{border-color:var(--line-2);color:var(--danger-ink)}
+.btn.d:hover{border-color:var(--danger-ink);background:color-mix(in srgb,var(--danger-ink) 10%,transparent)}
+.btn.xs{height:24px;padding:0 8px;font-size:11px}
+
+/* KPI strip */
+.kpi{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line);flex:none;background:var(--panel)}
+.kpi > div{padding:8px 14px;border-right:1px solid var(--line);min-width:0}
+.kpi > div:last-child{border-right:0}
+.kpi > div.click{cursor:pointer}.kpi > div.click:hover{background:var(--sel)}
+.kpi span.lbl{display:block;font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-dim);font-weight:600}
+.kpi b.val{font-size:17px}
+.kpi b.val.bad{color:var(--danger-ink)}
+.kpi i{font-style:normal;font-size:11px;color:var(--ink-dim);margin-left:6px}
+
+/* Rolling digits */
+.roll{display:inline-flex;align-items:baseline;line-height:1.15;white-space:pre}
+.reel{display:inline-block;height:1.15em;overflow:hidden;vertical-align:bottom}
+.reel > span{display:flex;flex-direction:column;transition:transform .65s cubic-bezier(.2,.7,.2,1)}
+.reel > span > span{height:1.15em}
+
+/* Tabs */
+.tabs{display:flex;gap:20px;padding:0 16px;border-bottom:1px solid var(--line);flex:none;overflow-x:auto;background:var(--ground)}
+.tab{border:0;background:transparent;padding:9px 0;border-bottom:2px solid transparent;font-size:12.5px;font-weight:600;color:var(--ink-dim);white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.tab[aria-selected="true"]{color:var(--ink);border-color:var(--gold)}
+.cnt-pill{font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid var(--accent-edge);color:var(--accent-ink);background:var(--sel)}
+
+.st{font-size:9.5px;font-weight:700;letter-spacing:.04em;padding:1px 6px;border-radius:5px;border:1px solid var(--line-2);color:var(--ink-muted);white-space:nowrap;text-transform:uppercase;display:inline-flex;align-items:center;gap:3px}
+.st.bad{border-color:var(--danger-ink);color:var(--danger-ink)}
+.st.g{border-color:var(--accent-edge);color:var(--accent-ink);background:var(--sel)}
+.dim{color:var(--ink-dim)}
+.r{text-align:right}
+.inp{height:28px;border:1px solid var(--line-2);border-radius:6px;background:var(--inset);padding:0 8px;font-size:12px;color:var(--ink);outline:0;min-width:0}
+.inp:focus{border-color:var(--accent-edge)}
+
+/* Master-Detail body (Rival products tab) */
+.work{display:grid;grid-template-columns:320px minmax(0,1fr);grid-template-rows:minmax(0,1fr);flex:1;min-height:0;overflow:hidden}
+.list{border-right:1px solid var(--line);background:var(--panel);overflow-y:auto;min-height:0}
+.grp-h{padding:6px 12px;background:var(--inset);border-bottom:1px solid var(--line);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);display:flex;justify-content:space-between;align-items:center}
+.rrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;width:100%;border:0;background:transparent;text-align:left;padding:9px 12px;border-left:2.5px solid transparent;border-bottom:1px solid var(--hair)}
+.rrow:hover{background:var(--sel)}
+.rrow.sel{background:var(--wash);border-left-color:var(--gold)}
+.rrow b{display:block;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rrow span.s{display:block;font-size:11px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.detail{padding:14px 18px;overflow-y:auto;min-height:0;display:flex;flex-direction:column;gap:12px}
+.pane{padding:14px 18px;overflow-y:auto;flex:1;min-height:0;display:flex;flex-direction:column;gap:12px}
+.dh{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.dh h3{margin:0;font-size:16px}
+.dh p{margin:2px 0 0;font-size:11.5px;color:var(--ink-dim)}
+.card{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:11px 13px;display:flex;flex-direction:column;gap:9px;min-width:0}
+.ch{display:flex;justify-content:space-between;align-items:center;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);font-weight:700;gap:8px;flex-wrap:wrap}
+
+/* Price matrix table */
+.tblw{overflow-x:auto}
+table.pt{width:100%;border-collapse:collapse}
+table.pt th{background:var(--inset);text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.pt td{padding:8px 10px;border-bottom:1px solid var(--hair);vertical-align:middle;font-size:12.5px}
+table.pt tr:last-child td{border-bottom:0}
+.diff-cell{background:var(--sel)}
+.pmeta{font-size:10px;color:var(--ink-dim);display:block;margin-top:2px}
+
+/* Side-by-side Compare */
+.duel{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dcol{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.dcol.mine{border-color:var(--accent-edge)}
+.bigp{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.bfly{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--line);border-radius:9px;background:var(--panel)}
+.bar-t{height:8px;border-radius:4px;background:var(--inset);overflow:hidden;display:flex}
+.bar-t.l{justify-content:flex-end}
+.bar-t span{height:100%;display:block;transition:width .6s ease}
+.bar-t .us{background:var(--gold)}
+.bar-t .them{background:var(--danger-ink)}
+.lad{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--hair);font-size:12px}
+.lad:last-child{border-bottom:0}
+.lad.me{background:var(--sel);font-weight:600}
+.lad.pick{background:color-mix(in srgb,var(--danger-ink) 10%,transparent);font-weight:600}
+
+/* Reports Queue & Manage */
+.qitem{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:11px 13px;display:flex;flex-direction:column;gap:8px}
+.qmeta{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:11.5px;color:var(--ink-muted)}
+.warn-box{padding:7px 10px;border-left:3px solid var(--accent-edge);background:var(--sel);font-size:11.5px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;border-radius:0 6px 6px 0}
+.two-opt{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opt-card{border:1px solid var(--line-2);border-radius:9px;background:var(--inset);padding:10px;display:flex;flex-direction:column;gap:7px;cursor:pointer;text-align:left}
+.opt-card.on{border-color:var(--accent-edge);background:var(--sel)}
+.opt-card b{font-size:12px}
+.opt-card span{font-size:11px;color:var(--ink-dim)}
+
+/* Matrix defaults footer note */
+.matrix-note{padding:7px 16px;background:var(--inset);border-top:1px solid var(--line);font-size:11px;color:var(--ink-dim);display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;flex:none}
+.matrix-note b{color:var(--ink)}
+
+/* In-page dialogs */
+.ov{position:absolute;inset:0;background:var(--scrim);display:flex;align-items:center;justify-content:center;z-index:25;padding:16px;animation:fi .15s}
+@keyframes fi{from{opacity:0}}
+.dlg{background:var(--raised);border:1px solid var(--accent-edge);border-radius:12px;width:min(620px,100%);max-height:94%;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:11px;box-shadow:0 24px 50px -20px rgba(0,0,0,.65)}
+.dlg.sm{width:min(440px,100%)}
+.dlg h4{margin:0;font-size:14.5px}
+.dlg p{margin:0;font-size:12px;color:var(--ink-muted);line-height:1.45}
+.dlg .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;padding-top:4px}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fg label{display:flex;flex-direction:column;gap:3px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-dim)}
+.fg .inp{width:100%}
+
+/* Self-drawing gold check toast */
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;pointer-events:none;
+  display:flex;align-items:center;gap:10px;background:var(--raised);border:1px solid var(--accent-edge);border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;
+  box-shadow:0 18px 40px -16px rgba(0,0,0,.6);transition:opacity .2s,transform .25s cubic-bezier(.2,.7,.2,1);z-index:50;max-width:calc(100% - 32px)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.toast svg{width:18px;height:18px;flex:none;stroke:var(--gold);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.toast path{stroke-dasharray:24;stroke-dashoffset:24}
+.toast.on path{animation:draw .45s .1s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+
+/* Phone overrides */
+.sb{height:24px;display:flex;justify-content:space-between;align-items:center;padding:0 18px;font-size:11px;color:var(--ink-dim);background:var(--panel);flex:none}
+.phone .top{padding:8px 12px;gap:6px}
+.phone .top .sub{display:none}
+.phone .search{order:10;flex:1 1 100%}
+.phone .search input{width:100%}
+.phone .kpi{grid-template-columns:1fr 1fr}
+.phone .kpi > div{padding:6px 10px;border-bottom:1px solid var(--line)}
+.phone .kpi > div:nth-child(2n){border-right:0}
+.phone .kpi > div:nth-child(n+3){border-bottom:0}
+.phone .kpi i{display:block;margin:1px 0 0;font-size:10px}
+.phone .tabs{padding:0 10px;gap:10px}
+.phone .tab{font-size:11.5px;gap:4px}
+.phone .work{grid-template-columns:1fr}
+.phone .list{border-right:0}
+.phone .detail,.phone .pane{padding:11px 12px}
+.phone .duel,.phone .two-opt,.phone .fg{grid-template-columns:1fr}
+.phone .bfly{grid-template-columns:1fr;gap:6px;text-align:center}
+.phone .matrix-note{padding:6px 12px;font-size:10.5px}
+
+@media (max-width:760px){.fr.pc,.pcap{display:none}}
+.nomotion *,.nomotion *::before,.nomotion *::after{animation:none!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="srch" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="chk" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></symbol>
+  <symbol id="edit" viewBox="0 0 24 24"><path d="M14 4l6 6-10 10H4v-6z"/></symbol>
+  <symbol id="trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13"/></symbol>
+  <symbol id="cam" viewBox="0 0 24 24"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></symbol>
+  <symbol id="back" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></symbol>
+  <symbol id="shield" viewBox="0 0 24 24"><path d="M12 3l8 3.5v5.5c0 5-3.4 8.3-8 9.8-4.6-1.5-8-4.8-8-9.8V6.5z"/></symbol>
+  <symbol id="merge" viewBox="0 0 24 24"><path d="M6 4v6a4 4 0 0 0 4 4h8"/><path d="M18 4v16"/><path d="M15 17l3 3 3-3"/></symbol>
+  <symbol id="tag" viewBox="0 0 24 24"><path d="M4 12V4h8l8 8-8 8z"/><circle cx="8.5" cy="8.5" r="1.3"/></symbol>
+</svg>
+
+<div class="board">
+  <h1>Competitors · Global Screen (Task 78)</h1>
+  <span>View as <span class="seg" id="role">
+    <button type="button" aria-pressed="true" data-v="T2">T2 Owner</button>
+    <button type="button" aria-pressed="false" data-v="T3">T3 HQ Sales Manager</button>
+    <button type="button" aria-pressed="false" data-v="T4">T4 Regional Admin (Jawa Barat)</button>
+    <button type="button" aria-pressed="false" data-v="T5">T5 Sales Canvas</button>
+    <button type="button" aria-pressed="false" data-v="T6">T6 Sales Motorist</button>
+  </span></span>
+  <span>Theme <span class="seg" id="theme"><button type="button" aria-pressed="true" data-v="">System</button><button type="button" aria-pressed="false" data-v="light">Light</button><button type="button" aria-pressed="false" data-v="dark">Dark</button></span></span>
+  <span>Motion <span class="seg" id="motion"><button type="button" aria-pressed="true" data-v="on">On</button><button type="button" aria-pressed="false" data-v="off">Lite</button></span></span>
+  <span style="flex-basis:100%">Example cigarette rival catalog shared with Customers C (Task 76). T3+ see all 3 regions; T4 sees and approves only JAWA BARAT; T5/T6 see JAWA BARAT read-only and submit reports for approval.</span>
+</div>
+
+<p class="cap pcap">PC · 1240 px</p>
+<div class="fr pc" id="pc"></div>
+<p class="cap">Phone · 390 px (same app mounted live)</p>
+<div class="fr phone" id="ph"></div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span id="toastT"></span></div>
+
+<script>
+/* ---------- Shared Seed Data (identical shape reused by Task 76 customers-c.html) ---------- */
+const REGIONS = ['JAWA BARAT', 'JAWA TENGAH', 'JAWA TIMUR'];
+const CUST_TYPES = ['Retail', 'Grosir', 'Ecer'];
+const T4_REGION = 'JAWA BARAT';
+
+const CAT_TREE = [
+  { id: 'skm', name: 'SKM', subs: [{ id: 'skm-12', name: 'SKM 12' }, { id: 'skm-16', name: 'SKM 16' }, { id: 'skm-flav', name: 'SKM Flavour' }] },
+  { id: 'mild', name: 'Mild', subs: [{ id: 'mild-16', name: 'Mild 16' }, { id: 'mild-menthol', name: 'Mild Menthol' }] },
+  { id: 'skt', name: 'SKT', subs: [{ id: 'skt-12', name: 'SKT 12' }, { id: 'skt-16', name: 'SKT 16' }] },
+  { id: 'putih', name: 'Rokok Putih', subs: [{ id: 'putih-12', name: 'Putih 12' }, { id: 'putih-20', name: 'Putih 20' }], competitorsOnly: true },
+  { id: 'kretek', name: 'Kretek', subs: [{ id: 'kretek-12', name: 'Kretek 12' }] },
+];
+
+const OURS = [
+  { id: 'cof', name: 'Cello Coffee & Caramel', catId: 'skm', subId: 'skm-flav', prices: { Retail: 8500, Grosir: 8000, Ecer: 9500 } },
+  { id: 'choc', name: 'Cello Chocolate', catId: 'skm', subId: 'skm-flav', prices: { Retail: 10000, Grosir: 9500, Ecer: 11000 } },
+  { id: 'mm', name: 'Cello Mmrapi', catId: 'mild', subId: 'mild-16', prices: { Retail: 8500, Grosir: 8000, Ecer: 9500 } },
+  { id: 'green', name: 'Cello Green', catId: 'mild', subId: 'mild-menthol', prices: { Retail: 7000, Grosir: 6500, Ecer: 8000 } },
+  { id: 'teh', name: 'Cello Teh Manis', catId: 'skt', subId: 'skt-12', prices: { Retail: 8000, Grosir: 7500, Ecer: 9000 } },
+];
+
+const RIVALS = [
+  { id: 'r1', name: 'Rival Kretek 12 (example)', catId: 'skm', subId: 'skm-12', pair: 'cof', prices: {
+    'JAWA BARAT':  { Retail: 11000, Grosir: 10400, Ecer: 12000, by: 'Hendra (T4)', date: '2026-11-16' },
+    'JAWA TENGAH': { Retail: 10500, Grosir: 10000, Ecer: 11500, by: 'Hartono (T3)', date: '2026-11-15' },
+    'JAWA TIMUR':  { Retail: 10800, Grosir: 10200, Ecer: 12000, by: 'Hartono (T3)', date: '2026-11-14' },
+  } },
+  { id: 'r2', name: 'Rival Mild 16 (example)', catId: 'mild', subId: 'mild-16', pair: 'mm', prices: {
+    'JAWA BARAT':  { Retail: 18500, Grosir: 17800, Ecer: 20000, by: 'Hendra (T4)', date: '2026-11-17' },
+    'JAWA TENGAH': { Retail: 18500, Grosir: 17800, Ecer: 20000, by: 'Hartono (T3)', date: '2026-11-16' },
+    'JAWA TIMUR':  { Retail: 19000, Grosir: 18200, Ecer: 20500, by: 'Hartono (T3)', date: '2026-11-12' },
+  } },
+  { id: 'r3', name: 'Rival Filter 12 (example)', catId: 'putih', subId: 'putih-12', pair: 'cof', prices: {
+    'JAWA BARAT':  { Retail: 14000, Grosir: 13300, Ecer: 15000, by: 'Hendra (T4)', date: '2026-11-14' },
+    'JAWA TENGAH': { Retail: 13500, Grosir: 12900, Ecer: 14500, by: 'Hartono (T3)', date: '2026-11-13' },
+    'JAWA TIMUR':  { Retail: 13500, Grosir: 12900, Ecer: 14500, by: 'Hartono (T3)', date: '2026-11-11' },
+  } },
+  { id: 'r4', name: 'Rival Kretek 16 (example)', catId: 'skm', subId: 'skm-16', pair: 'choc', prices: {
+    'JAWA BARAT':  { Retail: 9500,  Grosir: 9000,  Ecer: 10500, by: 'Hendra (T4)', date: '2026-11-17' },
+    'JAWA TENGAH': { Retail: 9200,  Grosir: 8800,  Ecer: 10000, by: 'Hartono (T3)', date: '2026-11-15' },
+    'JAWA TIMUR':  { Retail: 9500,  Grosir: 9000,  Ecer: 10500, by: 'Hartono (T3)', date: '2026-11-15' },
+  } },
+  { id: 'r5', name: 'Rival Green Menthol (example)', catId: 'mild', subId: 'mild-menthol', pair: 'green', prices: {
+    'JAWA BARAT':  { Retail: 7500,  Grosir: 7000,  Ecer: 8500,  by: 'Hendra (T4)', date: '2026-11-18' },
+    'JAWA TENGAH': { Retail: 7200,  Grosir: 6800,  Ecer: 8000,  by: 'Hartono (T3)', date: '2026-11-17' },
+    'JAWA TIMUR':  { Retail: 7500,  Grosir: 7000,  Ecer: 8500,  by: 'Hartono (T3)', date: '2026-11-15' },
+  } },
+  { id: 'r6', name: 'Rival Teh Clove 12 (example)', catId: 'skt', subId: 'skt-12', pair: 'teh', prices: {
+    'JAWA BARAT':  { Retail: 7800,  Grosir: 7400,  Ecer: 8500,  by: 'Hendra (T4)', date: '2026-11-16' },
+    'JAWA TENGAH': { Retail: 7600,  Grosir: 7200,  Ecer: 8500,  by: 'Hartono (T3)', date: '2026-11-14' },
+    'JAWA TIMUR':  { Retail: 7800,  Grosir: 7400,  Ecer: 8500,  by: 'Hartono (T3)', date: '2026-11-13' },
+  } },
+];
+
+const REPORTS = [
+  { id: 'rep1', shop: 'AMANAH BARU', region: 'JAWA BARAT', salesman: 'Budi Santoso', custType: 'Retail', rivalId: 'r1', newName: '', price: 10500, shelf: 'Eye level', promo: 'Discount', speed: 'Fast', photo: true, date: '2026-11-18', note: 'Supplier dropped wholesale bonus this week', status: 'WAITING' },
+  { id: 'rep2', shop: 'ANEKA BARU PANJI', region: 'JAWA BARAT', salesman: 'Agus Prasetyo', custType: 'Retail', rivalId: '', newName: 'rival-kretek.12 (example)', price: 11200, shelf: 'Counter / till', promo: 'Poster', speed: 'Medium', photo: true, date: '2026-11-18', note: 'Owner called it Kretek 12', status: 'WAITING' },
+  { id: 'rep3', shop: 'CEMERLANG', region: 'JAWA BARAT', salesman: 'Sri Rahayu', custType: 'Grosir', rivalId: '', newName: 'Rival Berry Click 16 (example)', price: 16200, shelf: 'Top shelf', promo: 'Free gift', speed: 'Fast', photo: true, date: '2026-11-19', note: 'New capsule pack arrived in Soreang', status: 'WAITING' },
+  { id: 'rep4', shop: 'ASYIFA MART MADURA', region: 'JAWA TENGAH', salesman: 'Dika Saputra', custType: 'Retail', rivalId: 'r5', newName: '', price: 7000, shelf: 'Eye level', promo: 'None', speed: 'Fast', photo: false, date: '2026-11-18', note: 'Matching Cello Green price in Muntilan', status: 'WAITING' },
+];
+
+const G = { tier: 'T2', motion: true };
+const seesAllRegions = () => G.tier === 'T2' || G.tier === 'T3';
+const canApprove = () => G.tier === 'T2' || G.tier === 'T3' || G.tier === 'T4';
+const canManage = () => G.tier === 'T2' || G.tier === 'T3' || G.tier === 'T4';
+const actorName = () => ({ T2: 'Aldi (T2)', T3: 'Hartono (T3)', T4: 'Hendra (T4)', T5: 'Agus (T5)', T6: 'Ujang (T6)' }[G.tier]);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const rp = (n) => 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID');
+const normName = (s) => String(s || '').toLowerCase().replace(/\(example\)/g, '').replace(/[^a-z0-9]/g, '');
+const catLabel = (catId, subId) => {
+  const c = CAT_TREE.find((x) => x.id === catId);
+  const sub = c?.subs.find((x) => x.id === subId);
+  return c ? (sub ? `${c.name} › ${sub.name}` : c.name) : '—';
+};
+const findNearRival = (name, skipId) => {
+  const k = normName(name);
+  if (!k) return null;
+  return RIVALS.find((r) => r.id !== skipId && (normName(r.name) === k || normName(r.name).includes(k) || k.includes(normName(r.name)))) || null;
+};
+const findNearCat = (name) => {
+  const k = normName(name);
+  if (!k) return null;
+  for (const c of CAT_TREE) {
+    if (normName(c.name) === k) return c.name;
+    for (const s of c.subs) if (normName(s.name) === k) return `${c.name} › ${s.name}`;
+  }
+  return null;
+};
+
+/* ---------- rolling digits + gold check toast ---------- */
+function rollHTML(text, prevText) {
+  const out = [], pt = prevText || '', off = text.length - pt.length;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (/\d/.test(c)) {
+      const old = pt[i - off], from = /\d/.test(old || '') ? +old : 0;
+      out.push(`<span class="reel"><span data-to="${c}" style="transform:translateY(-${from * 1.15}em)">${'0123456789'.split('').map((x) => `<span>${x}</span>`).join('')}</span></span>`);
+    } else out.push(`<span>${esc(c)}</span>`);
+  }
+  return `<span class="roll" aria-label="${esc(text)}">${out.join('')}</span>`;
+}
+function R(st, key, text) { const h = rollHTML(text, st.prev[key]); st.prev[key] = text; return h; }
+function settleRolls(root) {
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    root.querySelectorAll('.reel > span[data-to]').forEach((s) => { s.style.transform = `translateY(-${+s.dataset.to * 1.15}em)`; });
+  }));
+}
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.classList.remove('on');
+  void t.offsetWidth;
+  document.getElementById('toastT').textContent = msg;
+  t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('on'), 2800);
+}
+
+/* ---------- dual-mounted state ---------- */
+const apps = [];
+const freshState = (mode) => ({
+  mode, tab: 'rivals', q: '', selRival: 'r1', phDetail: false,
+  cmpOurs: 'cof', cmpRival: 'r1', cmpRegion: 'JAWA BARAT', cmpType: 'Retail',
+  prev: {}, modal: null, form: null,
+});
+
+function mount(el, mode) {
+  const st = freshState(mode);
+  apps.push({ el, st });
+  el.addEventListener('click', (e) => onClick(e, el, st));
+  el.addEventListener('input', (e) => onInput(e, el, st));
+  el.addEventListener('change', (e) => onInput(e, el, st));
+  render(el, st);
+}
+function rerenderAll() { apps.forEach((a) => render(a.el, a.st)); }
+
+function visibleRegions() { return seesAllRegions() ? REGIONS : [T4_REGION]; }
+function visibleReports() {
+  const waiting = REPORTS.filter((r) => r.status === 'WAITING');
+  return seesAllRegions() ? waiting : waiting.filter((r) => r.region === T4_REGION);
+}
+
+function render(el, st) {
+  const ph = st.mode === 'phone';
+  if (!canManage() && st.tab === 'manage') st.tab = 'rivals';
+  const scroll = el.querySelector('.list, .detail, .pane')?.scrollTop || 0;
+  const regs = visibleRegions();
+  if (!regs.includes(st.cmpRegion)) st.cmpRegion = regs[0];
+  const waitReps = visibleReports();
+  const q = st.q.trim().toLowerCase();
+  const list = RIVALS.filter((r) => !q || r.name.toLowerCase().includes(q) || catLabel(r.catId, r.subId).toLowerCase().includes(q));
+  if (!list.some((x) => x.id === st.selRival) && list.length) st.selRival = list[0].id;
+  const activeRival = RIVALS.find((x) => x.id === st.selRival) || RIVALS[0];
+  const diffCount = RIVALS.filter((r) => {
+    if (!seesAllRegions()) return false;
+    return CUST_TYPES.some((ct) => new Set(REGIONS.map((rg) => r.prices[rg]?.[ct])).size > 1);
+  }).length;
+
+  let html = ph ? `<div class="sb"><span>09:41</span><span>5G · 92%</span></div>` : '';
+  html += `<div class="top">
+    <b class="t">Competitors</b>
+    <span class="sub">${seesAllRegions() ? 'Global catalog · all 3 regions' : `${T4_REGION} only · ${actorName()}`}</span>
+    <label class="search"><svg class="i"><use href="#srch"/></svg><input data-f="q" id="q-${st.mode}" value="${esc(st.q)}" placeholder="Search rival or category..." aria-label="Search"></label>
+    <span class="sp"></span>
+    <button type="button" class="btn q" data-act="open-report"><svg class="i"><use href="#cam"/></svg>Report rival</button>
+    ${canManage() ? `<button type="button" class="btn" data-act="open-add-rival"><svg class="i"><use href="#plus"/></svg>${ph ? 'Add' : 'Add rival product'}</button>` : ''}
+  </div>
+
+  <div class="kpi">
+    <div><span class="lbl">Rival products</span><b class="val">${R(st, 'k-rv', String(RIVALS.length))}</b><i>across ${CAT_TREE.length} categories</i></div>
+    <div><span class="lbl">Regions shown</span><b class="val">${R(st, 'k-rg', String(regs.length))}</b><i>${seesAllRegions() ? 'T1–T3 see all' : `${T4_REGION} only`}</i></div>
+    <div class="click" data-tab="reports"><span class="lbl">Reports waiting</span><b class="val" style="color:var(--accent-ink)">${R(st, 'k-rp', String(waitReps.length))}</b><i>${canApprove() ? 'tap to approve' : 'sent to T4 admin'}</i></div>
+    <div><span class="lbl">Region price gaps</span><b class="val ${diffCount ? 'bad' : ''}">${R(st, 'k-df', seesAllRegions() ? String(diffCount) : '—')}</b><i>${seesAllRegions() ? 'rivals vary by region' : 'T3+ compares regions'}</i></div>
+  </div>
+
+  <nav class="tabs" role="tablist">
+    <button type="button" class="tab" role="tab" data-tab="rivals" aria-selected="${st.tab === 'rivals'}">Rival products <span class="cnt-pill">${list.length}</span></button>
+    <button type="button" class="tab" role="tab" data-tab="compare" aria-selected="${st.tab === 'compare'}">Compare</button>
+    <button type="button" class="tab" role="tab" data-tab="reports" aria-selected="${st.tab === 'reports'}">Reports waiting <span class="cnt-pill">${waitReps.length}</span></button>
+    ${canManage() ? `<button type="button" class="tab" role="tab" data-tab="manage" aria-selected="${st.tab === 'manage'}">Manage</button>` : ''}
+  </nav>`;
+
+  if (st.tab === 'rivals') html += renderRivalsTab(st, list, activeRival, regs, ph);
+  else if (st.tab === 'compare') html += renderCompareTab(st, regs);
+  else if (st.tab === 'reports') html += renderReportsTab(st, waitReps);
+  else html += renderManageTab(st, regs);
+
+  html += `<div class="matrix-note">
+    <svg class="i"><use href="#shield"/></svg>
+    <span><b>Permission matrix defaults:</b></span>
+    <span>See competitor prices in all regions: <b>T1–T3</b></span>
+    <span>· Approve reports &amp; edit prices: <b>T1–T4</b> (own region for T4)</span>
+    <span>· Report a competitor: <b>All tiers</b></span>
+  </div>`;
+
+  if (st.modal) html += st.modal(st);
+  el.innerHTML = html;
+  const sc = el.querySelector('.list, .detail, .pane');
+  if (sc) sc.scrollTop = scroll;
+  settleRolls(el);
+}
+
+function renderRivalsTab(st, list, r, regs, ph) {
+  const showList = !ph || !st.phDetail;
+  const showDetail = !ph || st.phDetail;
+  let listHtml = `<aside class="list" aria-label="Rival catalog">`;
+  CAT_TREE.forEach((cat) => {
+    cat.subs.forEach((sub) => {
+      const items = list.filter((x) => x.catId === cat.id && x.subId === sub.id);
+      if (!items.length) return;
+      listHtml += `<div class="grp-h"><span>${esc(cat.name)} › ${esc(sub.name)}</span><span>${items.length}</span></div>`;
+      items.forEach((item) => {
+        const pair = OURS.find((o) => o.id === item.pair);
+        const regP = item.prices[regs[0]]?.Retail || 0;
+        const varies = seesAllRegions() && new Set(REGIONS.map((rg) => item.prices[rg]?.Retail)).size > 1;
+        listHtml += `<button type="button" class="rrow ${item.id === r?.id ? 'sel' : ''}" data-pick-rival="${item.id}">
+          <div style="min-width:0"><b>${esc(item.name)}</b><span class="s">${pair ? 'Paired: ' + esc(pair.name) : 'No Cello pair yet'}</span></div>
+          <div class="r"><b>${rp(regP)}</b><div style="margin-top:2px">${varies ? '<span class="st g">varies</span>' : '<span class="dim" style="font-size:10px">Retail</span>'}</div></div>
+        </button>`;
+      });
+    });
+  });
+  if (!list.length) listHtml += `<div class="dim" style="padding:28px;text-align:center">No rival products match.</div>`;
+  listHtml += `</aside>`;
+
+  let detHtml = '';
+  if (showDetail && r) {
+    const pair = OURS.find((o) => o.id === r.pair);
+    const diffCat = pair && (pair.catId !== r.catId || pair.subId !== r.subId);
+    detHtml = `<section class="detail" aria-label="Rival region prices">
+      ${ph ? `<div><button type="button" class="btn xs q" data-act="ph-back"><svg class="i"><use href="#back"/></svg>All rival products</button></div>` : ''}
+      <div class="dh">
+        <div style="flex:1;min-width:0">
+          <h3>${esc(r.name)}</h3>
+          <p>${esc(catLabel(r.catId, r.subId))}${pair ? ` · paired with <b>${esc(pair.name)}</b> (${esc(catLabel(pair.catId, pair.subId))})` : ' · no Cello pair'}</p>
+        </div>
+        ${diffCat ? `<span class="st g">Different category pair</span>` : ''}
+        <button type="button" class="btn xs q" data-act="jump-cmp" data-id="${r.id}">Compare side by side</button>
+      </div>
+
+      <div class="card">
+        <div class="ch">
+          <span>Region × Customer Type Price Table</span>
+          <span>${seesAllRegions() ? 'shaded cells differ across regions' : `scoped to ${T4_REGION}`}</span>
+        </div>
+        <div class="tblw">
+          <table class="pt">
+            <thead>
+              <tr>
+                <th>Customer type</th>
+                ${regs.map((rg) => `<th class="r">${esc(rg)}</th>`).join('')}
+                <th class="r">Our pair (${pair ? esc(pair.name.replace('Cello ', '')) : '—'})</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${CUST_TYPES.map((ct) => {
+                const vals = regs.map((rg) => r.prices[rg]?.[ct] || 0);
+                const varies = regs.length > 1 && new Set(vals).size > 1;
+                const minV = Math.min(...vals);
+                const ourP = pair ? pair.prices[ct] : null;
+                return `<tr>
+                  <td><b>${ct}</b></td>
+                  ${regs.map((rg) => {
+                    const entry = r.prices[rg] || { by: '—', date: '—' };
+                    const val = entry[ct] || 0;
+                    const isLow = varies && val === minV;
+                    return `<td class="r ${varies ? 'diff-cell' : ''}">
+                      <div style="display:inline-flex;align-items:center;gap:6px">
+                        ${isLow ? '<span class="st bad">lowest</span>' : ''}
+                        <b>${val ? rp(val) : '—'}</b>
+                        ${canManage() ? `<button type="button" class="btn xs q" data-act="edit-price" data-rid="${r.id}" data-reg="${esc(rg)}" data-ct="${ct}" aria-label="Edit ${rg} ${ct} price"><svg class="i" style="width:11px;height:11px"><use href="#edit"/></svg></button>` : ''}
+                      </div>
+                      <span class="pmeta">by ${esc(entry.by)} · ${esc(entry.date)}</span>
+                    </td>`;
+                  }).join('')}
+                  <td class="r"><b>${ourP ? rp(ourP) : '—'}</b><span class="pmeta">${ourP && vals[0] ? (vals[0] < ourP ? `Rival ${rp(ourP - vals[0])} cheaper` : vals[0] > ourP ? `Cello ${rp(vals[0] - ourP)} cheaper` : 'Same price') : ''}</span></td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ch"><span>Cello Pair &amp; Controls</span><span>${canManage() ? 'T1–T4 editable' : 'Read-only for ' + G.tier}</span></div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="dim" style="font-size:12px">Paired Cello product:</span>
+          ${canManage() ? `<select class="inp" data-f="set-pair" data-rid="${r.id}" aria-label="Paired Cello product">
+            <option value="">No pair</option>
+            ${OURS.map((o) => `<option value="${o.id}" ${r.pair === o.id ? 'selected' : ''}>${esc(o.name)} (${esc(catLabel(o.catId, o.subId))})</option>`).join('')}
+          </select>` : `<b>${pair ? esc(pair.name) : 'None'}</b>`}
+          <span style="flex:1"></span>
+          <button type="button" class="btn xs q" data-act="open-report" data-rid="${r.id}"><svg class="i"><use href="#cam"/></svg>Report field price</button>
+        </div>
+      </div>
+    </section>`;
+  }
+  return `<div class="work">${showList ? listHtml : ''}${showDetail ? detHtml : ''}</div>`;
+}
+
+function renderCompareTab(st, regs) {
+  const o = OURS.find((x) => x.id === st.cmpOurs) || OURS[0];
+  const r = RIVALS.find((x) => x.id === st.cmpRival) || RIVALS[0];
+  const reg = regs.includes(st.cmpRegion) ? st.cmpRegion : regs[0];
+  const ct = st.cmpType;
+  const ourP = o.prices[ct] || 0;
+  const rivEntry = r.prices[reg] || { Retail: 0, Grosir: 0, Ecer: 0, by: '—', date: '—' };
+  const rivP = rivEntry[ct] || 0;
+  const diffCat = o.catId !== r.catId || o.subId !== r.subId;
+  const gap = rivP - ourP;
+  const pct = ourP ? Math.round((Math.abs(gap) / ourP) * 100) : 0;
+  const top = Math.max(ourP, rivP, 1);
+  const verdict = gap < 0 ? `Rival ${rp(-gap)} cheaper · ${pct}%` : gap > 0 ? `Cello ${rp(gap)} cheaper · ${pct}%` : 'Same price';
+
+  const ladder = [
+    ...RIVALS.filter((x) => x.catId === r.catId && x.subId === r.subId).map((x) => ({ name: x.name, rp: x.prices[reg]?.[ct] || 0, cls: x.id === r.id ? 'pick' : '' })),
+    ...OURS.filter((x) => x.catId === r.catId && x.subId === r.subId || x.id === o.id).map((x) => ({ name: x.name + ' (ours)', rp: x.prices[ct] || 0, cls: 'me' })),
+  ].sort((a, b) => a.rp - b.rp);
+
+  return `<div class="pane">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <span class="dim" style="font-size:11.5px;font-weight:600">REGION</span>
+      <select class="inp" data-f="cmpRegion" aria-label="Compare region" ${regs.length === 1 ? 'disabled' : ''}>
+        ${regs.map((rg) => `<option value="${esc(rg)}" ${rg === reg ? 'selected' : ''}>${esc(rg)}</option>`).join('')}
+      </select>
+      <span class="dim" style="font-size:11.5px;font-weight:600">CUSTOMER TYPE</span>
+      <div class="seg" role="group" aria-label="Customer type">
+        ${CUST_TYPES.map((t) => `<button type="button" data-act="cmp-type" data-ct="${t}" aria-pressed="${ct === t}">${t}</button>`).join('')}
+      </div>
+      ${diffCat ? `<span class="st g">Different category</span>` : `<span class="st">Same sub-category</span>`}
+    </div>
+
+    <div class="duel">
+      <div class="dcol mine">
+        <span class="dim" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Our product · ${esc(catLabel(o.catId, o.subId))}</span>
+        <select class="inp" data-f="cmpOurs" aria-label="Pick our product">
+          ${OURS.map((x) => `<option value="${x.id}" ${x.id === o.id ? 'selected' : ''}>${esc(x.name)} · ${esc(catLabel(x.catId, x.subId))}</option>`).join('')}
+        </select>
+        <div class="bigp">${rp(ourP)}</div>
+        <span class="dim" style="font-size:11.5px">Master Vault ${ct} price</span>
+      </div>
+      <div class="dcol">
+        <span class="dim" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Rival product · ${esc(catLabel(r.catId, r.subId))}</span>
+        <select class="inp" data-f="cmpRival" aria-label="Pick rival product">
+          ${RIVALS.map((x) => `<option value="${x.id}" ${x.id === r.id ? 'selected' : ''}>${esc(x.name)} · ${esc(catLabel(x.catId, x.subId))}</option>`).join('')}
+        </select>
+        <div class="bigp" style="color:var(--danger-ink)">${rp(rivP)}</div>
+        <span class="dim" style="font-size:11.5px">${esc(reg)} ${ct} · by ${esc(rivEntry.by)} · ${esc(rivEntry.date)}</span>
+      </div>
+    </div>
+
+    <div class="bfly">
+      <div class="bar-t l"><span class="us" style="width:${Math.round((ourP / top) * 100)}%"></span></div>
+      <span class="st ${gap < 0 ? 'bad' : 'g'}">${verdict}</span>
+      <div class="bar-t"><span class="them" style="width:${Math.round((rivP / top) * 100)}%"></span></div>
+    </div>
+
+    <div class="card">
+      <div class="ch"><span>Price ladder · ${esc(catLabel(r.catId, r.subId))} (${esc(reg)} · ${ct})</span><span>cheapest first</span></div>
+      <div>
+        ${ladder.map((x, i) => `<div class="lad ${x.cls}"><span class="dim">${i + 1}</span><span>${esc(x.name)}</span><b>${rp(x.rp)}</b></div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderReportsTab(st, waitReps) {
+  return `<div class="pane">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <div><b>Reports waiting for approval (${waitReps.length})</b> <span class="dim">· ${seesAllRegions() ? 'All regions (T1–T3)' : `Showing ${T4_REGION} only`}</span></div>
+      <button type="button" class="btn xs" data-act="open-report"><svg class="i"><use href="#plus"/></svg>Submit field report</button>
+    </div>
+    ${waitReps.length ? waitReps.map((rep) => {
+      const ex = rep.rivalId ? RIVALS.find((x) => x.id === rep.rivalId) : null;
+      const near = !ex ? findNearRival(rep.newName) : null;
+      const curRegionP = ex ? ex.prices[rep.region]?.[rep.custType] : null;
+      return `<div class="qitem">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">
+          <div>
+            <b>${ex ? esc(ex.name) : esc(rep.newName)}</b>
+            ${!ex ? '<span class="st g" style="margin-left:6px">New product</span>' : ''}
+            <span class="st" style="margin-left:4px">${esc(rep.region)} · ${esc(rep.custType)}</span>
+          </div>
+          <b style="font-size:15px;color:var(--danger-ink)">${rp(rep.price)}</b>
+        </div>
+        <div class="qmeta">
+          <span>Shop: <b style="color:var(--ink)">${esc(rep.shop)}</b></span>
+          <span>By: <b style="color:var(--ink)">${esc(rep.salesman)}</b></span>
+          <span>Shelf: ${esc(rep.shelf)}</span>
+          <span>Promo: ${esc(rep.promo)}</span>
+          <span>Selling: ${esc(rep.speed)}</span>
+          <span>${rep.photo ? 'Photo attached' : 'No photo'}</span>
+          <span>${esc(rep.date)}</span>
+        </div>
+        ${curRegionP != null ? `<div class="dim" style="font-size:11.5px">Current ${esc(rep.region)} ${esc(rep.custType)} price: <b style="color:var(--ink)">${rp(curRegionP)}</b> (${rep.price === curRegionP ? 'same price' : rep.price < curRegionP ? rp(curRegionP - rep.price) + ' lower' : rp(rep.price - curRegionP) + ' higher'})</div>` : ''}
+        ${rep.note ? `<div class="dim" style="font-size:11.5px">Note: ${esc(rep.note)}</div>` : ''}
+        ${near ? `<div class="warn-box">
+          <span><b>Looks like ${esc(near.name)}</b> (matches after lower-casing and removing spaces/dots/dashes).</span>
+          ${canApprove() ? `<button type="button" class="btn xs" data-act="merge-rep" data-rep="${rep.id}" data-rid="${near.id}"><svg class="i"><use href="#merge"/></svg>Merge into existing</button>` : ''}
+        </div>` : ''}
+        <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+          ${canApprove() ? `
+            <button type="button" class="btn xs d" data-act="open-reject" data-rep="${rep.id}">Reject</button>
+            <button type="button" class="btn xs" data-act="open-approve" data-rep="${rep.id}"><svg class="i"><use href="#chk"/></svg>Approve</button>
+          ` : `<span class="dim" style="font-size:11px">Waiting for T4 (${esc(rep.region)}) or T3+ approval</span>`}
+        </div>
+      </div>`;
+    }).join('') : `<div class="card"><div class="dim" style="text-align:center;padding:18px">No reports waiting for approval.</div></div>`}
+  </div>`;
+}
+
+function renderManageTab(st) {
+  return `<div class="pane">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <div><b>Shared Categories &amp; Rival Catalog</b> <span class="dim">· one category list shared with Master Vault</span></div>
+      <div style="display:flex;gap:6px">
+        <button type="button" class="btn xs q" data-act="open-add-cat"><svg class="i"><use href="#tag"/></svg>Add category</button>
+        <button type="button" class="btn xs" data-act="open-add-rival"><svg class="i"><use href="#plus"/></svg>Add rival product</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch"><span>Shared Category List (${CAT_TREE.length})</span><span>used by Master Vault + Competitors</span></div>
+      ${CAT_TREE.map((c) => {
+        const ourCnt = OURS.filter((o) => o.catId === c.id).length;
+        const rivCnt = RIVALS.filter((r) => r.catId === c.id).length;
+        return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--hair);flex-wrap:wrap">
+          <div style="flex:1;min-width:180px">
+            <b>${esc(c.name)}</b>
+            ${ourCnt === 0 ? `<span class="st g" style="margin-left:6px">competitors only · 0 of ours</span>` : `<span class="dim" style="margin-left:6px;font-size:11px">${ourCnt} ours · ${rivCnt} rivals</span>`}
+            <div class="dim" style="font-size:11px;margin-top:2px">Subs: ${c.subs.map((s) => esc(s.name)).join(' · ')}</div>
+          </div>
+          <button type="button" class="btn xs q" data-act="open-ren-cat" data-cid="${c.id}"><svg class="i"><use href="#edit"/></svg>Rename</button>
+          <button type="button" class="btn xs q" data-act="open-add-sub" data-cid="${c.id}"><svg class="i"><use href="#plus"/></svg>Sub</button>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+/* ---------- In-page Modals ---------- */
+const M = {
+  editPrice: () => (st) => {
+    const f = st.form;
+    return `<div class="ov"><div class="dlg sm" role="dialog" aria-label="Edit region price">
+      <h4>Edit ${esc(f.region)} · ${esc(f.ct)} price</h4>
+      <p><b>${esc(f.rivalName)}</b> · saved with your name (${esc(actorName())}) and today's date.</p>
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ink-dim)">New price (Rp)<input class="inp" type="number" data-m="price" value="${esc(f.price)}"></label>
+      <div class="row"><button type="button" class="btn q" data-act="close">Cancel</button><button type="button" class="btn" data-act="save-price"><svg class="i"><use href="#chk"/></svg>Save price</button></div>
+    </div></div>`;
+  },
+  approve: () => (st) => {
+    const f = st.form;
+    const rep = REPORTS.find((x) => x.id === f.repId);
+    if (!rep) return '';
+    const isNew = !rep.rivalId;
+    const cat = CAT_TREE.find((c) => c.id === f.catId) || CAT_TREE[0];
+    const dupCatWarn = f.catMode === 'new' ? findNearCat(f.newCatName || f.newSubName) : null;
+    const dupRivalWarn = isNew ? findNearRival(f.rivalName) : null;
+    return `<div class="ov"><div class="dlg" role="dialog" aria-label="Approve salesman report">
+      <h4>Approve report · ${esc(rep.shop)} (${esc(rep.region)})</h4>
+      <p>Salesman <b>${esc(rep.salesman)}</b> saw <b>${rp(rep.price)}</b> (${esc(rep.custType)}) · ${esc(rep.speed)} selling.</p>
+      ${isNew ? `
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ink-dim)">Rival product name<input class="inp" data-m="rivalName" value="${esc(f.rivalName)}"></label>
+        ${dupRivalWarn ? `<div class="warn-box"><span><b>Looks like ${esc(dupRivalWarn.name)}</b> already exists.</span></div>` : ''}
+        <div class="two-opt">
+          <button type="button" class="opt-card ${f.catMode === 'existing' ? 'on' : ''}" data-act="cat-mode" data-cm="existing">
+            <b>Add to an existing category</b>
+            <span>Pick Category › Sub from the list shared with our products</span>
+          </button>
+          <button type="button" class="opt-card ${f.catMode === 'new' ? 'on' : ''}" data-act="cat-mode" data-cm="new">
+            <b>Add a new category</b>
+            <span>Creates a shared category (tagged "competitors only · 0 of ours")</span>
+          </button>
+        </div>
+        ${f.catMode === 'existing' ? `<div class="fg">
+          <label>Category<select class="inp" data-m="catId">${CAT_TREE.map((c) => `<option value="${c.id}" ${c.id === f.catId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></label>
+          <label>Sub-category<select class="inp" data-m="subId">${cat.subs.map((s) => `<option value="${s.id}" ${s.id === f.subId ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select></label>
+        </div>` : `<div class="fg">
+          <label>New category name<input class="inp" data-m="newCatName" value="${esc(f.newCatName)}" placeholder="e.g. Capsule / Click"></label>
+          <label>New sub-category name<input class="inp" data-m="newSubName" value="${esc(f.newSubName)}" placeholder="e.g. Berry 16"></label>
+        </div>${dupCatWarn ? `<div class="warn-box"><span>Duplicate warning: looks like <b>${esc(dupCatWarn)}</b> already exists.</span></div>` : ''}`}
+      ` : `
+        <div class="two-opt">
+          <button type="button" class="opt-card ${f.priceAction === 'update' ? 'on' : ''}" data-act="price-action" data-pa="update">
+            <b>Update the region price</b>
+            <span>Sets ${esc(rep.region)} ${esc(rep.custType)} to ${rp(rep.price)} for every shop in this region</span>
+          </button>
+          <button type="button" class="opt-card ${f.priceAction === 'note' ? 'on' : ''}" data-act="price-action" data-pa="note">
+            <b>Keep as a note only</b>
+            <span>Region price stays unchanged; saves this shop's selling speed and note</span>
+          </button>
+        </div>
+      `}
+      <div class="row"><button type="button" class="btn q" data-act="close">Cancel</button><button type="button" class="btn" data-act="confirm-approve"><svg class="i"><use href="#chk"/></svg>Confirm approval</button></div>
+    </div></div>`;
+  },
+  reject: () => (st) => `<div class="ov"><div class="dlg sm" role="dialog" aria-label="Reject report">
+    <h4>Reject salesman report</h4>
+    <p>Give a short reason so the salesman knows why this report was not added.</p>
+    <label style="display:flex;flex-direction:column;gap:4px;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ink-dim)">Reason<input class="inp" data-m="reason" value="${esc(st.form.reason)}" placeholder="e.g. Blurred price tag, promo already ended"></label>
+    <div class="row"><button type="button" class="btn q" data-act="close">Cancel</button><button type="button" class="btn d" data-act="confirm-reject">Reject report</button></div>
+  </div></div>`,
+  addRival: () => (st) => {
+    const f = st.form;
+    const cat = CAT_TREE.find((c) => c.id === f.catId) || CAT_TREE[0];
+    const nearR = findNearRival(f.name);
+    const nearC = f.catMode === 'new' ? findNearCat(f.newCatName || f.newSubName) : null;
+    return `<div class="ov"><div class="dlg" role="dialog" aria-label="Add rival product">
+      <h4>Add rival product</h4>
+      <div class="fg">
+        <label>Rival product name<input class="inp" data-m="name" value="${esc(f.name)}" placeholder="e.g. Rival Mild Berry 16"></label>
+        <label>Paired Cello product<select class="inp" data-m="pair"><option value="">No pair yet</option>${OURS.map((o) => `<option value="${o.id}" ${o.id === f.pair ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select></label>
+      </div>
+      ${nearR ? `<div class="warn-box"><span>Duplicate warning: looks like <b>${esc(nearR.name)}</b> already exists.</span></div>` : ''}
+      <div class="two-opt">
+        <button type="button" class="opt-card ${f.catMode === 'existing' ? 'on' : ''}" data-act="cat-mode" data-cm="existing">
+          <b>Add to an existing category</b>
+          <span>Pick Category › Sub from the shared list</span>
+        </button>
+        <button type="button" class="opt-card ${f.catMode === 'new' ? 'on' : ''}" data-act="cat-mode" data-cm="new">
+          <b>Add a new category</b>
+          <span>Shared with Master Vault ("competitors only · 0 of ours")</span>
+        </button>
+      </div>
+      ${f.catMode === 'existing' ? `<div class="fg">
+        <label>Category<select class="inp" data-m="catId">${CAT_TREE.map((c) => `<option value="${c.id}" ${c.id === f.catId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></label>
+        <label>Sub-category<select class="inp" data-m="subId">${cat.subs.map((s) => `<option value="${s.id}" ${s.id === f.subId ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select></label>
+      </div>` : `<div class="fg">
+        <label>New category name<input class="inp" data-m="newCatName" value="${esc(f.newCatName)}" placeholder="e.g. Capsule"></label>
+        <label>New sub-category name<input class="inp" data-m="newSubName" value="${esc(f.newSubName)}" placeholder="e.g. Berry 16"></label>
+      </div>${nearC ? `<div class="warn-box"><span>Duplicate warning: looks like <b>${esc(nearC)}</b> already exists.</span></div>` : ''}`}
+      <div class="fg" style="grid-template-columns:1fr 1fr 1fr">
+        <label>Retail (Rp)<input class="inp" type="number" data-m="retail" value="${esc(f.retail)}"></label>
+        <label>Grosir (Rp)<input class="inp" type="number" data-m="grosir" value="${esc(f.grosir)}"></label>
+        <label>Ecer (Rp)<input class="inp" type="number" data-m="ecer" value="${esc(f.ecer)}"></label>
+      </div>
+      <div class="row"><button type="button" class="btn q" data-act="close">Cancel</button><button type="button" class="btn" data-act="save-rival"><svg class="i"><use href="#chk"/></svg>Save rival product</button></div>
+    </div></div>`;
+  },
+  reportForm: () => (st) => {
+    const f = st.form;
+    return `<div class="ov"><div class="dlg" role="dialog" aria-label="Report a rival">
+      <h4>Report a rival (sends to admin approval)</h4>
+      <div class="fg">
+        <label>Rival product<select class="inp" data-m="rivalId"><option value="">+ New product not on list</option>${RIVALS.map((r) => `<option value="${r.id}" ${r.id === f.rivalId ? 'selected' : ''}>${esc(r.name)}</option>`).join('')}</select></label>
+        <label>${f.rivalId ? 'Shop name' : 'New product name'}<input class="inp" data-m="${f.rivalId ? 'shop' : 'newName'}" value="${esc(f.rivalId ? f.shop : f.newName)}" placeholder="${f.rivalId ? 'AMANAH BARU' : 'Type rival name...'}"></label>
+        <label>Price seen (Rp)<input class="inp" type="number" data-m="price" value="${esc(f.price)}"></label>
+        <label>Customer type<select class="inp" data-m="custType">${CUST_TYPES.map((ct) => `<option ${ct === f.custType ? 'selected' : ''}>${ct}</option>`).join('')}</select></label>
+        <label>Shelf<select class="inp" data-m="shelf">${['Eye level', 'Top shelf', 'Bottom shelf', 'Counter / till'].map((x) => `<option ${x === f.shelf ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
+        <label>Selling speed<select class="inp" data-m="speed">${['Fast', 'Medium', 'Slow'].map((x) => `<option ${x === f.speed ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
+      </div>
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ink-dim)">Note<input class="inp" data-m="note" value="${esc(f.note)}" placeholder="Promo, stock level, what the owner said..."></label>
+      <div class="row"><button type="button" class="btn q" data-act="close">Cancel</button><button type="button" class="btn" data-act="submit-report"><svg class="i"><use href="#chk"/></svg>Send for approval</button></div>
+    </div></div>`;
+  },
+  catDialog: () => (st) => {
+    const f = st.form;
+    const near = findNearCat(f.name);
+    return `<div class="ov"><div class="dlg sm" role="dialog" aria-label="${esc(f.title)}">
+      <h4>${esc(f.title)}</h4>
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ink-dim)">Name<input class="inp" data-m="name" value="${esc(f.name)}" placeholder="Type name..."></label>
+      ${near ? `<div class="warn-box"><span>Duplicate warning: looks like <b>${esc(near)}</b> already exists.</span></div>` : ''}
+      <div class="row"><button type="button" class="btn q" data-act="close">Cancel</button><button type="button" class="btn" data-act="save-cat"><svg class="i"><use href="#chk"/></svg>Save</button></div>
+    </div></div>`;
+  },
+};
+
+/* ---------- Events ---------- */
+function refocus(el, id) { const i = el.querySelector('#' + id); if (i) { i.focus(); if (i.setSelectionRange) i.setSelectionRange(i.value.length, i.value.length); } }
+function onInput(e, el, st) {
+  const tg = e.target, f = tg.dataset.f, m = tg.dataset.m;
+  if (m && st.form) {
+    st.form[m] = tg.value;
+    if (m === 'catId') {
+      const c = CAT_TREE.find((x) => x.id === tg.value);
+      st.form.subId = c?.subs[0]?.id || '';
+      return render(el, st);
+    }
+    if (m === 'rivalId' || m === 'name' || m === 'rivalName' || m === 'newCatName' || m === 'newSubName') {
+      const pos = tg.selectionStart;
+      render(el, st);
+      const next = el.querySelector(`[data-m="${m}"]`);
+      if (next && next.focus) { next.focus(); if (next.setSelectionRange && pos != null) next.setSelectionRange(pos, pos); }
+    }
+    return;
+  }
+  if (!f) return;
+  if (f === 'q') { st.q = tg.value; render(el, st); return refocus(el, `q-${st.mode}`); }
+  if (f === 'cmpOurs' || f === 'cmpRival' || f === 'cmpRegion') { st[f] = tg.value; return render(el, st); }
+  if (f === 'set-pair' && e.type === 'change') {
+    const r = RIVALS.find((x) => x.id === tg.dataset.rid);
+    if (r) { r.pair = tg.value; rerenderAll(); toast(`Saved Cello pair for ${r.name}`); }
+  }
+}
+
+function onClick(e, el, st) {
+  const b = e.target.closest('button, [data-tab], [data-pick-rival], .ov');
+  if (!b) return;
+  if (b.classList.contains('ov')) { if (e.target === b) { st.modal = null; st.form = null; render(el, st); } return; }
+  const d = b.dataset;
+  if (d.tab) { st.tab = d.tab; return render(el, st); }
+  if (d.pickRival) { st.selRival = d.pickRival; if (st.mode === 'phone') st.phDetail = true; return render(el, st); }
+  switch (d.act) {
+    case 'close': st.modal = null; st.form = null; return render(el, st);
+    case 'ph-back': st.phDetail = false; return render(el, st);
+    case 'cmp-type': st.cmpType = d.ct; return render(el, st);
+    case 'jump-cmp': st.cmpRival = d.id; const rv = RIVALS.find((x) => x.id === d.id); if (rv?.pair) st.cmpOurs = rv.pair; st.tab = 'compare'; return render(el, st);
+    case 'edit-price': {
+      const r = RIVALS.find((x) => x.id === d.rid);
+      if (!r) return;
+      st.form = { rid: r.id, rivalName: r.name, region: d.reg, ct: d.ct, price: r.prices[d.reg]?.[d.ct] || 0 };
+      st.modal = M.editPrice();
+      return render(el, st);
+    }
+    case 'save-price': {
+      const f = st.form, r = RIVALS.find((x) => x.id === f.rid);
+      const val = parseInt(f.price, 10);
+      if (!val || val <= 0) return toast('Enter a valid price in Rp');
+      r.prices[f.region] ||= { Retail: val, Grosir: val, Ecer: val };
+      r.prices[f.region][f.ct] = val;
+      r.prices[f.region].by = actorName();
+      r.prices[f.region].date = '2026-11-19';
+      st.modal = null; st.form = null;
+      rerenderAll();
+      return toast(`Updated ${f.region} ${f.ct} price to ${rp(val)}`);
+    }
+    case 'open-approve': {
+      const rep = REPORTS.find((x) => x.id === d.rep);
+      if (!rep) return;
+      st.form = { repId: rep.id, rivalName: rep.newName, catMode: 'existing', catId: CAT_TREE[0].id, subId: CAT_TREE[0].subs[0].id, newCatName: '', newSubName: '', priceAction: 'update' };
+      st.modal = M.approve();
+      return render(el, st);
+    }
+    case 'cat-mode': if (st.form) { st.form.catMode = d.cm; render(el, st); } return;
+    case 'price-action': if (st.form) { st.form.priceAction = d.pa; render(el, st); } return;
+    case 'confirm-approve': {
+      const f = st.form, rep = REPORTS.find((x) => x.id === f.repId);
+      if (!rep) return;
+      if (!rep.rivalId) {
+        const name = (f.rivalName || '').trim();
+        if (!name) return toast('Enter the rival product name');
+        let catId = f.catId, subId = f.subId;
+        if (f.catMode === 'new') {
+          const cn = (f.newCatName || '').trim() || 'New Category';
+          const sn = (f.newSubName || '').trim() || cn + ' Standard';
+          catId = 'cat-' + Date.now(); subId = 'sub-' + Date.now();
+          CAT_TREE.push({ id: catId, name: cn, subs: [{ id: subId, name: sn }], competitorsOnly: true });
+        }
+        const nid = 'r' + (RIVALS.length + 10);
+        const p = Number(rep.price) || 10000;
+        const pObj = () => ({ Retail: p, Grosir: Math.max(1000, p - 500), Ecer: p + 1000, by: actorName(), date: '2026-11-19' });
+        RIVALS.push({ id: nid, name, catId, subId, pair: '', prices: { 'JAWA BARAT': pObj(), 'JAWA TENGAH': pObj(), 'JAWA TIMUR': pObj() } });
+        rep.status = 'APPROVED';
+        st.modal = null; st.form = null;
+        rerenderAll();
+        return toast(`Approved & added "${name}" to global Competitors`);
+      } else {
+        const r = RIVALS.find((x) => x.id === rep.rivalId);
+        if (r && f.priceAction === 'update') {
+          r.prices[rep.region][rep.custType] = rep.price;
+          r.prices[rep.region].by = actorName();
+          r.prices[rep.region].date = '2026-11-19';
+        }
+        rep.status = 'APPROVED';
+        st.modal = null; st.form = null;
+        rerenderAll();
+        return toast(f.priceAction === 'update' ? `Approved and updated ${rep.region} ${rep.custType} price to ${rp(rep.price)}` : 'Approved and kept as shop note only');
+      }
+    }
+    case 'merge-rep': {
+      const rep = REPORTS.find((x) => x.id === d.rep), r = RIVALS.find((x) => x.id === d.rid);
+      if (rep && r) {
+        rep.rivalId = r.id;
+        rep.newName = '';
+        rerenderAll();
+        return toast(`Linked report to existing "${r.name}" — ready to approve`);
+      }
+      return;
+    }
+    case 'open-reject': st.form = { repId: d.rep, reason: '' }; st.modal = M.reject(); return render(el, st);
+    case 'confirm-reject': {
+      const rep = REPORTS.find((x) => x.id === st.form.repId);
+      if (!st.form.reason.trim()) return toast('Enter a short reason before rejecting');
+      if (rep) rep.status = 'REJECTED';
+      st.modal = null; st.form = null;
+      rerenderAll();
+      return toast('Report rejected and salesman notified');
+    }
+    case 'open-add-rival': {
+      st.form = { name: '', pair: '', catMode: 'existing', catId: CAT_TREE[0].id, subId: CAT_TREE[0].subs[0].id, newCatName: '', newSubName: '', retail: 11000, grosir: 10500, ecer: 12000 };
+      st.modal = M.addRival();
+      return render(el, st);
+    }
+    case 'save-rival': {
+      const f = st.form, name = (f.name || '').trim();
+      if (!name) return toast('Enter the rival product name');
+      let catId = f.catId, subId = f.subId;
+      if (f.catMode === 'new') {
+        const cn = (f.newCatName || '').trim();
+        if (!cn) return toast('Enter the new category name');
+        const sn = (f.newSubName || '').trim() || cn + ' Standard';
+        catId = 'cat-' + Date.now(); subId = 'sub-' + Date.now();
+        CAT_TREE.push({ id: catId, name: cn, subs: [{ id: subId, name: sn }], competitorsOnly: true });
+      }
+      const mk = () => ({ Retail: parseInt(f.retail, 10) || 10000, Grosir: parseInt(f.grosir, 10) || 9500, Ecer: parseInt(f.ecer, 10) || 11000, by: actorName(), date: '2026-11-19' });
+      const nid = 'r' + (RIVALS.length + 10);
+      RIVALS.push({ id: nid, name, catId, subId, pair: f.pair, prices: { 'JAWA BARAT': mk(), 'JAWA TENGAH': mk(), 'JAWA TIMUR': mk() } });
+      st.selRival = nid; st.modal = null; st.form = null;
+      rerenderAll();
+      return toast(`Added "${name}" to ${catLabel(catId, subId)}`);
+    }
+    case 'open-report': {
+      st.form = { rivalId: d.rid || RIVALS[0].id, newName: '', shop: 'AMANAH BARU', price: 10800, custType: 'Retail', shelf: 'Eye level', speed: 'Fast', note: '' };
+      st.modal = M.reportForm();
+      return render(el, st);
+    }
+    case 'submit-report': {
+      const f = st.form;
+      if (!f.rivalId && !f.newName.trim()) return toast('Pick a rival or type the new product name');
+      REPORTS.unshift({ id: 'rep' + Date.now(), shop: f.shop || 'AMANAH BARU', region: T4_REGION, salesman: actorName(), custType: f.custType, rivalId: f.rivalId, newName: f.newName.trim(), price: parseInt(f.price, 10) || 10000, shelf: f.shelf, promo: 'None', speed: f.speed, photo: true, date: '2026-11-19', note: f.note.trim(), status: 'WAITING' });
+      st.modal = null; st.form = null; st.tab = 'reports';
+      rerenderAll();
+      return toast('Report sent to admin approval queue');
+    }
+    case 'open-add-cat': st.form = { mode: 'add-cat', title: 'Add shared category', name: '' }; st.modal = M.catDialog(); return render(el, st);
+    case 'open-ren-cat': { const c = CAT_TREE.find((x) => x.id === d.cid); st.form = { mode: 'ren-cat', cid: c.id, title: 'Rename category', name: c.name }; st.modal = M.catDialog(); return render(el, st); }
+    case 'open-add-sub': { const c = CAT_TREE.find((x) => x.id === d.cid); st.form = { mode: 'add-sub', cid: c.id, title: `Add sub-category under ${c.name}`, name: '' }; st.modal = M.catDialog(); return render(el, st); }
+    case 'save-cat': {
+      const f = st.form, nm = (f.name || '').trim();
+      if (!nm) return toast('Enter a name');
+      if (f.mode === 'add-cat') CAT_TREE.push({ id: 'c' + Date.now(), name: nm, subs: [{ id: 's' + Date.now(), name: nm + ' Standard' }], competitorsOnly: true });
+      else if (f.mode === 'ren-cat') { const c = CAT_TREE.find((x) => x.id === f.cid); if (c) c.name = nm; }
+      else if (f.mode === 'add-sub') { const c = CAT_TREE.find((x) => x.id === f.cid); if (c) c.subs.push({ id: 's' + Date.now(), name: nm }); }
+      st.modal = null; st.form = null;
+      rerenderAll();
+      return toast(`Saved "${nm}" in shared categories`);
+    }
+  }
+}
+
+/* ---------- Top Controls ---------- */
+const segs = (id, fn) => document.getElementById(id).addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  b.parentElement.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', x === b));
+  fn(b.dataset.v);
+});
+segs('role', (v) => {
+  G.tier = v;
+  apps.forEach((a) => { a.st.modal = null; a.st.form = null; });
+  rerenderAll();
+  toast(v === 'T2' || v === 'T3' ? `${actorName()}: sees all 3 regions and approves any region` : v === 'T4' ? 'T4 Regional Admin: JAWA BARAT prices & approvals only' : `${actorName()}: read-only JAWA BARAT prices + report rivals`);
+});
+segs('theme', (v) => { if (v) document.documentElement.dataset.theme = v; else delete document.documentElement.dataset.theme; });
+segs('motion', (v) => { G.motion = v === 'on'; document.body.classList.toggle('nomotion', !G.motion); });
+
+mount(document.getElementById('pc'), 'pc');
+mount(document.getElementById('ph'), 'phone');
+</script>
+</body>
+</html>
