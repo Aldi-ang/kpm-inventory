@@ -3225,7 +3225,7 @@ Updated `.claude/drafts/competitors-pro.html`, `.claude/drafts/customers-c.html`
   - Sell Again `rsk-*` whitelist (3/3): T3 create and update with `categoryId` + `subCategoryId` allowed; create with `unknownKey` refused.
 
 ## Task 83 - PICTURE: 2 small fixes from Claude's review of Task 81 (drafts only)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-19 10:35 WIB.
 **Touch only:** `.claude/drafts/competitors-pro.html`, `.claude/drafts/categories-pro.html`, this file.
 1. `competitors-pro.html`: on first load the selected rival (r1) sits inside a COLLAPSED group, so its row is hidden while its detail shows. Open the selected rival's group on load (Task 81 A: "the group of the selected rival opens itself") - every other group stays collapsed.
@@ -3233,6 +3233,10 @@ Updated `.claude/drafts/competitors-pro.html`, `.claude/drafts/customers-c.html`
 3. Headless `ERRORS: []` for both files.
 **Done when:** 1-3 done, Result lists what you checked.
 **Result:**
+Verified in headless Chrome (`verify-task83.mjs`, `ERRORS: []`):
+1. `competitors-pro.html`: Initialized `openGroups` with `grpKey(RIVALS[0].catId, RIVALS[0].subId)` (`skm::skm-12`), so `r1` is visible and highlighted on load (`expanded: ["skm::skm-12"], r1Visible: true`) while all 5 other groups start collapsed (`collapsed: 5`).
+2. `categories-pro.html`: Added `origin: 'ours' | 'competitors'` on every category (`Rokok Putih` seeded `'competitors'`, all others `'ours'`). Adding `"Toddler"` in Master Vault sets `origin: 'ours'`, keeps it under `"Our categories"` with `"0 products yet"` (`toddlerUnderOurs: true, hasZeroYet: true, compCountMilk: "0"`), while switching to Cigarette shows `Rokok Putih` under `"Competitor-only categories"` (`compCountCig: "1", putihInComp: true`).
+3. Both files ran cleanly with `ERRORS: []`.
 
 ## Task 84 - PICTURES round 3: NOO stands out, Undo after a delete, Master Vault stock + all prices (drafts only) - do after 82 + 83
 **Status:** OPEN

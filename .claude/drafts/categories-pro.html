@@ -265,9 +265,9 @@ const COMPANIES = {
     label: 'Milk Company (example)',
     unit: 'Box', packLabels: ['Packs per Box', 'Box per Carton', 'Carton per Pallet'],
     cats: [
-      { id: 'kid', name: 'Kid', subs: [{ id: 'kid-silver', name: 'Kid Silver' }, { id: 'kid-bronze', name: 'Kid Bronze' }, { id: 'kid-gold', name: 'Kid Gold' }], rivals: 2 },
-      { id: 'adult', name: 'Adult', subs: [{ id: 'adult-choc', name: 'Adult Chocolate' }, { id: 'adult-van', name: 'Adult Vanilla' }, { id: 'adult-ban', name: 'Adult Banana Choco' }], rivals: 3 },
-      { id: 'elder', name: 'Elder', subs: [], rivals: 1 },
+      { id: 'kid', name: 'Kid', origin: 'ours', subs: [{ id: 'kid-silver', name: 'Kid Silver' }, { id: 'kid-bronze', name: 'Kid Bronze' }, { id: 'kid-gold', name: 'Kid Gold' }], rivals: 2 },
+      { id: 'adult', name: 'Adult', origin: 'ours', subs: [{ id: 'adult-choc', name: 'Adult Chocolate' }, { id: 'adult-van', name: 'Adult Vanilla' }, { id: 'adult-ban', name: 'Adult Banana Choco' }], rivals: 3 },
+      { id: 'elder', name: 'Elder', origin: 'ours', subs: [], rivals: 1 },
     ],
     products: [
       { id: 'm1', name: 'NutriKid Silver 400g (example)', desc: 'Daily growth formula for ages 1-3', catId: 'kid', subId: 'kid-silver', stock: 180, minStock: 40, p1: 12, p2: 6, p3: 4, cost: 34000, retail: 42000, grosir: 39000, ecer: 45000 },
@@ -283,11 +283,11 @@ const COMPANIES = {
     label: 'Cigarette Company (example)',
     unit: 'Bks', packLabels: ['Bks per Slop', 'Slop per Bal', 'Bal per Karton'],
     cats: [
-      { id: 'skt', name: 'SKT', subs: [{ id: 'skt-12', name: 'SKT 12' }, { id: 'skt-16', name: 'SKT 16' }], rivals: 1 },
-      { id: 'skm', name: 'SKM', subs: [{ id: 'skm-12', name: 'SKM 12' }, { id: 'skm-16', name: 'SKM 16' }, { id: 'skm-flav', name: 'SKM Flavour' }], rivals: 2 },
-      { id: 'mild', name: 'Mild', subs: [{ id: 'mild-16', name: 'Mild 16' }, { id: 'mild-menthol', name: 'Mild Menthol' }], rivals: 2 },
-      { id: 'putih', name: 'Rokok Putih', subs: [{ id: 'putih-12', name: 'Putih 12' }, { id: 'putih-20', name: 'Putih 20' }], rivals: 1 },
-      { id: 'kretek', name: 'Kretek', subs: [{ id: 'kretek-12', name: 'Kretek 12' }], rivals: 0 },
+      { id: 'skt', name: 'SKT', origin: 'ours', subs: [{ id: 'skt-12', name: 'SKT 12' }, { id: 'skt-16', name: 'SKT 16' }], rivals: 1 },
+      { id: 'skm', name: 'SKM', origin: 'ours', subs: [{ id: 'skm-12', name: 'SKM 12' }, { id: 'skm-16', name: 'SKM 16' }, { id: 'skm-flav', name: 'SKM Flavour' }], rivals: 2 },
+      { id: 'mild', name: 'Mild', origin: 'ours', subs: [{ id: 'mild-16', name: 'Mild 16' }, { id: 'mild-menthol', name: 'Mild Menthol' }], rivals: 2 },
+      { id: 'putih', name: 'Rokok Putih', origin: 'competitors', subs: [{ id: 'putih-12', name: 'Putih 12' }, { id: 'putih-20', name: 'Putih 20' }], rivals: 1 },
+      { id: 'kretek', name: 'Kretek', origin: 'ours', subs: [{ id: 'kretek-12', name: 'Kretek 12' }], rivals: 0 },
     ],
     products: [
       { id: 'c1', name: 'Cello Coffee & Caramel (example)', desc: 'Signature flavour SKM', catId: 'skm', subId: 'skm-flav', stock: 4200, minStock: 600, p1: 10, p2: 20, p3: 4, cost: 7200, retail: 8500, grosir: 8000, ecer: 9500 },
@@ -399,8 +399,8 @@ function render(el, st) {
   const co = curCo(), ph = st.mode === 'phone';
   if (!co.cats.some((c) => c.id === st.selCat)) st.selCat = co.cats[0]?.id || '';
   const activeCat = co.cats.find((c) => c.id === st.selCat) || co.cats[0];
-  const ourCats = co.cats.filter((c) => productsInCat(c.id).length > 0);
-  const compCats = co.cats.filter((c) => productsInCat(c.id).length === 0);
+  const ourCats = co.cats.filter((c) => c.origin !== 'competitors' || productsInCat(c.id).length > 0);
+  const compCats = co.cats.filter((c) => c.origin === 'competitors' && productsInCat(c.id).length === 0);
   const totalSubs = co.cats.reduce((n, c) => n + c.subs.length, 0);
   const lowCount = co.products.filter((p) => Number(p.stock) < Number(p.minStock)).length;
 
@@ -489,16 +489,17 @@ function renderCatsFrame(co, st, activeCat, ourCats, compCats, ph) {
   const newMatch = findCatMatch(st.newCatName, null);
   const renderCatRow = (c) => {
     const nProd = productsInCat(c.id).length;
+    const isCompOnly = c.origin === 'competitors' && nProd === 0;
     return `<button type="button" class="cat-row ${activeCat && c.id === activeCat.id ? 'sel' : ''}" data-pick-cat="${c.id}">
       <div class="nm">
         <b>${esc(c.name)}</b>
         <div class="meta">
           <span>${c.subs.length} sub-categor${c.subs.length === 1 ? 'y' : 'ies'}</span>
           <span>·</span>
-          <span>${nProd} of ours</span>
+          <span>${nProd === 0 ? (isCompOnly ? '0 of ours' : '0 products yet') : `${nProd} of ours`}</span>
         </div>
       </div>
-      ${nProd === 0 ? `<span class="st g">competitors only</span>` : `<span class="st">${nProd} ours</span>`}
+      ${isCompOnly ? `<span class="st g">competitors only</span>` : `<span class="st">${nProd === 0 ? '0 products yet' : `${nProd} ours`}</span>`}
     </button>`;
   };
 
@@ -541,8 +542,8 @@ function renderCatsFrame(co, st, activeCat, ourCats, compCats, ph) {
           <div>
             <h2 style="margin:0;font-size:17px">${esc(activeCat.name)}</h2>
             <div class="dim" style="font-size:12px;margin-top:3px">
-              ${prods.length} of our products · Main warehouse only
-              ${prods.length === 0 ? ` · <span class="st g">competitors only · 0 of ours</span>` : ''}
+              ${prods.length === 0 ? (activeCat.origin === 'competitors' ? '0 of our products' : '0 products yet') : `${prods.length} of our products`} · Main warehouse only
+              ${activeCat.origin === 'competitors' && prods.length === 0 ? ` · <span class="st g">competitors only · 0 of ours</span>` : ''}
             </div>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -617,7 +618,7 @@ function renderProductFormFrame(co, st, ourCats, compCats) {
           <div class="pf-2">
             <div>
               <label class="pf-lbl">Category</label>
-              ${pickerButton({ kind: 'category', target: 'pf-cat', label: cat ? cat.name : 'Pick category', sub: cat && productsInCat(cat.id).length === 0 ? 'Competitor-only (0 of ours)' : 'Our category' })}
+              ${pickerButton({ kind: 'category', target: 'pf-cat', label: cat ? cat.name : 'Pick category', sub: cat && cat.origin === 'competitors' && productsInCat(cat.id).length === 0 ? 'Competitor-only (0 of ours)' : 'Our category' })}
             </div>
             <div>
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:6px">
@@ -856,8 +857,8 @@ function onClick(e, el, st) {
       const m = findCatMatch(name, null);
       if (m?.exact) return toast(`"${m.label}" already exists`);
       const id = 'cat-' + Date.now();
-      co.cats.push({ id, name, subs: [], rivals: 0 });
-      st.selCat = id; st.compCatsOpen = true; st.newCatName = ''; st.modalVal = ''; st.modal = null;
+      co.cats.push({ id, name, origin: 'ours', subs: [], rivals: 0 });
+      st.selCat = id; st.newCatName = ''; st.modalVal = ''; st.modal = null;
       rerenderAll(); return toast(`Category "${name}" added`);
     }
     case 'open-ren-cat': {

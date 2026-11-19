@@ -389,7 +389,7 @@ function toast(msg) {
 const apps = [];
 const freshState = (mode) => ({
   mode, tab: 'rivals', q: '', selRival: 'r1', phDetail: false,
-  openGroups: new Set(), // Task 81 A: ALL category groups start COLLAPSED by default
+  openGroups: new Set([grpKey(RIVALS[0].catId, RIVALS[0].subId)]), // Task 83.1: open selected rival's group on load; all other groups stay collapsed
   cmpOurs: 'cof', cmpRival: 'r1', cmpRegion: 'JAWA BARAT', cmpType: 'Retail',
   prev: {}, modal: null, form: null, picker: null,
 });
