@@ -3509,7 +3509,7 @@ Updated `.claude/drafts/customers-c.html` and verified every wording rule + all 
 | **8-second Undo** | Bottom toast-bar `#toastUndo` (`UNDO`) | Bottom toast-bar `#toastUndo` (`UNDO`) after shop/folder/dup delete | **OK** (`parity.shopInfoActions / resetFolderAndUndo: true`) |
 
 ## Task 89 - READ-ONLY: paste-ready Console steps for Change 29 (product categories rules)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-19 18:05 WIB (Claude, quota at 95%; Antigravity leads until Sat 2026-11-21). Claude reviewed 86, 87, 88: all OK, drafts only, nothing pushed.
 **Touch only:** `.claude/drafts/console-change-29.md` (new), this file.
 1. Read the Task 80 plan (Step 0 rules) + Task 82 fix + `rules-test/test-product-categories.mjs`. Write the exact text Aldi pastes into the Firebase Console Rules editor: WHERE (quote the existing line it goes after), WHAT (the block), and a 3-line "after publish, check this" list.
@@ -3517,6 +3517,12 @@ Updated `.claude/drafts/customers-c.html` and verified every wording rule + all 
 3. Plain English, numbered steps a non-programmer can follow; no "kamu".
 **Done when:** the file exists, every pasted block matches the draft rules the emulator test proved, test count in the Result.
 **Result:**
+1. Created `.claude/drafts/console-change-29.md` with 3 numbered plain-English Console steps (no `"kamu"`), quoting the exact surrounding lines in `firestore.rules`:
+   - **Step 1 of 3 (`categoryManager` helper):** paste after the closing `}` of `function sellDamagedHolder(bossUid)` (`firestore.rules:155`) and before `function isSalesman(bossUid) {` (`firestore.rules:157`).
+   - **Step 2 of 3 (`rsk-*` Sell Again whitelist):** replace `firestore.rules:668-676` inside `match /products/{productId}` to add `'categoryId', 'subCategoryId',` right after `'category',` on both `allow create` (`L669`) and `allow update` (`L674`).
+   - **Step 3 of 3 (`match /product_categories/{catId}`):** paste after the closing `}` of `match /products/{productId}` (`firestore.rules:678`) and before `// [CHANGE 24 — DRAFT] the Sell Again holder writes its own line` (`firestore.rules:679`).
+   - Includes the 3-line **"After publish, check this"** checklist at the bottom.
+2. Emulator run (`npx firebase emulators:exec --only firestore --project demo-kpm-rules "node rules-test/test-product-categories.mjs"`): **`30 passed, 0 failed` (exit code 0)**. `firestore.rules` on disk untouched.
 
 ## Task 90 - READ-ONLY: check the Task 86 Undo plan against the real code
 **Status:** OPEN
