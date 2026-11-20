@@ -1,7 +1,7 @@
 # The one job - Categories + Competitors: from approved pictures to the build (step 0 + step 1)
 
 
-**Status 2026-11-20 08:35 WIB (Claude, quota ~95%):** Antigravity 86-94 reviewed. LIVE 1b13865f: Undo for shop delete + step 1 pre-Console helpers (categories readers, `canManageCategories`) + Claude fix (benchmark fallback). Change 29 applied into `firestore.rules` (01600afc, emulator loads it clean) - Aldi copies the WHOLE file into the Console after checking it already has "CHANGE 23" + "CHANGE 24" (else the whole-file paste publishes them too); then the [NEEDS CONSOLE CHANGE 29 FIRST] steps of Task 92. Antigravity 95 (Undo fixes from Task 93) + 96 (next Undo row) OPEN.
+**Status 2026-11-20 08:35 WIB (Claude, quota ~95%):** Antigravity 86-94 reviewed. LIVE 1b13865f: Undo for shop delete + step 1 pre-Console helpers (categories readers, `canManageCategories`) + Claude fix (benchmark fallback). Change 29 applied into `firestore.rules` (01600afc, emulator loads it clean) - PUBLISHED by Aldi 2026-11-20 on the main project; demo project kpm-demo-f4d74 still needs the same whole-file paste before category code goes live; then the [NEEDS CONSOLE CHANGE 29 FIRST] steps of Task 92. Antigravity 95 (Undo fixes from Task 93) + 96 (next Undo row) OPEN.
 **Written 2026-11-19 09:05 WIB (Claude).** Design is DECIDED. Full note with his words: A-Brain `Brainstorm/2026-11-19_categories-subcategories-and-rival-catalog.md` (DECISION section).
 
 ## What he decided (2026-11-19)
