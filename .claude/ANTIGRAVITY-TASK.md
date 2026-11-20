@@ -3653,7 +3653,7 @@ Because the current codebase stores the product category string in **`product.ty
 | **12** | `src/config/demoSeed.js:116-123` | `type: 'SKT'`, `type: 'SKM'`, `type: 'PROMO'` on demo seed products | Demo company seeded products. | `resolveCategoryName(prod, cats)` falls back to `prod.type \|\| 'MISC'`, so demo products without `categoryId` continue grouping under `'SKT'` and `'SKM'` automatically. |
 
 ## Task 93 - READ-ONLY: where else a "deleted" shop still shows during the 8 s Undo
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-19 18:55 WIB (Claude). Claude reviewed 91 (5b178ee0) + 92 (52eef4af): OK; re-ran the gates itself: undef clean, selfcheck 3031/0, build 0, audit 726/0. 91 is NOT pushed yet (not rendered).
 **Touch only:** this file.
 1. Task 91 hides the shop only inside `CustomerManagement` (filter on `isPendingUndo`). List every OTHER screen that reads the same customers list (map, reports, sales terminal shop picker, receivables, ...) with `file:line`, and say if the shop stays visible there for the 8 s.
@@ -3661,6 +3661,41 @@ Because the current codebase stores the product category string in **`product.ty
 3. Also say: `beforeunload` in `src/utils/delayedWrite.js` calls `e.preventDefault()` - does the browser then show its own "Leave site?" box on a normal reload? Is that box needed for the write to reach the local cache, or can it go?
 **Done when:** the screen table + one fix line + the answer to 3.
 **Result:**
+
+### 1. Every OTHER screen and engine that reads the `customers` list during the 8-second Undo window
+
+Because Task 91 (`5b178ee0`) filtered `rawCustomers` only inside `src/components/CustomerManager.jsx:194-196`, **`customers` (`src/App.jsx:604`), `displayCustomers` (`src/App.jsx:3905-3906`), `permittedCustomers` (`src/App.jsx:4483-4516`), and `displayPermitted` (`src/App.jsx:4519-4520`) still include the pending-delete shop for those 8 seconds.** Every other screen that reads them therefore still sees the shop during the 8 s if the admin switches tabs before the timer expires:
+
+| Screen / Consumer | `file:line` where `customers` is passed | Prop / source list | How that screen reads it (`file:line`) | Stays visible there during the 8 s today? |
+|---|---|---|---|---|
+| **Command Center (`DashboardView`)** | `src/App.jsx:5130` | `customers={displayCustomers}` | `src/components/DashboardView.jsx:37` (forwards `customers` to `DashboardBenchmarks` and KPI shop counts) | **YES** (for 8 s until `deleteDoc` fires) |
+| **Map System (`MapMissionControl`)** | `src/App.jsx:5139` | `customers={userRole === 'ADMIN' ? displayCustomers : displayPermitted}` | `src/MapMissionControl.jsx:463` (map pins, area filter, and shop sheet) | **YES** (for 8 s) |
+| **Journey Plan (`JourneyView`)** | `src/App.jsx:5142` | `customers={displayPermitted}` | `src/JourneyView.jsx:153` (route shop picker, map pins, and stop cards) | **YES** (for 8 s) |
+| **Fleet & Canvas (`FleetCanvasManager`)** | `src/App.jsx:5155` | `customers={customers}` | `src/FleetCanvasManager.jsx:148` (van chest `TITIP` tab reads `mappedBy` / shop owner after hand-off) | **YES** (for 8 s) |
+| **Agent Profile (`AgentProfileView`)** | `src/App.jsx:5183` | `customers={customers}` | `src/AgentProfileView.jsx:386` (today's route `CLOSED ?/?` counter and Titip shop lookup) | **YES** (for 8 s) |
+| **Sales Terminal (`MerchantSalesView`)** | `src/App.jsx:5505` | `customers={displayCustomers}` | `src/MerchantSalesView.jsx:117` (shop search/picker dropdown, geofence pin lookup, customer brief) | **YES** (for 8 s) |
+| **Sale Engine (`useTransactionEngine`)** | `src/App.jsx:3911` | `customers: displayCustomers` | `src/hooks/useTransactionEngine.js:24` (matches `storeKey(c.name)` on sale commit to update `lastOrderDate` or skip NOO creation) | **YES** (for 8 s) |
+| **Receivables & Consignment (`ConsignmentFinanceView`)** | `src/App.jsx:5547` | `customers={customers}` | `src/ConsignmentFinanceView.jsx:49, 173` (`customerByName` lookup for GPS, WhatsApp phone, `tempoDays`, and `mappedBy`; note: debt rows themselves come from `consignmentTx`) | **YES** (profile metadata stays attached for 8 s) |
+| **EOD Setoran (`EODReconciliationView`)** | `src/App.jsx:5587` | `customers={displayPermitted}` | `src/EODReconciliationView.jsx:163` (route completion / stores lookup) | **YES** (for 8 s) |
+| **Reports (`HistoryReportView`)** | `src/App.jsx:5697` | `customers={displayCustomers}` | `src/components/HistoryReportView.jsx:200` (shop level/region lookup on transaction history) | **YES** (for 8 s) |
+| **Settings -> Customer Access (`SettingsView`)** | `src/App.jsx:5725` | `customers={customers}` | `src/components/SettingsView.jsx:626` (derives `Provinsi > Kabupaten > Kecamatan` folder checkboxes from `customers`) | **YES** (for 8 s) |
+| **Admin Hand-off & Grosir Approvals (`App.jsx`)** | `src/App.jsx:1987, 2203-2207` | `customers` | `handleConfirmGrosirHold` (`L1987`) and `handleAdminApproveTransfer` (`L2203`) | **YES** (for 8 s) |
+
+### 2. Smallest fix (ONE place so every screen gets it automatically)
+
+Put `usePendingUndo()` and the `!isPendingUndo(\`cust:\${c.id}\`)` filter in **`src/hooks/useDatabaseSync.js:37, 286`** (where `customers` leaves `useDatabaseSync` into `src/App.jsx:604`):
+- At `src/hooks/useDatabaseSync.js:12`: `import { isPendingUndo, usePendingUndo } from '../utils/delayedWrite.js';`
+- At `src/hooks/useDatabaseSync.js:38`: call `const undoVersion = usePendingUndo();` and memoize `const visibleCustomers = useMemo(() => (noFolders ? NO_SHOPS : customers).filter(c => !isPendingUndo(\`cust:\${c.id}\`)), [noFolders, customers, undoVersion]);`
+- At `src/hooks/useDatabaseSync.js:286`: return `customers: visibleCustomers` (and then the duplicate filter in `src/components/CustomerManager.jsx:194-196` can be removed).
+-Because `App.jsx:604` receives `customers` from `useDatabaseSync.js:286` and derives `displayCustomers` (`App.jsx:3905`), `permittedCustomers` (`App.jsx:4483`), and `displayPermitted` (`App.jsx:4519`) from it, **that single line hides a pending-delete shop across all 12 screens and engines at once.**
+
+### 3. Does `e.preventDefault()` in `beforeunload` (`src/utils/delayedWrite.js:168`) trigger the browser's native "Leave site?" dialog, and can it go?
+
+- **Yes — it triggers the browser's native `"Leave site? Changes you made may not be saved"` dialog** whenever the user reloads or closes the tab inside the 8-second Undo window (assuming the user has interacted with the page, which they just did by clicking Delete -> Confirm). That native browser dialog violates the app's zero-browser-dialog rule (`src/config/integration.audit.mjs:238`, Group 10 *"No browser dialog anywhere"*).
+- **It is NOT needed for the write to reach the local cache, and `e.preventDefault(); e.returnValue = '';` can go:**
+  - `src/config/firebase.js:65` initializes Firestore with `persistentLocalCache({ tabManager: persistentMultipleTabManager() })`.
+  - When `flushAllPendingWrites()` runs synchronously inside `beforeunload` / `pagehide` (`src/utils/delayedWrite.js:165-174`), calling `deleteDoc(...)` synchronously enqueues the mutation in the Firestore SDK's local queue and starts the local IndexedDB transaction during the unload turn without needing `e.preventDefault()` to block the reload with a native popup.
+  - Removing `e.preventDefault(); e.returnValue = '';` at `src/utils/delayedWrite.js:168-169` (keeping only `if (pending.size > 0) flushAllPendingWrites();` on `beforeunload` and `pagehide`) flushes the delete cleanly with zero native browser dialog.
 
 ## Task 94 - BUILD (local only): the Step 1 steps marked [CAN BUILD BEFORE CONSOLE PUBLISH] in Task 92
 **Status:** OPEN
