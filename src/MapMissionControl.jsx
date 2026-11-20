@@ -19,6 +19,7 @@ import { loadBorderCache, saveBorderCache, clearBorderCache } from './utils/bord
 import { revenueOf, debtCredit } from './utils/revenueRule';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
+import { scheduleDelayedWrite } from './utils/delayedWrite.js';
 import { ExpeditionLayer } from './components/Expedition.jsx';
 import { expedition, visibleTeam } from './utils/expedition';
 import { hasClearance } from './config/permissions';
@@ -1275,17 +1276,19 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, consignmentTx, inven
     };
 
     const handleDeleteStore = async () => {
-        if (!await confirmAction(`⚠️ DANGER: Are you absolutely sure you want to PERMANENTLY DELETE ${store.name}? This cannot be undone.`)) return;
+        if (!await confirmAction(`⚠️ DANGER: Are you absolutely sure you want to PERMANENTLY DELETE ${store.name}?`)) return;
         if (!db || !appId || !user || !store?.id) return;
-        try {
-            const userId = user?.uid || user?.id;
-            await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id));
-            notify(`✅ ${store.name} has been eradicated from the database.`);
-            setSelectedStore(null);
-        } catch (error) {
-            console.error("Delete Error:", error);
-            notify("Failed to delete store.");
-        }
+        const userId = user?.uid || user?.id;
+        const storeId = store.id;
+        const storeName = store.name || 'shop';
+        scheduleDelayedWrite({
+            key: `cust:${storeId}`,
+            label: storeName,
+            onOptimistic: () => setSelectedStore(null),
+            commit: async () => {
+                await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, storeId));
+            },
+        });
     };
 
     const getWhatsappLink = () => { 

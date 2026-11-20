@@ -3750,7 +3750,7 @@ Put `usePendingUndo()` and the `!isPendingUndo(\`cust:\${c.id}\`)` filter in **`
    - `node src/config/integration.audit.mjs`: **`726 passed, 0 failed, 726 checks`**
 
 ## Task 96 - BUILD (local only): Undo for the NEXT delete row from Task 90's table
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-20 08:35 WIB (Claude).
 **Touch only:** the one component file that row names, `src/config/logicFixes.selfcheck.mjs`, `src/config/patchNotes.js`, this file. Do after 95.
 1. Pick the smallest, most-used row left in Task 90's table (not #10). Say which and why in the Result.
@@ -3758,3 +3758,16 @@ Put `usePendingUndo()` and the `!isPendingUndo(\`cust:\${c.id}\`)` filter in **`
 3. Self-check line + one patch-notes line (en + id, plain words). Gates green, counts in the Result. Commit locally. NEVER push.
 **Done when:** that one row has the 8 s Undo, gates green.
 **Result:**
+1. **Picked Row #14 — Shop delete from the Map sheet (`src/MapMissionControl.jsx:1278-1290`, `handleDeleteStore`):**
+   - *Why:* It is the smallest (12-line) and highest-frequency shop delete left in Task 90's table (every admin opening a store pin on Map System sees its Delete button), touches zero money and zero stock, and shares the `cust:` collection prefix with #10 so Task 95's global `useDatabaseSync.js` filter hides the shop across every screen automatically.
+2. **Implementation (`src/MapMissionControl.jsx:22, 1278-1290`):**
+   - `handleDeleteStore` now routes through `scheduleDelayedWrite({ key: \`cust:\${storeId}\`, label: storeName, onOptimistic: () => setSelectedStore(null), commit: async () => { await deleteDoc(doc(db, \`artifacts/\${appId}/users/\${userId}/customers\`, storeId)); } })` after `confirmAction(...)`.
+   - `onOptimistic` closes the Map store sheet immediately, and Task 95's `!isPendingUndo(\`cust:\${c.id}\`)` in `src/hooks/useDatabaseSync.js:288` hides the pin and shop across Map System, Customer Directory, Sales Terminal, Journey Plan, and all other screens during the 8-second Undo window.
+3. **Self-check, patch notes, & 5 BUILD gates after last edit (all green):**
+   - `src/config/logicFixes.selfcheck.mjs:14860-14867` (`MAP SHOP DELETE 8-SECOND UNDO (Task 96, 2026-11-20)`): verifies `handleDeleteStore` routes through `scheduleDelayedWrite` with `cust:` key and optimistic sheet close, paired with `useDatabaseSync.js` global filtering.
+   - `src/config/patchNotes.js:6-8`: added `2026-11-20` entry (`en` + `id`, plain words, no `"kamu"`).
+   - `node src/config/undef.check.mjs`: **`clean`** (`no new undefined identifiers in src (4 pinned)`)
+   - `node src/config/logicFixes.selfcheck.mjs`: **`3042 passed, 0 failed, 3042 checks`**
+   - Every `src/config/*.selfcheck.mjs` (14 suites): **all 14 exited 0 (`0 RED`)**
+   - `npm run build`: **exit 0** (`built in 10.63s`)
+   - `node src/config/integration.audit.mjs`: **`726 passed, 0 failed, 726 checks`**

@@ -14857,5 +14857,14 @@ section('SHOP UNDO GLOBAL FILTER, CLEAN BEFOREUNLOAD & DEAD CODE CLEANUP (Task 9
   ok('REGRESSION (Task 95.3): ResidentEvilInventory removes dead usedCatCounts',
      !inv.includes('usedCatCounts'));
 }
+section('MAP SHOP DELETE 8-SECOND UNDO (Task 96, 2026-11-20)');
+{
+  const mmc = read('src/MapMissionControl.jsx');
+  const sync = read('src/hooks/useDatabaseSync.js');
+  ok('REGRESSION (Task 96, Row #14): MapMissionControl handleDeleteStore routes through scheduleDelayedWrite with cust: key prefix and closes sheet optimistically, while useDatabaseSync hides pending cust: across all screens',
+     mmc.includes("import { scheduleDelayedWrite } from './utils/delayedWrite.js'") &&
+     /const handleDeleteStore = async \(\) => \{[\s\S]{0,420}scheduleDelayedWrite\(\{[\s\S]{0,220}key:\s*`cust:\$\{storeId\}`[\s\S]{0,220}onOptimistic:\s*\(\) => setSelectedStore\(null\)/.test(mmc) &&
+     sync.includes('!isPendingUndo(`cust:${c.id}`)'));
+}
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

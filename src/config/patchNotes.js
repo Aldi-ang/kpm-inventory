@@ -3,6 +3,9 @@
    Every finished job that changes what people see adds a line here before its push (CLAUDE.md, Publishing).
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
+  { date: '2026-11-20', items: [
+    { kind: 'new', en: 'Map System: deleting a shop from the map panel now also waits 8 seconds with the "Undo" bar before permanently removing it.', id: 'Sistem Peta: menghapus toko dari panel peta kini juga menunggu 8 detik dengan bilah "Undo" sebelum toko benar-benar dihapus.' },
+  ] },
   { date: '2026-11-19', items: [
     { kind: 'new', en: 'Customer Directory: after confirming a shop delete, an "Undo" bar now stays at the bottom for 8 seconds before the shop is permanently removed.', id: 'Daftar Pelanggan: setelah konfirmasi hapus toko, bilah "Undo" kini muncul di bawah selama 8 detik sebelum toko benar-benar dihapus.' },
   ] },
