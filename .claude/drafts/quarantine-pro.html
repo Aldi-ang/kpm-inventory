@@ -12,6 +12,7 @@
   --danger-ink:#7A2118;--danger:#9E2F23;--danger-wash:rgba(158,47,35,.10);
   --page:#C9C0AA;--sel:rgba(138,90,18,.09);--wash:rgba(138,90,18,.13);
   --f:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --ease-out:cubic-bezier(0.23,1,0.32,1);
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --ground:#0B0A09;--panel:#121110;--raised:#171513;--inset:#0E0D0C;--line:#24211D;--line-2:#3A3631;
@@ -29,7 +30,8 @@
 ::selection{background:var(--wash);color:var(--ink)}
 body{margin:0;background:var(--page);color:var(--ink);font:14px/1.45 var(--f);font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;padding:20px 24px 72px}
 button,input,select{font:inherit;color:inherit}
-button{cursor:pointer;background:transparent;border:0;padding:0}
+button{cursor:pointer;background:transparent;border:0;padding:0;transition:transform 150ms var(--ease-out),background-color 150ms var(--ease-out),border-color 150ms var(--ease-out),color 150ms var(--ease-out),opacity 150ms var(--ease-out)}
+button:active{transform:scale(0.97)}
 svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
 /* Top draft controls */
@@ -57,7 +59,8 @@ svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;stro
 .segtabs button{min-height:36px;padding:0 14px;border-radius:7px;font-size:12.5px;font-weight:600;color:var(--ink-muted);border:1px solid var(--line);background:var(--panel);display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
 .segtabs button.on{background:var(--wash);border-color:var(--accent-edge);color:var(--ink);font-weight:700}
 
-.kpi{margin-left:auto;display:flex;align-items:center;gap:18px;font-size:13px;color:var(--ink-muted);flex-wrap:wrap}
+.kpi{margin-left:auto;display:flex;align-items:center;gap:18px;font-size:13px;color:var(--ink-muted);flex-wrap:wrap;transition:opacity 180ms var(--ease-out),transform 180ms var(--ease-out)}
+.kpi.is-entering{opacity:0;transform:translateY(4px)}
 .kpi .val{font-size:17px;font-weight:700;color:var(--accent-ink);margin-left:4px}
 .kpi b{color:var(--ink);font-weight:700}
 .kpi .sep{width:1px;height:16px;background:var(--line-2)}
@@ -66,21 +69,26 @@ svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;stro
 .whbar{display:flex;align-items:center;gap:8px;padding:10px 24px;border-bottom:1px solid var(--line);background:var(--ground);overflow-x:auto;scrollbar-width:none}
 .whbtn{min-height:36px;padding:6px 14px;border-radius:9px;border:1px solid var(--line-2);background:var(--panel);color:var(--ink-muted);font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
 .whbtn.on{background:var(--wash);border-color:var(--accent-edge);color:var(--ink);font-weight:700}
-.whbtn .badge{padding:1px 7px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid var(--line);background:var(--inset);color:var(--ink-muted)}
+.whbtn .badge{padding:1px 7px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid var(--line);background:var(--inset);color:var(--ink-muted);transition:border-color 150ms var(--ease-out),color 150ms var(--ease-out)}
 .whbtn.on .badge{border-color:var(--accent-edge);color:var(--accent-ink)}
 .whbtn.hasdmg .badge{color:var(--danger-ink);border-color:var(--danger)}
 
 /* Workspace: master-detail */
-.work{flex:1;min-height:0;display:flex}
-.list{width:430px;flex:none;border-right:1px solid var(--line);display:flex;flex-direction:column;background:var(--panel);min-height:0}
+.work{flex:1;min-height:0;display:flex;transition:opacity 190ms var(--ease-out),transform 190ms var(--ease-out)}
+.work.is-wh-entering{opacity:0;transform:translateY(6px)}
+.list{width:430px;flex:none;border-right:1px solid var(--line);display:flex;flex-direction:column;background:var(--panel);min-height:0;transition:opacity 180ms var(--ease-out),transform 180ms var(--ease-out)}
+.list.is-ph-entering{opacity:0;transform:translateX(-12px)}
 .search-row{padding:12px 16px;border-bottom:1px solid var(--line)}
-.search-box{display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;border:1px solid var(--line-2);border-radius:9px;background:var(--inset)}
+.search-box{display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;border:1px solid var(--line-2);border-radius:9px;background:var(--inset);transition:border-color 150ms var(--ease-out)}
+.search-box:focus-within{border-color:var(--accent-edge)}
 .search-box input{flex:1;min-width:0;border:0;background:transparent;outline:none;font-size:13px}
 .rows{flex:1;overflow-y:auto;padding:8px 0}
-.row{width:100%;text-align:left;padding:12px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;border-left:3px solid transparent;transition:background-color .15s}
-.row:hover{background:var(--inset)}
+.row{width:100%;text-align:left;padding:12px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;border-left:3px solid transparent;transition:opacity 190ms var(--ease-out),transform 190ms var(--ease-out),background-color 150ms var(--ease-out),border-color 150ms var(--ease-out)}
+.row:active{transform:scale(0.992)}
 .row.sel{background:var(--sel);border-left-color:var(--gold)}
-.row .ic{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--inset);display:flex;align-items:center;justify-content:center;color:var(--ink-dim);flex:none}
+.row.is-leaving{opacity:0;transform:translateX(-16px) scale(0.985);pointer-events:none}
+.row.is-updated{opacity:0.76;transform:translateX(3px)}
+.row .ic{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--inset);display:flex;align-items:center;justify-content:center;color:var(--ink-dim);flex:none;transition:border-color 150ms var(--ease-out),color 150ms var(--ease-out)}
 .row.sel .ic{border-color:var(--accent-edge);color:var(--accent-ink)}
 .row .meta{flex:1;min-width:0}
 .row .nm{font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.3}
@@ -90,7 +98,8 @@ svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;stro
 .row .hpp{font-size:11.5px;color:var(--ink-dim);margin-top:1px}
 .tag-rsk{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:5px;border:1px solid var(--accent-edge);font-size:10.5px;font-weight:700;color:var(--accent-ink);vertical-align:middle}
 
-.detail{flex:1;min-width:0;overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;gap:16px;background:var(--ground)}
+.detail{flex:1;min-width:0;overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;gap:16px;background:var(--ground);transition:opacity 180ms var(--ease-out),transform 180ms var(--ease-out)}
+.detail.is-entering{opacity:0;transform:translateY(6px)}
 .card{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:16px 18px}
 .sec-lbl{font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:8px}
 .dhead{display:flex;align-items:center;gap:14px}
@@ -104,22 +113,31 @@ svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;stro
 
 /* Action buttons (all outlined, zero neon, zero gradient glow) */
 .acts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.actbtn{min-height:42px;padding:10px 14px;border-radius:10px;border:1px solid var(--line-2);background:var(--raised);display:flex;align-items:center;gap:10px;text-align:left;transition:background-color .15s,border-color .15s}
-.actbtn:hover{border-color:var(--accent-edge);background:var(--wash)}
+.actbtn{min-height:42px;padding:10px 14px;border-radius:10px;border:1px solid var(--line-2);background:var(--raised);display:flex;align-items:center;gap:10px;text-align:left}
+.actbtn:active{transform:scale(0.985)}
 .actbtn.primary{border-color:var(--accent-edge);background:var(--wash)}
 .actbtn.danger{border-color:var(--danger);color:var(--danger-ink)}
-.actbtn.danger:hover{background:var(--danger-wash)}
 .actbtn .atxt{flex:1;min-width:0}
 .actbtn .atxt b{display:block;font-size:13px;font-weight:700}
 .actbtn .atxt span{display:block;font-size:11.5px;color:var(--ink-dim);margin-top:1px}
 .actbtn.danger .atxt span{color:var(--danger-ink);opacity:.85}
+
+@media (hover:hover) and (pointer:fine){
+  .row:not(.sel):hover{background:var(--inset)}
+  .whbtn:not(.on):hover{border-color:var(--accent-edge);color:var(--ink)}
+  .actbtn:hover{border-color:var(--accent-edge);background:var(--wash)}
+  .actbtn.danger:hover{background:var(--danger-wash);border-color:var(--danger)}
+  .pill:not(.on):hover{border-color:var(--accent-edge);color:var(--ink)}
+  .btn:hover{opacity:.92}
+}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:36px;padding:0 14px;border-radius:9px;border:1px solid var(--accent-edge);background:var(--wash);color:var(--ink);font-size:12.5px;font-weight:600;white-space:nowrap}
 .btn.quiet{border-color:var(--line-2);background:var(--panel);color:var(--ink-muted)}
 .btn.danger{border-color:var(--danger);background:var(--danger-wash);color:var(--danger-ink)}
 
 /* History view */
-.hist-wrap{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--ground)}
+.hist-wrap{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--ground);transition:opacity 180ms var(--ease-out),transform 180ms var(--ease-out)}
+.hist-wrap.is-entering{opacity:0;transform:translateY(6px)}
 .hist-tools{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 24px;border-bottom:1px solid var(--line);background:var(--panel)}
 .hist-tools select,.hist-tools .search-box{height:36px;border-radius:9px;border:1px solid var(--line-2);background:var(--inset);padding:0 10px;font-size:12.5px}
 .pill-row{display:flex;flex-wrap:wrap;gap:6px}
@@ -132,27 +150,31 @@ svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;stro
 .hrow .hmeta{font-size:12px;color:var(--ink-dim);margin-top:4px}
 .hrow .hnote{font-size:12.5px;color:var(--ink-muted);margin-top:6px;padding:6px 10px;border-radius:7px;background:var(--inset);border:1px solid var(--line)}
 
-/* In-page blurred dialog */
-.ov{position:absolute;inset:0;z-index:50;background:rgba(10,8,6,.55);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px}
-.dlg{width:100%;max-width:440px;border:1px solid var(--line-2);border-radius:14px;background:var(--panel);box-shadow:0 24px 60px -20px rgba(0,0,0,.65);overflow:hidden}
+/* In-page blurred dialog (open + close + step transition) */
+.ov{position:absolute;inset:0;z-index:50;background:rgba(10,8,6,.55);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;transition:opacity 180ms var(--ease-out)}
+.ov.is-open{opacity:1}
+.ov.is-closing{opacity:0;pointer-events:none;transition-duration:150ms}
+.dlg{width:100%;max-width:440px;border:1px solid var(--line-2);border-radius:14px;background:var(--panel);box-shadow:0 24px 60px -20px rgba(0,0,0,.65);overflow:hidden;opacity:0;transform:scale(0.96) translateY(8px);transition:transform 200ms var(--ease-out),opacity 180ms var(--ease-out)}
+.ov.is-open .dlg{opacity:1;transform:scale(1) translateY(0)}
+.ov.is-closing .dlg{opacity:0;transform:scale(0.96) translateY(6px);transition-duration:155ms}
 .dlg-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);background:var(--raised)}
 .dlg-hd h3{margin:0;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
-.dlg-bd{padding:16px 18px;display:flex;flex-direction:column;gap:14px;max-height:72vh;overflow-y:auto}
+.dlg-bd{padding:16px 18px;display:flex;flex-direction:column;gap:14px;max-height:72vh;overflow-y:auto;transition:opacity 150ms var(--ease-out),transform 150ms var(--ease-out)}
+.dlg-bd.is-step-entering{opacity:0;transform:translateY(4px)}
 .fld label{display:block;font-size:12px;font-weight:600;color:var(--ink-muted);margin-bottom:5px}
-.fld input,.fld select{width:100%;min-height:40px;padding:0 12px;border-radius:9px;border:1px solid var(--line-2);background:var(--inset);outline:none;font-size:13.5px}
+.fld input,.fld select{width:100%;min-height:40px;padding:0 12px;border-radius:9px;border:1px solid var(--line-2);background:var(--inset);outline:none;font-size:13.5px;transition:border-color 150ms var(--ease-out)}
 .fld input:focus,.fld select:focus{border-color:var(--accent-edge)}
 .dlg-ft{display:flex;justify-content:flex-end;gap:10px;padding:12px 18px;border-top:1px solid var(--line);background:var(--raised)}
 
-/* Toast with self-drawing gold check */
-.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:99;display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:10px;border:1px solid var(--accent-edge);background:var(--panel);box-shadow:0 14px 36px -12px rgba(0,0,0,.6);font-size:13.5px;font-weight:600;max-width:calc(100vw - 28px)}
+/* Toast with interruptible enter/exit transition + self-drawing gold check */
+.toast{position:fixed;bottom:18px;left:50%;transform:translate(-50%,14px) scale(0.97);opacity:0;z-index:99;display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:10px;border:1px solid var(--accent-edge);background:var(--panel);box-shadow:0 14px 36px -12px rgba(0,0,0,.6);font-size:13.5px;font-weight:600;max-width:calc(100vw - 28px);transition:transform 200ms var(--ease-out),opacity 200ms var(--ease-out)}
+.toast.is-shown{opacity:1;transform:translate(-50%,0) scale(1)}
+.toast.is-leaving{opacity:0;transform:translate(-50%,12px) scale(0.98);transition-duration:160ms}
 .ck{width:20px;height:20px;stroke:var(--gold);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex:none}
-.ck path{stroke-dasharray:30;stroke-dashoffset:0;animation:draw .35s ease-out both}
-@keyframes draw{from{stroke-dashoffset:30}to{stroke-dashoffset:0}}
-.lite *{transition:none!important;animation:none!important}
-.lite .ov{backdrop-filter:none!important}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.ck path{stroke-dasharray:30;stroke-dashoffset:30;transition:stroke-dashoffset 240ms var(--ease-out)}
+.toast.is-shown .ck path{stroke-dashoffset:0}
 
-/* Phone 390px adjustments */
+/* Phone 390px adjustments + phone slide transitions */
 .phone .sb{height:26px;display:flex;justify-content:space-between;align-items:center;padding:0 16px;font-size:11px;color:var(--ink-dim)}
 .phone .top{padding:6px 16px 0;gap:0;flex-direction:column;align-items:stretch}
 .phone .top h1{margin:0 0 8px;font-size:16px}
@@ -166,6 +188,9 @@ svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;stro
 .phone .work{flex-direction:column}
 .phone .list{width:100%;border-right:0;flex:1}
 .phone .row{min-height:56px;padding:10px 14px}
+.phone .ph-detail-wrap{flex:1;display:flex;flex-direction:column;min-height:0;transition:opacity 200ms var(--ease-out),transform 200ms var(--ease-out)}
+.phone .ph-detail-wrap.is-entering{opacity:0;transform:translateX(16px)}
+.phone .ph-detail-wrap.is-leaving{opacity:0;transform:translateX(16px);transition-duration:160ms}
 .phone .detail{padding:14px}
 .phone .dstats{grid-template-columns:1fr 1fr;gap:10px}
 .phone .acts{grid-template-columns:1fr}
@@ -178,7 +203,17 @@ svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;stro
 .phone .fld input,.phone .fld select{min-height:44px}
 .phone .dlg-hd button{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
 .phone .ov{align-items:flex-end;padding:0}
-.phone .dlg{border-radius:18px 18px 0 0;max-width:100%}
+.phone .dlg{border-radius:18px 18px 0 0;max-width:100%;opacity:0;transform:translateY(100%);transition:transform 220ms var(--ease-out),opacity 180ms var(--ease-out)}
+.phone .ov.is-open .dlg{opacity:1;transform:translateY(0)}
+.phone .ov.is-closing .dlg{opacity:0;transform:translateY(100%);transition-duration:165ms}
+
+/* Every animation and blur completely off in Lite mode and with prefers-reduced-motion */
+.lite *,.lite *::before,.lite *::after{transition:none!important;animation:none!important}
+.lite .ov{backdrop-filter:none!important}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition:none!important;animation:none!important}
+  .ov{backdrop-filter:none!important}
+}
 </style>
 </head>
 <body>
@@ -268,17 +303,44 @@ const STATE = {
   toast: null,
 };
 
+const prefersReduced = () => Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+const canAnimate = () => STATE.motion !== 'lite' && !prefersReduced();
+function animateEnter(el, cls = 'is-entering') {
+  if (!el || !canAnimate()) return;
+  el.classList.add(cls);
+  el.offsetWidth;
+  requestAnimationFrame(() => el.classList.remove(cls));
+}
+
 let toastTimer = null;
+let toastLeaveTimer = null;
 function showToast(msg) {
   STATE.toast = { id: Date.now(), text: msg };
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { STATE.toast = null; renderToast(); }, 4500);
+  clearTimeout(toastLeaveTimer);
   renderToast();
+  const stay = canAnimate() ? 4300 : 4500;
+  toastTimer = setTimeout(dismissToast, stay);
+}
+function dismissToast() {
+  const el = document.querySelector('#toast-root .toast');
+  if (!el || !canAnimate()) {
+    STATE.toast = null;
+    renderToast();
+    return;
+  }
+  el.classList.remove('is-shown');
+  el.classList.add('is-leaving');
+  toastLeaveTimer = setTimeout(() => { STATE.toast = null; renderToast(); }, 170);
 }
 function renderToast() {
   const r = document.getElementById('toast-root');
   if (!STATE.toast) { r.innerHTML = ''; return; }
   r.innerHTML = `<div class="toast" role="status"><svg class="ck" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10"/><path d="M6.5 11.4l3 3 6-6.4"/></svg><span>${esc(STATE.toast.text)}</span></div>`;
+  const el = r.firstElementChild;
+  if (!canAnimate()) { el.classList.add('is-shown'); return; }
+  el.offsetWidth;
+  requestAnimationFrame(() => el.classList.add('is-shown'));
 }
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (m) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
@@ -299,7 +361,7 @@ function setRole(role) {
   STATE.role = role;
   if (role === 'T3' && STATE.subTab === 'history') STATE.subTab = 'active';
   document.querySelectorAll('[data-role-set]').forEach(b => b.classList.toggle('on', b.dataset.roleSet === role));
-  renderAll();
+  renderAll({ animWork: true });
 }
 
 function methodMeta(m) {
@@ -312,13 +374,51 @@ function methodMeta(m) {
   }[m];
 }
 
+let modalCloseTimer = null;
+let commitBusy = false;
 function openAction(id, method, host = 'pc') {
   const item = STATE.items.find(x => x.id === id);
-  if (!item) return;
+  if (!item || commitBusy) return;
+  clearTimeout(modalCloseTimer);
   STATE.modal = { host, item, method, cheap: false, step: 'form', values: { qty: item.damagedStock, reason: '', rtvRef: '', agentId: 's1', toWarehouse: 'BANDUNG', price: Math.max(1000, item.retail - 2000) } };
-  renderAll();
+  renderModalSlot(host, 'open');
 }
-function closeModal() { STATE.modal = null; renderAll(); }
+function closeModal(onDone) {
+  if (!STATE.modal) { if (onDone) onDone(); return; }
+  const host = STATE.modal.host;
+  const slot = document.querySelector(`#${host}-root .modal-slot`);
+  const ov = slot ? slot.querySelector('.ov') : null;
+  clearTimeout(modalCloseTimer);
+  if (!ov || !canAnimate()) {
+    STATE.modal = null;
+    if (slot) slot.innerHTML = '';
+    if (onDone) onDone();
+    return;
+  }
+  ov.classList.remove('is-open');
+  ov.classList.add('is-closing');
+  modalCloseTimer = setTimeout(() => {
+    STATE.modal = null;
+    if (slot) slot.innerHTML = '';
+    if (onDone) onDone();
+  }, 165);
+}
+function toggleCheap(val) {
+  if (!STATE.modal) return;
+  const host = STATE.modal.host;
+  const dlg = document.querySelector(`#${host}-root .dlg`);
+  const qtyEl = dlg?.querySelector('[name="qty"]');
+  const priceEl = dlg?.querySelector('[name="price"]');
+  if (qtyEl) STATE.modal.values.qty = Number(qtyEl.value || STATE.modal.values.qty);
+  if (priceEl) STATE.modal.values.price = Number(priceEl.value || STATE.modal.values.price);
+  STATE.modal.cheap = val;
+  renderModalSlot(host, 'stay');
+}
+function backToForm() {
+  if (!STATE.modal) return;
+  STATE.modal.step = 'form';
+  renderModalSlot(STATE.modal.host, 'step');
+}
 function stepConfirm(e) {
   e.preventDefault();
   const fd = new FormData(e.target);
@@ -340,30 +440,35 @@ function stepConfirm(e) {
   if (m.method === 'SAMPLING' && !m.values.reason) { showToast('Write a short reason'); return; }
   if (m.method === 'RTV' && !m.values.rtvRef) { showToast('Enter the Surat Jalan Retur number'); return; }
   m.step = 'confirm';
-  renderAll();
+  renderModalSlot(m.host, 'step');
 }
-function commitAction() {
-  const { item, method, cheap, values } = STATE.modal;
+
+function finalizeCommit(snapshot) {
+  const { itemId, itemName, facility, hppUnit, retailUnit, method, cheap, values } = snapshot;
   const qty = values.qty;
-  item.damagedStock -= qty;
-  if (item.damagedStock <= 0) STATE.items = STATE.items.filter(x => x.id !== item.id);
-  const priceUsed = cheap ? values.price : item.retail;
+  const target = STATE.items.find(x => x.id === itemId);
+  const stillLeft = target ? target.damagedStock - qty > 0 : false;
+  if (target) {
+    target.damagedStock -= qty;
+    if (target.damagedStock <= 0) STATE.items = STATE.items.filter(x => x.id !== itemId);
+  }
+  const priceUsed = cheap ? values.price : retailUnit;
   let detail = '';
   let hpp = 0;
   if (method === 'REPAIR') {
     detail = 'Repaired and returned to good Master Vault stock' + (values.reason ? ' · ' + values.reason : '');
   } else if (method === 'SELL') {
-    detail = `Put on sale as "${item.name} · RUSAK" at ${rp(priceUsed)} per Bks`;
+    detail = `Put on sale as "${itemName} · RUSAK" at ${rp(priceUsed)} per Bks`;
   } else if (method === 'SAMPLING') {
-    const dest = item.facility === 'MASTER' ? values.toWarehouse : item.facility;
+    const dest = facility === 'MASTER' ? values.toWarehouse : facility;
     detail = `Converted to promo sample (${qty} pcs) in ${dest} · ${values.reason}`;
-    hpp = qty * item.hpp;
+    hpp = qty * hppUnit;
   } else if (method === 'RTV') {
     detail = `Returned to factory · Surat Jalan Retur ${values.rtvRef}`;
-    hpp = qty * item.hpp;
+    hpp = qty * hppUnit;
   } else if (method === 'PENALTY') {
     const st = STAFF.find(s => s.id === values.agentId);
-    hpp = qty * item.retail;
+    hpp = qty * retailUnit;
     detail = `Charged to ${st ? st.name : 'Staff'} (${rp(hpp)} added to daily EOD Setoran)`;
   }
   STATE.logs.unshift({
@@ -371,35 +476,131 @@ function commitAction() {
     method,
     time: 'Just now',
     qty,
-    productName: item.name,
-    facility: item.facility,
+    productName: itemName,
+    facility,
     by: STATE.role === 'T2' ? 'Owner' : 'Area Admin',
     detail,
     hpp,
   });
-  const facRows = STATE.items.filter(x => x.facility === STATE.fac);
+  const facRows = STATE.items.filter(x => x.facility === STATE.fac && x.damagedStock > 0);
+  const prevSel = STATE.selId;
   if (!facRows.some(x => x.id === STATE.selId)) {
     STATE.selId = facRows[0]?.id || null;
     if (!STATE.selId) STATE.phOpen = false;
   }
-  STATE.modal = null;
-  showToast(`${methodMeta(method).label}: ${qty} Bks ${item.name} saved.`);
-  renderAll();
+  commitBusy = false;
+  showToast(`${methodMeta(method).label}: ${qty} Bks ${itemName} saved.`);
+  renderAll({ animDetail: prevSel !== STATE.selId });
+  if (stillLeft && canAnimate()) {
+    document.querySelectorAll(`[data-row-id="${itemId}"]`).forEach(el => animateEnter(el, 'is-updated'));
+  }
 }
 
-function renderHost(targetId, isPhone) {
-  const root = document.getElementById(targetId);
-  const hostKey = isPhone ? 'ph' : 'pc';
-  const isT2 = STATE.role === 'T2';
+function commitAction() {
+  if (!STATE.modal || commitBusy) return;
+  commitBusy = true;
+  const { item, method, cheap, values } = STATE.modal;
+  const snapshot = {
+    itemId: item.id,
+    itemName: item.name,
+    facility: item.facility,
+    hppUnit: item.hpp,
+    retailUnit: item.retail,
+    method,
+    cheap,
+    values: { ...values },
+  };
+  const willLeave = (item.damagedStock - values.qty) <= 0;
+  closeModal(() => {
+    if (willLeave && canAnimate()) {
+      const leavingRows = document.querySelectorAll(`[data-row-id="${snapshot.itemId}"]`);
+      const phDetail = STATE.phOpen ? document.querySelector('#ph-root .ph-detail-wrap') : null;
+      if (phDetail) phDetail.classList.add('is-leaving');
+      leavingRows.forEach(r => r.classList.add('is-leaving'));
+      if (leavingRows.length || phDetail) {
+        setTimeout(() => finalizeCommit(snapshot), 205);
+        return;
+      }
+    }
+    finalizeCommit(snapshot);
+  });
+}
+
+function selectRow(id, isPhone) {
+  if (commitBusy) return;
+  if (isPhone) {
+    STATE.selId = id;
+    STATE.phOpen = true;
+    renderHost('pc-root', false, { animDetail: true });
+    renderHost('ph-root', true, { animPhDetail: true });
+    return;
+  }
+  if (STATE.selId === id) return;
+  STATE.selId = id;
+  document.querySelectorAll('#pc-root .row').forEach(r => r.classList.toggle('sel', r.dataset.rowId === id));
+  const pcDetail = document.querySelector('#pc-root .detail');
+  if (pcDetail) {
+    pcDetail.innerHTML = buildDetailHtml(getActiveSelection().sel, 'pc');
+    animateEnter(pcDetail, 'is-entering');
+  } else {
+    renderHost('pc-root', false, { animDetail: true });
+  }
+  renderHost('ph-root', true);
+}
+
+function closePhoneDetail() {
+  if (!STATE.phOpen) return;
+  const wrap = document.querySelector('#ph-root .ph-detail-wrap');
+  if (!wrap || !canAnimate()) {
+    STATE.phOpen = false;
+    renderHost('ph-root', true);
+    return;
+  }
+  wrap.classList.add('is-leaving');
+  setTimeout(() => {
+    STATE.phOpen = false;
+    renderHost('ph-root', true, { animPhList: true });
+  }, 165);
+}
+
+function switchFacility(key) {
+  if (STATE.fac === key && !STATE.phOpen) return;
+  STATE.fac = key;
+  STATE.selId = null;
+  STATE.phOpen = false;
+  renderAll({ animWork: true });
+}
+
+function switchSubTab(tab) {
+  if (STATE.subTab === tab) return;
+  STATE.subTab = tab;
+  STATE.phOpen = false;
+  renderAll({ animWork: true });
+}
+
+function onSearchInput(sourceHostKey, value) {
+  STATE.search = value;
+  const otherHost = sourceHostKey === 'pc' ? 'ph-root' : 'pc-root';
+  const otherInp = document.querySelector(`#${otherHost} .search-box input`);
+  if (otherInp && otherInp.value !== value) otherInp.value = value;
+  const { filtered, sel } = getActiveSelection();
+  ['pc-root', 'ph-root'].forEach(hid => {
+    const rowsEl = document.querySelector(`#${hid} .rows`);
+    if (rowsEl) rowsEl.innerHTML = buildRowsHtml(filtered, sel, hid === 'ph-root');
+  });
+}
+
+function getActiveSelection() {
   const facItems = STATE.items.filter(i => i.facility === STATE.fac && i.damagedStock > 0);
-  const filtered = facItems.filter(i => i.name.toLowerCase().includes(STATE.search.toLowerCase()));
+  const q = STATE.search.trim().toLowerCase();
+  const filtered = facItems.filter(i => i.name.toLowerCase().includes(q));
   const sel = filtered.find(i => i.id === STATE.selId) || facItems.find(i => i.id === STATE.selId) || filtered[0] || facItems[0] || null;
-  const totalBks = facItems.reduce((s, i) => s + i.damagedStock, 0);
-  const totalHpp = facItems.reduce((s, i) => s + i.damagedStock * i.hpp, 0);
+  return { facItems, filtered, sel };
+}
 
-  const histRows = STATE.logs.filter(l => (STATE.histFac === 'ALL' || l.facility === STATE.histFac) && (STATE.histMethod === 'ALL' || l.method === STATE.histMethod));
-
-  const detailHtml = sel ? `
+function buildDetailHtml(sel, hostKey) {
+  const isT2 = STATE.role === 'T2';
+  return sel ? `
     <div class="card">
       <div class="dhead">
         <span class="big"><svg class="i"><use href="#i-pack"/></svg></span>
@@ -442,102 +643,143 @@ function renderHost(targetId, isPhone) {
           </button>` : ''}
       </div>
     </div>` : `<div class="card"><p style="margin:0;color:var(--ink-dim)">No damaged goods left in this warehouse.</p></div>`;
+}
+
+function buildRowsHtml(filtered, sel, isPhone) {
+  return filtered.length ? filtered.map(it => `
+    <button type="button" data-row-id="${it.id}" class="row ${sel && sel.id === it.id ? 'sel' : ''}" onclick="selectRow('${it.id}',${isPhone ? 'true' : 'false'})">
+      <span class="ic"><svg class="i"><use href="#i-pack"/></svg></span>
+      <span class="meta">
+        <span class="nm" style="display:block">${esc(it.name)}${it.damagedFrom ? '<span class="tag-rsk">RUSAK</span>' : ''}</span>
+        <span class="sub" style="display:block">${rp(it.hpp)} HPP / Bks</span>
+      </span>
+      <span class="rgt">
+        <span class="qty" style="display:block">${num(it.damagedStock)} Bks</span>
+        <span class="hpp" style="display:block">${rp(it.damagedStock * it.hpp)}</span>
+      </span>
+    </button>`).join('') : `<p style="padding:20px;color:var(--ink-dim);margin:0">No damaged products in ${esc(FACILITIES.find(f => f.key === STATE.fac)?.name || STATE.fac)}.</p>`;
+}
+
+function buildModalHtml() {
+  const m = STATE.modal;
+  if (!m) return '';
+  const meta = methodMeta(m.method);
+  const full = m.item.retail;
+  if (m.step === 'confirm') {
+    const targetPrice = m.cheap ? m.values.price : full;
+    const summary = m.method === 'SELL'
+      ? `Put ${m.values.qty} Bks of ${m.item.name} back on sale as "${m.item.name} · RUSAK" at ${rp(targetPrice)} per Bks?`
+      : `${meta.label} for ${m.values.qty} Bks of ${m.item.name}?`;
+    return `
+      <div class="ov" onclick="if(event.target===this)closeModal()">
+        <div class="dlg" role="dialog" aria-modal="true" aria-label="Confirm action">
+          <div class="dlg-hd"><h3>Confirm action</h3><button type="button" onclick="closeModal()" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+          <div class="dlg-bd"><p style="margin:0;line-height:1.5">${esc(summary)}</p></div>
+          <div class="dlg-ft">
+            <button type="button" class="btn quiet" onclick="backToForm()">Back</button>
+            <button type="button" class="btn ${meta.danger ? 'danger' : ''}" onclick="commitAction()">Confirm</button>
+          </div>
+        </div>
+      </div>`;
+  }
+  return `
+    <div class="ov" onclick="if(event.target===this)closeModal()">
+      <form class="dlg" onsubmit="stepConfirm(event)" role="dialog" aria-modal="true" aria-label="${esc(meta.label)}">
+        <div class="dlg-hd"><h3><svg class="i"><use href="${meta.icon}"/></svg>${esc(meta.label)}</h3><button type="button" onclick="closeModal()" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+        <div class="dlg-bd">
+          <div style="padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--raised)">
+            <div style="font-weight:700">${esc(m.item.name)}</div>
+            <div style="font-size:12px;color:var(--accent-ink);margin-top:2px">Available in damaged stock: ${num(m.item.damagedStock)} Bks</div>
+          </div>
+          <div class="fld">
+            <label>Quantity (Bks)</label>
+            <input name="qty" type="number" min="1" max="${m.item.damagedStock}" value="${m.values.qty}" required>
+          </div>
+          ${m.method === 'REPAIR' ? `
+            <div class="fld">
+              <label>Repair note (optional)</label>
+              <input name="reason" value="${esc(m.values.reason)}" placeholder="e.g., Re-wrapped, excise seal intact">
+            </div>` : ''}
+          ${m.method === 'SELL' ? `
+            <div class="fld">
+              <label>Price per Bks</label>
+              <div class="segbox" style="width:100%;margin-bottom:8px">
+                <button type="button" style="flex:1" class="${!m.cheap ? 'on' : ''}" onclick="toggleCheap(false)">Full price · ${rp(full)}</button>
+                <button type="button" style="flex:1" class="${m.cheap ? 'on' : ''}" onclick="toggleCheap(true)">Lower price</button>
+              </div>
+              ${m.cheap ? `<input name="price" type="number" min="1" max="${full - 1}" value="${m.values.price}" required placeholder="Rp per Bks">` : ''}
+            </div>` : ''}
+          ${m.method === 'SAMPLING' ? `
+            ${m.item.facility === 'MASTER' ? `
+              <div class="fld"><label>Send promo pieces to</label>
+                <select name="toWarehouse">${FACILITIES.filter(f => f.key !== 'MASTER').map(f => `<option value="${f.key}" ${m.values.toWarehouse === f.key ? 'selected' : ''}>${f.name}</option>`).join('')}</select>
+              </div>` : ''}
+            <div class="fld"><label>Reason</label><input name="reason" value="${esc(m.values.reason)}" placeholder="e.g., Torn outer wrap, sealed packs" required></div>` : ''}
+          ${m.method === 'RTV' ? `
+            <div class="fld"><label>Surat Jalan Retur (RTV number)</label><input name="rtvRef" value="${esc(m.values.rtvRef)}" placeholder="e.g., SJR-2026-015" required></div>` : ''}
+          ${m.method === 'PENALTY' ? `
+            <div class="fld"><label>Charge staff member</label>
+              <select name="agentId">${STAFF.map(s => `<option value="${s.id}" ${m.values.agentId === s.id ? 'selected' : ''}>${s.name} (${s.role})</option>`).join('')}</select>
+            </div>
+            <div style="padding:10px 12px;border-radius:9px;border:1px solid var(--danger);background:var(--danger-wash);color:var(--danger-ink);font-size:12px">
+              This adds a fine to the selected person's daily EOD Setoran at ${rp(m.item.retail)} per Bks.
+            </div>` : ''}
+        </div>
+        <div class="dlg-ft">
+          <button type="button" class="btn quiet" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn ${meta.danger ? 'danger' : ''}">${m.method === 'SELL' ? 'Put on sale' : 'Review & confirm'}</button>
+        </div>
+      </form>
+    </div>`;
+}
+
+function renderModalSlot(hostKey, mode = 'open') {
+  const slot = document.querySelector(`#${hostKey}-root .modal-slot`);
+  if (!slot) return;
+  if (!STATE.modal || STATE.modal.host !== hostKey) {
+    slot.innerHTML = '';
+    return;
+  }
+  const existingOv = slot.querySelector('.ov');
+  if ((mode === 'step' || mode === 'stay') && existingOv && existingOv.classList.contains('is-open')) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = buildModalHtml().trim();
+    const nextDlg = tmp.querySelector('.dlg');
+    const curDlg = existingOv.querySelector('.dlg');
+    if (nextDlg && curDlg) {
+      curDlg.replaceWith(nextDlg);
+      if (mode === 'step') animateEnter(existingOv.querySelector('.dlg-bd'), 'is-step-entering');
+      return;
+    }
+  }
+  slot.innerHTML = buildModalHtml();
+  const ov = slot.querySelector('.ov');
+  if (!ov) return;
+  if (mode === 'stay' || !canAnimate()) {
+    ov.classList.add('is-open');
+    return;
+  }
+  ov.offsetWidth;
+  requestAnimationFrame(() => ov.classList.add('is-open'));
+}
+
+function renderHost(targetId, isPhone, anim = {}) {
+  const root = document.getElementById(targetId);
+  const hostKey = isPhone ? 'ph' : 'pc';
+  const isT2 = STATE.role === 'T2';
+  const { facItems, filtered, sel } = getActiveSelection();
+  const totalBks = facItems.reduce((s, i) => s + i.damagedStock, 0);
+  const totalHpp = facItems.reduce((s, i) => s + i.damagedStock * i.hpp, 0);
+  const histRows = STATE.logs.filter(l => (STATE.histFac === 'ALL' || l.facility === STATE.histFac) && (STATE.histMethod === 'ALL' || l.method === STATE.histMethod));
 
   const listHtml = `
     <div class="search-row">
       <div class="search-box">
         <svg class="i" style="color:var(--ink-dim)"><use href="#i-search"/></svg>
-        <input value="${esc(STATE.search)}" oninput="STATE.search=this.value;renderAll()" placeholder="Search damaged products">
+        <input value="${esc(STATE.search)}" oninput="onSearchInput('${hostKey}',this.value)" placeholder="Search damaged products">
       </div>
     </div>
-    <div class="rows">
-      ${filtered.length ? filtered.map(it => `
-        <button type="button" class="row ${sel && sel.id === it.id ? 'sel' : ''}" onclick="STATE.selId='${it.id}';${isPhone ? 'STATE.phOpen=true;' : ''}renderAll()">
-          <span class="ic"><svg class="i"><use href="#i-pack"/></svg></span>
-          <span class="meta">
-            <span class="nm" style="display:block">${esc(it.name)}${it.damagedFrom ? '<span class="tag-rsk">RUSAK</span>' : ''}</span>
-            <span class="sub" style="display:block">${rp(it.hpp)} HPP / Bks</span>
-          </span>
-          <span class="rgt">
-            <span class="qty" style="display:block">${num(it.damagedStock)} Bks</span>
-            <span class="hpp" style="display:block">${rp(it.damagedStock * it.hpp)}</span>
-          </span>
-        </button>`).join('') : `<p style="padding:20px;color:var(--ink-dim);margin:0">No damaged products in ${esc(FACILITIES.find(f => f.key === STATE.fac)?.name || STATE.fac)}.</p>`}
-    </div>`;
-
-  let modalHtml = '';
-  if (STATE.modal && STATE.modal.host === hostKey) {
-    const m = STATE.modal;
-    const meta = methodMeta(m.method);
-    const full = m.item.retail;
-    if (m.step === 'confirm') {
-      const targetPrice = m.cheap ? m.values.price : full;
-      const summary = m.method === 'SELL'
-        ? `Put ${m.values.qty} Bks of ${m.item.name} back on sale as "${m.item.name} · RUSAK" at ${rp(targetPrice)} per Bks?`
-        : `${meta.label} for ${m.values.qty} Bks of ${m.item.name}?`;
-      modalHtml = `
-        <div class="ov">
-          <div class="dlg" role="dialog" aria-modal="true" aria-label="Confirm action">
-            <div class="dlg-hd"><h3>Confirm action</h3><button type="button" onclick="closeModal()" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
-            <div class="dlg-bd"><p style="margin:0;line-height:1.5">${esc(summary)}</p></div>
-            <div class="dlg-ft">
-              <button type="button" class="btn quiet" onclick="STATE.modal.step='form';renderAll()">Back</button>
-              <button type="button" class="btn ${meta.danger ? 'danger' : ''}" onclick="commitAction()">Confirm</button>
-            </div>
-          </div>
-        </div>`;
-    } else {
-      modalHtml = `
-        <div class="ov">
-          <form class="dlg" onsubmit="stepConfirm(event)" role="dialog" aria-modal="true" aria-label="${esc(meta.label)}">
-            <div class="dlg-hd"><h3><svg class="i"><use href="${meta.icon}"/></svg>${esc(meta.label)}</h3><button type="button" onclick="closeModal()" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
-            <div class="dlg-bd">
-              <div style="padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--raised)">
-                <div style="font-weight:700">${esc(m.item.name)}</div>
-                <div style="font-size:12px;color:var(--accent-ink);margin-top:2px">Available in damaged stock: ${num(m.item.damagedStock)} Bks</div>
-              </div>
-              <div class="fld">
-                <label>Quantity (Bks)</label>
-                <input name="qty" type="number" min="1" max="${m.item.damagedStock}" value="${m.values.qty}" required>
-              </div>
-              ${m.method === 'REPAIR' ? `
-                <div class="fld">
-                  <label>Repair note (optional)</label>
-                  <input name="reason" value="${esc(m.values.reason)}" placeholder="e.g., Re-wrapped, excise seal intact">
-                </div>` : ''}
-              ${m.method === 'SELL' ? `
-                <div class="fld">
-                  <label>Price per Bks</label>
-                  <div class="segbox" style="width:100%;margin-bottom:8px">
-                    <button type="button" style="flex:1" class="${!m.cheap ? 'on' : ''}" onclick="STATE.modal.cheap=false;renderAll()">Full price · ${rp(full)}</button>
-                    <button type="button" style="flex:1" class="${m.cheap ? 'on' : ''}" onclick="STATE.modal.cheap=true;renderAll()">Lower price</button>
-                  </div>
-                  ${m.cheap ? `<input name="price" type="number" min="1" max="${full - 1}" value="${m.values.price}" required placeholder="Rp per Bks">` : ''}
-                </div>` : ''}
-              ${m.method === 'SAMPLING' ? `
-                ${m.item.facility === 'MASTER' ? `
-                  <div class="fld"><label>Send promo pieces to</label>
-                    <select name="toWarehouse">${FACILITIES.filter(f => f.key !== 'MASTER').map(f => `<option value="${f.key}">${f.name}</option>`).join('')}</select>
-                  </div>` : ''}
-                <div class="fld"><label>Reason</label><input name="reason" value="${esc(m.values.reason)}" placeholder="e.g., Torn outer wrap, sealed packs" required></div>` : ''}
-              ${m.method === 'RTV' ? `
-                <div class="fld"><label>Surat Jalan Retur (RTV number)</label><input name="rtvRef" value="${esc(m.values.rtvRef)}" placeholder="e.g., SJR-2026-015" required></div>` : ''}
-              ${m.method === 'PENALTY' ? `
-                <div class="fld"><label>Charge staff member</label>
-                  <select name="agentId">${STAFF.map(s => `<option value="${s.id}">${s.name} (${s.role})</option>`).join('')}</select>
-                </div>
-                <div style="padding:10px 12px;border-radius:9px;border:1px solid var(--danger);background:var(--danger-wash);color:var(--danger-ink);font-size:12px">
-                  This adds a fine to the selected person's daily EOD Setoran at ${rp(m.item.retail)} per Bks.
-                </div>` : ''}
-            </div>
-            <div class="dlg-ft">
-              <button type="button" class="btn quiet" onclick="closeModal()">Cancel</button>
-              <button type="submit" class="btn ${meta.danger ? 'danger' : ''}">${m.method === 'SELL' ? 'Put on sale' : 'Review & confirm'}</button>
-            </div>
-          </form>
-        </div>`;
-    }
-  }
+    <div class="rows">${buildRowsHtml(filtered, sel, isPhone)}</div>`;
 
   root.innerHTML = `
     ${isPhone ? `<div class="sb"><span>09:41</span><span>KPM</span></div>` : ''}
@@ -552,8 +794,8 @@ function renderHost(targetId, isPhone) {
     </div>
     <div class="subbar">
       <div class="segtabs">
-        <button type="button" class="${STATE.subTab === 'active' ? 'on' : ''}" onclick="STATE.subTab='active';renderAll()">Damaged stock</button>
-        ${isT2 ? `<button type="button" class="${STATE.subTab === 'history' ? 'on' : ''}" onclick="STATE.subTab='history';renderAll()"><svg class="i"><use href="#i-hist"/></svg>Action history (${STATE.logs.length})</button>` : ''}
+        <button type="button" class="${STATE.subTab === 'active' ? 'on' : ''}" onclick="switchSubTab('active')">Damaged stock</button>
+        ${isT2 ? `<button type="button" class="${STATE.subTab === 'history' ? 'on' : ''}" onclick="switchSubTab('history')"><svg class="i"><use href="#i-hist"/></svg>Action history (${STATE.logs.length})</button>` : ''}
       </div>
       ${STATE.subTab === 'active' ? `
         <div class="kpi">
@@ -567,7 +809,7 @@ function renderHost(targetId, isPhone) {
         ${FACILITIES.map(f => {
           const rows = STATE.items.filter(x => x.facility === f.key && x.damagedStock > 0);
           const bks = rows.reduce((s, x) => s + x.damagedStock, 0);
-          return `<button type="button" role="tab" aria-selected="${STATE.fac === f.key}" class="whbtn ${STATE.fac === f.key ? 'on' : ''} ${bks > 0 ? 'hasdmg' : ''}" onclick="STATE.fac='${f.key}';STATE.selId=null;STATE.phOpen=false;renderAll()">
+          return `<button type="button" role="tab" aria-selected="${STATE.fac === f.key}" class="whbtn ${STATE.fac === f.key ? 'on' : ''} ${bks > 0 ? 'hasdmg' : ''}" onclick="switchFacility('${f.key}')">
             <span>${esc(f.name)}</span>
             <span class="badge">${num(bks)} Bks</span>
           </button>`;
@@ -576,26 +818,26 @@ function renderHost(targetId, isPhone) {
       <div class="work">
         ${isPhone ? (
           STATE.phOpen && sel ? `
-            <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+            <div class="ph-detail-wrap">
               <div class="backbar">
-                <button type="button" onclick="STATE.phOpen=false;renderAll()"><svg class="i"><use href="#i-left"/></svg>Back to list</button>
+                <button type="button" onclick="closePhoneDetail()"><svg class="i"><use href="#i-left"/></svg>Back to list</button>
                 <span style="margin-left:auto;font-size:12px;color:var(--ink-dim)">${esc(FACILITIES.find(f => f.key === STATE.fac)?.name || STATE.fac)}</span>
               </div>
-              <div class="detail">${detailHtml}</div>
+              <div class="detail">${buildDetailHtml(sel, hostKey)}</div>
             </div>` : `<div class="list">${listHtml}</div>`
         ) : `
           <div class="list">${listHtml}</div>
-          <div class="detail">${detailHtml}</div>`}
+          <div class="detail">${buildDetailHtml(sel, hostKey)}</div>`}
       </div>` : `
       <div class="hist-wrap">
         <div class="hist-tools">
-          <select aria-label="Warehouse filter" onchange="STATE.histFac=this.value;renderAll()">
+          <select aria-label="Warehouse filter" onchange="STATE.histFac=this.value;renderAll({animHist:true})">
             <option value="ALL" ${STATE.histFac === 'ALL' ? 'selected' : ''}>All warehouses</option>
             ${FACILITIES.map(f => `<option value="${f.key}" ${STATE.histFac === f.key ? 'selected' : ''}>${esc(f.name)}</option>`).join('')}
           </select>
           <div class="pill-row">
             ${[['ALL','All'],['REPAIR','Repair'],['SELL','Sell again'],['SAMPLING','Sample'],['RTV','RTV'],['PENALTY','Staff charge']].map(([k, l]) => `
-              <button type="button" class="pill ${STATE.histMethod === k ? 'on' : ''}" onclick="STATE.histMethod='${k}';renderAll()">${l}</button>`).join('')}
+              <button type="button" class="pill ${STATE.histMethod === k ? 'on' : ''}" onclick="STATE.histMethod='${k}';renderAll({animHist:true})">${l}</button>`).join('')}
           </div>
         </div>
         <div class="hist-list">
@@ -619,13 +861,29 @@ function renderHost(targetId, isPhone) {
           }).join('') || `<p style="color:var(--ink-dim)">No action history matches this filter.</p>`}
         </div>
       </div>`}
-    ${modalHtml}
+    <div class="modal-slot"></div>
   `;
+
+  if (anim.animWork) {
+    animateEnter(root.querySelector('.work'), 'is-wh-entering');
+    animateEnter(root.querySelector('.kpi'), 'is-entering');
+    animateEnter(root.querySelector('.hist-wrap'), 'is-entering');
+  } else {
+    if (anim.animDetail) animateEnter(root.querySelector('.detail'), 'is-entering');
+    if (anim.animPhDetail) animateEnter(root.querySelector('.ph-detail-wrap'), 'is-entering');
+    if (anim.animPhList) animateEnter(root.querySelector('.list'), 'is-ph-entering');
+    if (anim.animHist) animateEnter(root.querySelector('.hist-list'), 'is-entering');
+  }
+  if (STATE.modal && STATE.modal.host === hostKey) renderModalSlot(hostKey, 'stay');
 }
 
-function renderAll() {
-  renderHost('pc-root', false);
-  renderHost('ph-root', true);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && STATE.modal) closeModal();
+});
+
+function renderAll(anim = {}) {
+  renderHost('pc-root', false, anim);
+  renderHost('ph-root', true, anim);
 }
 renderAll();
 </script>

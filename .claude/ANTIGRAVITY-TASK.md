@@ -3884,3 +3884,28 @@ Updated `src/components/CustomerManager.jsx`, `src/config/patchNotes.js`, and `s
 3. Run all 5 gates + `ponder-lab` PC/Phone visual checks, add `patchNotes.js` + `logicFixes.selfcheck.mjs` coverage, commit locally, NEVER push.
 **Done when:** Step 1 category flows work in lab + gates green + Result written.
 **Result:**
+
+## Task 102 - PICTURE (drafts only): Polish animations in `.claude/drafts/quarantine-pro.html`
+**Status:** DONE
+**Written:** 2026-11-20 10:20 WIB (Alucard-Lead). Aldi APPROVED `quarantine-pro.html` (*"this looks professional and its look fine make sure the animation is on point"*).
+**Touch only:** `.claude/drafts/quarantine-pro.html`, this file.
+1. Read `C:/Users/ASUS/.claude/skills/animate/SKILL.md`, `C:/Users/ASUS/.claude/skills/emil-design-eng/SKILL.md`, and `A-Brain/Wiki/Concepts/Aldi's Design Taste.md`.
+2. Rules: calm and fast (`150-250 ms`, `--ease-out: cubic-bezier(0.23, 1, 0.32, 1)`), only `opacity` and `transform` (no `width`/`height`/`top`/`left`, no `transition: all`, no `scale(0)`), nothing rotates, zero glow, every animation & blur completely off in `Motion -> Lite` mode AND `@media (prefers-reduced-motion: reduce)`, hover gating via `@media (hover: hover) and (pointer: fine)` where hover motion applies, and never re-animate/flicker on typing or unaffected presses.
+3. Cover all 6 states smoothly without re-mounting flickers:
+   - **List row select:** smooth press scale (`0.985`, `150ms`) + crisp detail panel enter (`opacity` + `translateY(6px)` / subtle crossfade, `180ms`) only when selected product changes.
+   - **Opening & closing the detail on phone:** slide/fade in from right (`translateX(14px)` + `opacity: 0`, `200ms`) on open, and clean reverse exit (`translateX(14px)` + `opacity: 0`, `160ms`) on "Back to list" before switching back to list.
+   - **Confirm box opening and closing:** veil `opacity` (`180ms`) + dialog card (`scale(0.96) translateY(8px)` on PC, `translateY(100%)` sheet on phone, `200ms` open / faster `160ms` close) + smooth form <-> confirm body transition with zero flicker.
+   - **Toast:** interruptible CSS transition enter/exit (`translate(-50%, 14px) scale(0.97)` + `opacity: 0` -> `translate(-50%, 0) scale(1)`, `200ms` open / `160ms` dismiss) + self-drawing gold check (`stroke-dashoffset`).
+   - **Warehouse tab switch:** clean press feedback + smooth content panel enter (`translateY(6px)` + `opacity: 0`, `190ms`) when changing warehouse (not on search keystrokes).
+   - **Row leaving the list after an action:** when a lot reaches `0 Bks` on `commitAction()`, animate that row out (`translateX(-14px)` + `opacity: 0`, `200ms --ease-out`) before removing it from the list, while updating remaining counts cleanly.
+4. Check all interactions + both Lite mode and `prefers-reduced-motion: reduce` in headless Chrome with `ERRORS: []` (0 console/page errors, 44 px phone targets, 0 overflow). Commit only `.claude/drafts/quarantine-pro.html` and this file, never push.
+**Done when:** all 6 animations work cleanly in PC 1440 + Phone 390, Lite + reduced-motion disable all motion, `ERRORS: []`, Result written.
+**Result:**
+Polished animations strictly inside `.claude/drafts/quarantine-pro.html` using `--ease-out: cubic-bezier(0.23, 1, 0.32, 1)` (`150–240 ms`), `opacity` + `transform` only (no `width`/`height`, `transition: all`, `scale(0)`, rotation, or glow), `@media (hover: hover) and (pointer: fine)` hover gating, and complete disabling of animations/transitions/blur under both `Lite` mode and `@media (prefers-reduced-motion: reduce)`:
+- **List row select & search:** Clicking a row updates `.row.sel` in-place without scrolling reset or double-click flicker and enters `.detail` (`180 ms`, `translateY(6px)`); search typing updates only `.rows` so `<input>` keeps focus cleanly.
+- **Phone detail open & close:** Slides in (`translateX(16px)` -> `0`, `200 ms`) on tap and reverses smoothly (`is-leaving`, `160 ms`) on `Back to list`.
+- **Confirm box open, step switch & close:** Backdrop fades (`180 ms` open / `150 ms` close), PC dialog enters `scale(0.96) translateY(8px)` (`200 ms` open / `155 ms` close), Phone sheet slides `translateY(100%)` (`220 ms` open / `165 ms` close), and form <-> confirm transitions cleanly via `.modal-slot` (also closes on backdrop tap & `Escape`).
+- **Toast:** Interruptible CSS enter/exit (`translate(-50%, 14px) scale(0.97)` -> `0`, `200 ms` open / `160 ms` exit) + self-drawing gold checkmark (`240 ms`).
+- **Warehouse tab switch:** Smooth `.work` + `.kpi` entrance (`translateY(6px)`, `190 ms`) on facility change without re-animating chrome.
+- **Row leaving list after action:** Depleted lots animate `.row.is-leaving` (`translateX(-16px) scale(0.985)`, `190 ms`) before removal and next-row selection.
+- **Verified (`verify-task102.mjs` in headless Chrome):** `staticChecks` all `true`, PC + Phone animations verified across all 6 flows (`minPhBtn: 44`, `phOverflow: false`), `liteFlow` + `reducedFlow` both `0s` + `backdropFilter: none` + `0ms` sync close/delete, visual inspection of `task102-pc.png`, `task102-dialog-pc.png`, `task102-phone-detail.png`, `task102-phone-dialog.png`, and `ERRORS: []`.
