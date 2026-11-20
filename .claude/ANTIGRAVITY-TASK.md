@@ -3771,3 +3771,24 @@ Put `usePendingUndo()` and the `!isPendingUndo(\`cust:\${c.id}\`)` filter in **`
    - Every `src/config/*.selfcheck.mjs` (14 suites): **all 14 exited 0 (`0 RED`)**
    - `npm run build`: **exit 0** (`built in 10.63s`)
    - `node src/config/integration.audit.mjs`: **`726 passed, 0 failed, 726 checks`**
+
+## Task 98 - READ-ONLY: real Stock Opname "New count" vs the approved picture - every difference
+**Status:** OPEN
+**Written:** 2026-11-20 09:00 WIB (Claude). Do after 95 + 96. Aldi, verbatim: *"UI for stock opname new count is different from your draft that u show me isnt it its looks worst on the real app as well as the stock count and the quarantine segment is not redesigned yet and still have the game chest we need to redesign that as well"*.
+**Touch only:** this file.
+1. Approved picture = `.claude/drafts/stock-opname-pro.html` (the v4 he approved; it went live as c25814d7). Real code = `src/StockOpnameView.jsx` (+ any component it renders for "New count").
+2. Table: each part of the picture (header, list, product in hand, count inputs, buttons, spacing, words) | how the real app does it today (`file:line`) | SAME / DIFFERENT / MISSING. PC 1440 and phone 390 both.
+3. Same table for the "Stock count" part and the Quarantine part: list every place that still uses the game look (chest, gamified words, glow, game icons) with `file:line`.
+4. No edits. Rank the differences by how much they hurt a real user (worst first).
+**Done when:** the 3 tables + the ranked list are in the Result.
+**Result:**
+
+## Task 99 - PICTURE (drafts only): Quarantine in the professional look, no game chest
+**Status:** OPEN
+**Written:** 2026-11-20 09:00 WIB (Claude). Do after 98.
+**Touch only:** `.claude/drafts/quarantine-pro.html` (new), this file.
+1. Read A-Brain `Wiki/Concepts/Aldi's Design Taste.md` and `Design Inspiration Sources.md` first. Same standard as `stock-opname-pro.html` and `customers-c.html`: slate + gold, no blue, no green, no chest, no game words, plain English labels.
+2. Every feature the real Quarantine has today (Task 98's list) must be in the picture: damaged stock per product, each way out (Repair, Sell Again as RUSAK, Return to vendor, write-off...), who/when history. Nothing dropped.
+3. PC 1440 + phone 390 frames, 44 px phone buttons, toast on every action, no `alert/confirm/prompt`, headless `ERRORS: []`.
+**Done when:** the picture works in both frames and the Result has a feature-by-feature "real app -> picture" table.
+**Result:**
