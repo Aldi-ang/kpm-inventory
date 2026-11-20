@@ -4,6 +4,7 @@
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
   { date: '2026-11-20', items: [
+    { kind: 'new', en: 'Quarantine: replaced the 3D warehouse crates with calm warehouse tabs, a searchable list + detail panel, a glowing biohazard mark beside Quarantine, and all 5 resolution options.', id: 'Karantina: mengganti peti gudang 3D dengan tab gudang yang rapi, daftar produk + detail, simbol biohazard bercahaya di samping Quarantine, dan seluruh 5 pilihan penyelesaian.' },
     { kind: 'new', en: 'Customers: clarified queue labels ("Shops without a salesman", "Assign", "Grosir price requests", and "GROSIR REQUESTED") with a one-line explanation under each shop and queue.', id: 'Pelanggan: memperjelas label antrean ("Shops without a salesman", "Assign", "Grosir price requests", dan "GROSIR REQUESTED") beserta keterangan singkat di setiap kartu dan antrean.' },
     { kind: 'new', en: 'Map System: deleting a shop from the map panel now also waits 8 seconds with the "Undo" bar before permanently removing it.', id: 'Sistem Peta: menghapus toko dari panel peta kini juga menunggu 8 detik dengan bilah "Undo" sebelum toko benar-benar dihapus.' },
   ] },

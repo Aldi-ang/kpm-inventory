@@ -5,7 +5,7 @@ import {
     RefreshCcw, Box, EyeOff, Send, ShieldAlert, Check, X, 
     ChevronDown, ChevronUp, Clock, User, Database, ShieldCheck, 
     Camera, UploadCloud, Image as ImageIcon,
-    Biohazard, FlaskConical, Undo2, BadgeDollarSign, History, Filter, BarChart, MapPin, Wrench, Tag,
+    FlaskConical, Undo2, BadgeDollarSign, History, Filter, BarChart, MapPin, Wrench, Tag,
     Minus, Plus, Gift, Package, ArrowRight
 } from 'lucide-react';
 import { collection, addDoc, getDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, onSnapshot, increment, deleteField } from "firebase/firestore";
@@ -19,7 +19,7 @@ import { canSeeExpectedCount, canDecideOpname, canSellDamaged, opnameBoardScope,
    HQ_LABEL is only what the reader sees, and that is the part that had four spellings. */
 import { MASTER as HQ_LABEL, isMasterVaultPlace, opnameThisWeek, opnameMark, countedDiffs, damagedAsGood, countBoxEmpty, quarantineLost, opnameMissing, opnameBoard, opnamePlaceOf, opnameDecisionPlan, opnameDraftKey, readOpnameDraft, saveOpnameDraft } from './utils/supply.js';
 import { nextWeekStart, weekStart, WEEK_DAYS } from './utils/period.js';
-import { CrateVault } from './components/WarehouseChest.jsx';
+import QuarantineBoard, { QuarantineBioIcon } from './components/QuarantineBoard.jsx';
 import OpnameWorklist from './components/OpnameWorklist.jsx';
 import { RollingNumber } from './components/BiohazardTheme.jsx';
 import { IS_DEMO } from './config/firebase';
@@ -332,7 +332,33 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
     const [quarantineInventory, setQuarantineInventory] = useState([]);
     const [quarantineLogs, setQuarantineLogs] = useState([]);
     const [resolutionModal, setResolutionModal] = useState(null);
+    const [closingModal, setClosingModal] = useState(false);
+    const [leavingId, setLeavingId] = useState(null);
     const [crateFac, setCrateFac] = useState(null);
+
+    const closeResolutionModal = () => {
+        if (!resolutionModal) return;
+        const off = typeof document !== 'undefined' && (document.documentElement.classList.contains('lite-mode') || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches));
+        if (off) {
+            setClosingModal(false);
+            setResolutionModal(null);
+            return;
+        }
+        setClosingModal(true);
+        setTimeout(() => {
+            setClosingModal(false);
+            setResolutionModal(null);
+        }, 160);
+    };
+
+    useEffect(() => {
+        if (!resolutionModal) return;
+        const onKey = (e) => {
+            if (e.key === 'Escape' && !isProcessingAudit) closeResolutionModal();
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [resolutionModal, isProcessingAudit]);
 
     const uniqueBranches = useMemo(() => {
         const branches = new Set();
@@ -884,9 +910,15 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
             return notify(`Cannot sell ${resolutionModal.item.name} again: it has no Retail price yet. Set it in the Master Vault first.`);
         if (resolutionModal.method === 'SELL' && resolutionModal.cheap && !(cheapPrice > 0 && cheapPrice < fullPrice))
             return notify(`Cannot use that price: a cheaper price must be more than 0 and less than the full price, ${formatRupiah(fullPrice)}.`);
+        const confirmLabel = ({
+            REPAIR: 'Repair',
+            SAMPLING: 'Sample goods',
+            RTV: 'Return to factory',
+            PENALTY: 'Charge staff',
+        }[resolutionModal.method]) || resolutionModal.method;
         if (!await confirmAction(resolutionModal.method === 'SELL'
-            ? `Put ${qtyToResolve} Bks of ${resolutionModal.item.name} back on sale as "${resolutionModal.item.name} · RUSAK" at ${formatRupiah(resolutionModal.cheap ? cheapPrice : fullPrice)} a Bks?`
-            : `Execute ${resolutionModal.method} protocol for ${qtyToResolve} Bks of ${resolutionModal.item.name}?`)) return;
+            ? `Put ${qtyToResolve} Bks of ${resolutionModal.item.name} back on sale as "${resolutionModal.item.name} · RUSAK" at ${formatRupiah(resolutionModal.cheap ? cheapPrice : fullPrice)} per Bks?`
+            : `${confirmLabel} for ${qtyToResolve} Bks of ${resolutionModal.item.name}?`)) return;
 
         setIsProcessingAudit(true);
         try {
@@ -999,10 +1031,25 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
             }
 
             batch.set(logRef, logData);
+            const depletedId = qtyToResolve >= (resolutionModal.item.damagedStock || 0) ? resolutionModal.item.id : null;
+            const actionLabel = ({
+                REPAIR: 'Repair',
+                SELL: 'Sell again (RUSAK)',
+                SAMPLING: 'Sample goods',
+                RTV: 'Return to factory',
+                PENALTY: 'Charge staff',
+            }[resolutionModal.method]) || resolutionModal.method;
+            const summaryName = resolutionModal.item.name;
+            const noMotion = typeof document !== 'undefined' && (document.documentElement.classList.contains('lite-mode') || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches));
+            if (depletedId && !noMotion) {
+                setLeavingId(depletedId);
+                await new Promise((r) => setTimeout(r, 185));
+            }
             await batch.commit();
-            triggerCapy("Quarantine Liquidation Logged & Executed! 📜");
-            setResolutionModal(null);
-        } catch (error) { notify("Resolution failed: " + error.message); } 
+            triggerCapy(`${actionLabel}: ${qtyToResolve} Bks ${summaryName} saved.`);
+            setLeavingId(null);
+            closeResolutionModal();
+        } catch (error) { setLeavingId(null); notify("Resolution failed: " + error.message); } 
         finally { setIsProcessingAudit(false); }
     };
 
@@ -1122,129 +1169,183 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                 </div>
             )}
 
-            {resolutionModal && (
-                <div className="fixed inset-0 z-[400] bg-[var(--duke-scrim-hi)] backdrop-blur-md flex items-center justify-center p-4 animate-pop-in">
-                    <div className={`w-full max-w-md bg-[var(--panel)] rounded-2xl border-2 shadow-2xl flex flex-col overflow-hidden ${['SAMPLING', 'REPAIR', 'SELL'].includes(resolutionModal.method) ?'border-[var(--accent-edge)]' : resolutionModal.method === 'RTV' ? 'border-[var(--line)]' : 'border-[var(--danger)]'} `}>
-                        <div className={`p-4 border-b border-[var(--line)] flex justify-between items-center ${['SAMPLING', 'REPAIR', 'SELL'].includes(resolutionModal.method) ?'bg-[var(--sunk)] text-[var(--accent-ink)]' : resolutionModal.method === 'RTV' ? 'bg-[var(--sunk)] text-[var(--accent-ink)]' : 'bg-[var(--danger)] text-[var(--danger-ink)]'} `}>
-                            <h3 className="font-black uppercase tracking-widest flex items-center gap-2">
-                                {resolutionModal.method === 'SAMPLING' && <FlaskConical size={18}/>}
-                                {resolutionModal.method === 'RTV' && <Undo2 size={18}/>}
-                                {resolutionModal.method === 'PENALTY' && <BadgeDollarSign size={18}/>}
-                                {resolutionModal.method === 'REPAIR' && <Wrench size={18}/>}
-                                {resolutionModal.method === 'SELL' ? <><Tag size={18}/> Sell Again</> : `${resolutionModal.method} PROTOCOL`}
+            {resolutionModal && (() => {
+                const m = resolutionModal;
+                const modalTitle = ({
+                    REPAIR: 'Repair',
+                    SELL: 'Sell again (RUSAK)',
+                    SAMPLING: 'Sample goods',
+                    RTV: 'Return to factory',
+                    PENALTY: 'Charge staff',
+                }[m.method]) || m.method;
+                const isDanger = m.method === 'PENALTY';
+                return (
+                <div
+                    className={`kpm-quar-ov ${closingModal ? 'is-closing' : ''}`}
+                    onClick={(e) => { if (e.target === e.currentTarget && !isProcessingAudit) closeResolutionModal(); }}
+                >
+                    <form
+                        onSubmit={executeResolution}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label={modalTitle}
+                        className="kpm-quar-dlg"
+                    >
+                        <div className="px-4 py-3.5 border-b border-[var(--line)] flex justify-between items-center bg-[var(--raised)]">
+                            <h3 className="text-[15px] font-bold text-[var(--ink)] flex items-center gap-2 m-0">
+                                {m.method === 'SAMPLING' && <FlaskConical size={16} className="text-[var(--accent-ink)]" />}
+                                {m.method === 'RTV' && <Undo2 size={16} className="text-[var(--accent-ink)]" />}
+                                {m.method === 'PENALTY' && <BadgeDollarSign size={16} className="text-[var(--danger-ink)]" />}
+                                {m.method === 'REPAIR' && <Wrench size={16} className="text-[var(--accent-ink)]" />}
+                                {m.method === 'SELL' && <Tag size={16} className="text-[var(--accent-ink)]" />}
+                                <span>{modalTitle}</span>
                             </h3>
-                            <button onClick={() => setResolutionModal(null)} className="hover:text-[var(--ink)]"><X size={20}/></button>
+                            <button
+                                type="button"
+                                disabled={isProcessingAudit}
+                                onClick={closeResolutionModal}
+                                aria-label="Close"
+                                className="min-w-11 min-h-11 lg:min-w-0 lg:min-h-0 p-1.5 rounded-lg text-[var(--ink-dim)] hover:text-[var(--ink)] inline-flex items-center justify-center"
+                            >
+                                <X size={18} />
+                            </button>
                         </div>
-                        <form onSubmit={executeResolution} className="p-6 space-y-5">
-                            <div className="bg-[var(--raised)] p-4 rounded-xl border border-[var(--line)]">
-                                <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-1">Target Asset</p>
-                                <p className="font-bold text-[var(--ink)] uppercase">{resolutionModal.item.name}</p>
-                                <p className="text-[11px] lg:text-[10px] text-[var(--accent-ink)] font-mono mt-1">Available in Quarantine: {resolutionModal.item.damagedStock} Bks</p>
-                            </div>
-                            
-                            <div>
-                                <label className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">{resolutionModal.method === 'SELL' ? 'Quantity to put on sale (Bks)' : 'Quantity to Resolve (Bks)'}</label>
-                                <input name="qty" type="number" max={resolutionModal.item.damagedStock} min="1" defaultValue={resolutionModal.item.damagedStock} className="w-full bg-[var(--sunk)] border border-[var(--line)] p-3 rounded-lg text-[var(--ink)] font-mono text-lg font-black focus:border-[var(--accent-edge)] outline-none" required/>
-                            </div>
-
-                            {resolutionModal.method === 'SAMPLING' && (<>
-                                {/* where the packs go, said before the press (his rule: every action reports) */}
-                                <p className="text-[11px] text-[var(--ink-dim)] uppercase tracking-widest leading-relaxed">
-                                    Becomes promo goods: <span className="text-[var(--ink)] font-black">{resolutionModal.item.name} · RUSAK</span>, 1 Bks = 1 pcs,
-                                    {resolutionModal.item.facility === 'MASTER' ? ' in the regional warehouse you pick below.' : ` in ${resolutionModal.item.facility}.`}
-                                </p>
-                                {resolutionModal.item.facility === 'MASTER' && (uniqueBranches.length ? (
-                                    <div>
-                                        <label className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">Send to Regional Warehouse</label>
-                                        <select name="toWarehouse" required className="min-h-11 lg:min-h-0 w-full bg-[var(--sunk)] border border-[var(--accent-edge)] p-3 rounded-lg text-[var(--ink)] outline-none uppercase tracking-widest text-xs font-bold">
-                                            <option value="" className="bg-[var(--sunk)]">-- SELECT WAREHOUSE --</option>
-                                            {uniqueBranches.map(b => <option key={b} value={b} className="bg-[var(--sunk)]">{b}</option>)}
-                                        </select>
-                                    </div>
-                                ) : <p className="text-[11px] text-[var(--danger-ink)] uppercase tracking-widest">No regional warehouse yet - put a salesman in a region in Fleet &amp; Canvas first.</p>)}
-                                <div>
-                                    <label className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">Reason</label>
-                                    <input name="reason" type="text" placeholder="e.g., Torn wrap, still sealed" className="w-full bg-[var(--sunk)] border border-[var(--line)] p-3 rounded-lg text-[var(--ink)] focus:border-[var(--line)] outline-none" required/>
+                        <div className="p-4 lg:p-5 space-y-3.5 max-h-[72vh] overflow-y-auto custom-scrollbar">
+                            <div className="bg-[var(--raised)] px-3 py-2.5 rounded-lg border border-[var(--line)]">
+                                <div className="font-bold text-[var(--ink)] text-sm">{m.item.name}</div>
+                                <div className="text-xs text-[var(--accent-ink)] font-mono mt-0.5">
+                                    Available in damaged stock: {formatNumber(m.item.damagedStock)} Bks
                                 </div>
-                            </>)}
+                            </div>
 
-                            {resolutionModal.method === 'SELL' && (() => {
-                                /* the board he saw (2026-11-08 frame B): Full price / Cheaper with no plate, a gold line under the
-                                   chosen one (his tab pick, kpm-tab-on), and the price field only for Cheaper */
-                                const full = tierPrice(safeInventory.find(p => p.id === resolutionModal.item.id) || resolutionModal.item, 'Retail');
+                            <div>
+                                <label className="text-xs font-semibold text-[var(--ink-muted)] mb-1.5 block">
+                                    {m.method === 'SELL' ? 'Quantity to put on sale (Bks)' : 'Quantity (Bks)'}
+                                </label>
+                                <input
+                                    name="qty"
+                                    type="number"
+                                    max={m.item.damagedStock}
+                                    min="1"
+                                    defaultValue={m.item.damagedStock}
+                                    className="min-h-11 lg:min-h-10 w-full bg-[var(--inset)] border border-[var(--line-2)] px-3 rounded-lg text-[var(--ink)] font-mono text-sm font-bold focus:border-[var(--accent-edge)] outline-none"
+                                    required
+                                />
+                            </div>
+
+                            {m.method === 'SAMPLING' && (
+                                <>
+                                    <p className="text-xs text-[var(--ink-muted)] leading-relaxed m-0">
+                                        Becomes promo goods: <strong className="text-[var(--ink)]">{m.item.name} · RUSAK</strong> (1 Bks = 1 pcs)
+                                        {m.item.facility === 'MASTER' ? ' in the regional warehouse below.' : ` in ${m.item.facility}.`}
+                                    </p>
+                                    {m.item.facility === 'MASTER' && (uniqueBranches.length ? (
+                                        <div>
+                                            <label className="text-xs font-semibold text-[var(--ink-muted)] mb-1.5 block">Send promo pieces to</label>
+                                            <select name="toWarehouse" required className="min-h-11 lg:min-h-0 w-full bg-[var(--inset)] border border-[var(--line-2)] p-2.5 rounded-lg text-[var(--ink)] outline-none text-xs font-semibold focus:border-[var(--accent-edge)]">
+                                                <option value="">Select warehouse...</option>
+                                                {uniqueBranches.map(b => <option key={b} value={b}>{b}</option>)}
+                                            </select>
+                                        </div>
+                                    ) : <p className="text-xs text-[var(--danger-ink)] m-0">No regional warehouse yet — assign a salesman to a region in Fleet &amp; Roster first.</p>)}
+                                    <div>
+                                        <label className="text-xs font-semibold text-[var(--ink-muted)] mb-1.5 block">Reason</label>
+                                        <input name="reason" type="text" placeholder="e.g., Torn outer wrap, sealed packs" className="min-h-11 lg:min-h-10 w-full bg-[var(--inset)] border border-[var(--line-2)] px-3 rounded-lg text-[var(--ink)] text-sm focus:border-[var(--accent-edge)] outline-none" required />
+                                    </div>
+                                </>
+                            )}
+
+                            {m.method === 'SELL' && (() => {
+                                const full = tierPrice(safeInventory.find(p => p.id === m.item.id) || m.item, 'Retail');
                                 const opt = (cheap, label) => (
-                                    <button type="button" aria-pressed={!!resolutionModal.cheap === cheap} onClick={() => setResolutionModal(m => ({ ...m, cheap }))}
-                                        className={`flex-1 px-3 py-2 text-[11px] font-black uppercase tracking-widest ${cheap ? 'border-l border-[var(--line)]' : ''} ${!!resolutionModal.cheap === cheap ? 'kpm-tab-on' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'}`}>
+                                    <button
+                                        type="button"
+                                        aria-pressed={!!m.cheap === cheap}
+                                        onClick={() => setResolutionModal(cur => ({ ...cur, cheap }))}
+                                        className={`flex-1 min-h-9 px-2.5 rounded-md text-xs font-semibold transition-colors ${!!m.cheap === cheap ? 'bg-[color-mix(in_srgb,var(--gold)_13%,transparent)] border border-[var(--accent-edge)] text-[var(--ink)]' : 'border border-transparent text-[var(--ink-dim)] hover:text-[var(--ink)]'}`}
+                                    >
                                         {label}
                                     </button>
                                 );
-                                return (<>
-                                    <p className="text-[11px] text-[var(--ink-dim)] uppercase tracking-widest leading-relaxed">
-                                        Goes on sale as <span className="text-[var(--ink)] font-black">{resolutionModal.item.name} · RUSAK</span>, with the damaged mark.
-                                        It waits in {resolutionModal.item.facility === 'MASTER' ? 'the Master Vault' : resolutionModal.item.facility} until a van loads it.
-                                    </p>
-                                    <div>
-                                        <label className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">Price per Bks</label>
-                                        <div className="flex border-b border-[var(--line)] mb-3">{opt(false, `Full price · ${formatRupiah(full)}`)}{opt(true, 'Cheaper')}</div>
-                                        {resolutionModal.cheap && (
-                                            <input name="price" type="number" min="1" max={Math.max(1, full - 1)} required autoFocus placeholder="Rp per Bks"
-                                                className="w-full bg-[var(--sunk)] border border-[var(--accent-edge)] p-3 rounded-lg text-[var(--ink)] font-mono text-lg font-black outline-none"/>
-                                        )}
-                                        <p className="mt-2 text-[11px] text-[var(--ink-dim)] uppercase tracking-widest">Only Tier 3 and up can set this price.</p>
-                                    </div>
-                                </>);
+                                return (
+                                    <>
+                                        <p className="text-xs text-[var(--ink-muted)] leading-relaxed m-0">
+                                            Put on sale as <strong className="text-[var(--ink)]">{m.item.name} · RUSAK</strong> in{' '}
+                                            {m.item.facility === 'MASTER' ? 'Master Vault' : m.item.facility}.
+                                        </p>
+                                        <div>
+                                            <label className="text-xs font-semibold text-[var(--ink-muted)] mb-1.5 block">Price per Bks</label>
+                                            <div className="inline-flex w-full border border-[var(--line-2)] rounded-lg p-0.5 bg-[var(--inset)] gap-1 mb-2">
+                                                {opt(false, `Full price · ${formatRupiah(full)}`)}
+                                                {opt(true, 'Lower price')}
+                                            </div>
+                                            {m.cheap && (
+                                                <input name="price" type="number" min="1" max={Math.max(1, full - 1)} required autoFocus placeholder="Rp per Bks" className="min-h-11 lg:min-h-10 w-full bg-[var(--inset)] border border-[var(--accent-edge)] px-3 rounded-lg text-[var(--ink)] font-mono text-sm font-bold outline-none" />
+                                            )}
+                                            <p className="mt-1.5 mb-0 text-[11px] text-[var(--ink-dim)]">Only Tier 3 and up can set this price.</p>
+                                        </div>
+                                    </>
+                                );
                             })()}
 
-                            {resolutionModal.method === 'REPAIR' && (
+                            {m.method === 'REPAIR' && (
                                 <div>
-                                    <p className="text-[11px] text-[var(--ink-dim)] uppercase tracking-widest leading-relaxed mb-3">Goes back to good stock in the Master Vault, ready to sell. Nothing is written off.</p>
-                                    <label className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">Repair note</label>
-                                    <input name="reason" type="text" placeholder="e.g., Re-wrapped, pita cukai intact" className="w-full bg-[var(--sunk)] border border-[var(--line)] p-3 rounded-lg text-[var(--ink)] focus:border-[var(--line)] outline-none"/>
+                                    <p className="text-xs text-[var(--ink-muted)] leading-relaxed mb-3 mt-0">
+                                        Returns fixed packs to good Master Vault stock. Nothing is written off.
+                                    </p>
+                                    <label className="text-xs font-semibold text-[var(--ink-muted)] mb-1.5 block">Repair note (optional)</label>
+                                    <input name="reason" type="text" placeholder="e.g., Re-wrapped, excise seal intact" className="min-h-11 lg:min-h-10 w-full bg-[var(--inset)] border border-[var(--line-2)] px-3 rounded-lg text-[var(--ink)] text-sm focus:border-[var(--accent-edge)] outline-none" />
                                 </div>
                             )}
 
-                            {resolutionModal.method === 'RTV' && (
+                            {m.method === 'RTV' && (
                                 <div>
-                                    <label className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">Surat Jalan Retur (RTV Number)</label>
-                                    <input name="rtvRef" type="text" placeholder="e.g., SJR-2026-001" className="w-full bg-[var(--sunk)] border border-[var(--line)] p-3 rounded-lg text-[var(--ink)] focus:border-[var(--line)] outline-none font-mono uppercase" required/>
+                                    <label className="text-xs font-semibold text-[var(--ink-muted)] mb-1.5 block">Surat Jalan Retur (RTV number)</label>
+                                    <input name="rtvRef" type="text" placeholder="e.g., SJR-2026-015" className="min-h-11 lg:min-h-10 w-full bg-[var(--inset)] border border-[var(--line-2)] px-3 rounded-lg text-[var(--ink)] text-sm focus:border-[var(--accent-edge)] outline-none font-mono uppercase" required />
                                 </div>
                             )}
 
-                            {resolutionModal.method === 'PENALTY' && (
+                            {m.method === 'PENALTY' && (
                                 <div>
-                                    <label className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">Target Personnel for Fine</label>
-                                    <select name="agentId" className="min-h-11 lg:min-h-0 w-full bg-[var(--sunk)] border border-[var(--danger)] p-3 rounded-lg text-[var(--ink)] focus:border-[var(--danger)] outline-none uppercase tracking-widest text-xs font-bold" required>
-                                        <option value="" className="bg-[var(--sunk)]">-- SELECT PERSONNEL --</option>
-                                        {safeMotorists.filter(m => m && m.id !== 'master_owner').map(m => (
-                                            <option key={m.id} value={m.id} className="bg-[var(--sunk)]">{m.name} ({m.role || 'Staff'})</option>
+                                    <label className="text-xs font-semibold text-[var(--ink-muted)] mb-1.5 block">Charge staff member</label>
+                                    <select name="agentId" className="min-h-11 lg:min-h-0 w-full bg-[var(--inset)] border border-[var(--danger)] p-2.5 rounded-lg text-[var(--ink)] focus:border-[var(--danger)] outline-none text-xs font-semibold" required>
+                                        <option value="">Select staff member...</option>
+                                        {safeMotorists.filter(st => st && st.id !== 'master_owner').map(st => (
+                                            <option key={st.id} value={st.id}>{st.name} ({st.role || 'Staff'})</option>
                                         ))}
                                     </select>
-                                    <div className="mt-3 p-3 bg-[var(--danger-well)] border border-[var(--danger)] rounded text-[11px] text-[var(--danger-ink)] uppercase tracking-widest leading-relaxed">
-                                        Warning: This will issue a Bounty/Penalty debt to the selected personnel. They must pay this fine during their daily EOD Setoran.
+                                    <div className="mt-2.5 p-2.5 rounded-lg border border-[var(--danger)] bg-[var(--danger-well)] text-xs text-[var(--danger-ink)] leading-relaxed">
+                                        Adds this damage charge to the selected person&apos;s daily EOD Setoran.
                                     </div>
                                 </div>
                             )}
-
-                            <button type="submit" disabled={isProcessingAudit} className={`w-full py-4 rounded-xl font-black uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-all active:scale-95 ${['SAMPLING', 'REPAIR', 'SELL'].includes(resolutionModal.method) ?'bg-[color-mix(in_srgb,var(--gold)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--gold)_22%,transparent)] border border-[var(--accent-edge)] text-[var(--accent-ink)]' : resolutionModal.method === 'RTV' ? 'bg-[color-mix(in_srgb,var(--gold)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--gold)_22%,transparent)] border border-[var(--accent-edge)] text-[var(--accent-ink)]' : 'bg-[color-mix(in_srgb,var(--danger)_14%,transparent)] hover:bg-[color-mix(in_srgb,var(--danger)_24%,transparent)] border border-[var(--danger)] text-[var(--danger-ink)]'} `}>
-                                {isProcessingAudit ? <RefreshCcw size={18} className="animate-spin"/> : <Check size={18}/>} {resolutionModal.method === 'SELL' ? 'Put on sale' : 'Execute Protocol'}
+                        </div>
+                        <div className="px-4 py-3 border-t border-[var(--line)] bg-[var(--raised)] flex justify-end gap-2.5">
+                            <button type="button" disabled={isProcessingAudit} onClick={closeResolutionModal} className="kpm-quar-btn quiet">
+                                Cancel
                             </button>
-                        </form>
-                    </div>
+                            <button type="submit" disabled={isProcessingAudit} className={`kpm-quar-btn ${isDanger ? 'danger' : ''}`}>
+                                {isProcessingAudit ? <RefreshCcw size={15} className="animate-spin" /> : <Check size={15} />}
+                                <span>{m.method === 'SELL' ? 'Put on sale' : 'Review & confirm'}</span>
+                            </button>
+                        </div>
+                    </form>
                 </div>
-            )}
+                );
+            })()}
 
             <div className={`flex flex-col md:flex-row justify-between items-start md:items-start bg-[var(--sunk)] border border-[var(--line)] p-4 rounded-xl gap-4 shrink-0 z-10 relative ${viewMode === 'review' ? 'kpm-wl-fold' : 'shadow-lg'}`}>
                 <div className={viewMode === 'review' ? 'hidden' : ''}>
                     <h2 className="text-xl lg:text-2xl font-black text-[var(--ink)] flex items-center gap-2 tracking-widest uppercase">
                         {viewMode === 'count' && <><ClipboardList size={24} className="text-[var(--ink-dim)]"/> Warehouse Opname</>}
                         {viewMode === 'review' && <><ShieldAlert size={24} className="text-[var(--ink-dim)]"/> HQ Recon Board</>}
-                        {viewMode === 'quarantine' && <><Biohazard size={24} className="kpm-hazard text-[var(--danger-ink)]"/> Quarantine Vault</>}
+                        {viewMode === 'quarantine' && <><QuarantineBioIcon /> Quarantine</>}
                         {viewMode === 'monitor' && <><BarChart size={24} className="text-[var(--ink-dim)] animate-pulse"/> Supply Telemetry</>}
                     </h2>
                     <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-mono mt-1 flex items-center gap-2">
                         {viewMode === 'count' && `AUDITING: ${countPlace}`}
                         {viewMode === 'review' && 'VERIFY REGIONAL STOCK OVERWRITES'}
-                        {viewMode === 'quarantine' && 'DAMAGED GOODS LIQUIDATION & HISTORY'}
+                        {viewMode === 'quarantine' && 'Damaged stock resolution & history'}
                         {viewMode === 'monitor' && 'REAL-TIME FACILITY OVERWATCH'}
                         {!isHighCommand && !countClosed && viewMode === 'count' && !showExpectedWhileCounting && <span className="bg-transparent text-[var(--accent-ink)] border border-[var(--accent-edge)] px-2 py-0.5 rounded text-[11px] font-black tracking-widest flex items-center gap-1"><EyeOff size={10}/> BLIND COUNT ENFORCED</span>}
                     </p>
@@ -1259,7 +1360,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                             <ShieldAlert size={14}/> {boardScope === 'all' ? 'HQ Audits' : 'Review'} {pendingAudits.length > 0 && <NixieCount value={pendingAudits.length} size={13} rollIn />}
                         </button>
                         {canSell && <button onClick={() => setViewMode('quarantine')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'quarantine' ? 'kpm-tab-on' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
-                            <Biohazard size={14}/> Quarantine
+                            Quarantine
                         </button>}
                         {canCount && <button data-mission="8" onClick={() => setViewMode('count')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'count' ? 'kpm-tab-on' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <ClipboardList size={14}/> New Count
@@ -1372,124 +1473,37 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
             )}
 
             {/* ======================================================== */}
-            {/* VIEW MODE 1.5: THE QUARANTINE VAULT                      */}
+            {/* VIEW MODE 1.5: QUARANTINE (Professional Edition)         */}
             {/* ======================================================== */}
             {viewMode === 'quarantine' && canSell && (
-                <div className="flex-1 flex flex-col min-h-0 bg-[var(--sunk)] rounded-xl border border-[var(--accent-edge)] shadow-inner p-4 relative overflow-hidden animate-fade-in">
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(249,115,22,0.05),transparent_70%)] pointer-events-none"></div>
-                    
-                    <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-[var(--accent-edge)] pb-4">
-                        <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
-                            {isHighCommand && <div className="flex bg-[var(--sunk)] rounded-lg p-1 border border-[var(--accent-edge)]">
-                                <button onClick={() => setQuarSubTab('active')} className={`px-4 py-2 rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 ${quarSubTab === 'active' ? 'kpm-tab-on' : 'text-[var(--ink-dim)] hover:text-[var(--accent-ink)]'} `}>
-                                    <AlertTriangle size={14}/> Active Quarantine
-                                </button>
-                                <button onClick={() => setQuarSubTab('history')} className={`px-4 py-2 rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 ${quarSubTab === 'history' ? 'kpm-tab-on' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
-                                    <History size={14}/> Liquidation History
-                                </button>
-                            </div>}
-
-                            {/* the Active tab picks its warehouse with the crates below, not a list */}
-                            {quarSubTab === 'active' ? null : (
-                                <div className="flex items-center gap-2 bg-[var(--sunk)] border border-[var(--line)] rounded-lg p-1.5 px-3">
-                                    <Filter size={14} className="text-[var(--ink-dim)]"/>
-                                    <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} className="min-h-11 lg:min-h-0 bg-transparent text-xs text-[var(--ink)] font-bold uppercase tracking-widest outline-none">
-                                        <option value="ALL" className="bg-[var(--sunk)] text-[var(--ink)]">All Facilities</option>
-                                        <option value="MASTER" className="bg-[var(--sunk)] text-[var(--ink)]">{HQ_LABEL}</option>
-                                        {uniqueBranches.map(branch => <option key={branch} value={branch} className="bg-[var(--sunk)] text-[var(--ink)]">{branch}</option>)}
-                                    </select>
-                                </div>
-                            )}
+                <QuarantineBoard
+                    facilities={vaultFacilities}
+                    activeFacility={openFac}
+                    onPickFacility={setCrateFac}
+                    items={quarantineInventory}
+                    subTab={quarSubTab}
+                    onSubTabChange={setQuarSubTab}
+                    isHighCommand={isHighCommand}
+                    logs={displayedQuarantineLogs}
+                    logsCount={quarantineLogs.length}
+                    inventory={safeInventory}
+                    leavingId={leavingId}
+                    wide={wideScreen}
+                    onAction={(item, method) => {
+                        setClosingModal(false);
+                        setResolutionModal(method === 'SELL' ? { item, method, cheap: false } : { item, method });
+                    }}
+                    regionFilterSelect={
+                        <div className="flex items-center gap-2 bg-[var(--inset)] border border-[var(--line-2)] rounded-lg px-2.5 h-9 lg:h-9">
+                            <Filter size={14} className="text-[var(--ink-dim)] shrink-0" />
+                            <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} aria-label="Warehouse filter" className="min-h-11 lg:min-h-0 bg-transparent text-xs text-[var(--ink)] font-semibold outline-none">
+                                <option value="ALL">All warehouses</option>
+                                <option value="MASTER">{HQ_LABEL}</option>
+                                {uniqueBranches.map(branch => <option key={branch} value={branch}>{branch}</option>)}
+                            </select>
                         </div>
-                        
-                        {quarSubTab === 'active' && (
-                            <div className="text-right w-full md:w-auto bg-[var(--sunk)] p-3 rounded-lg border border-[var(--accent-edge)]">
-                                <p className="text-[11px] text-[var(--ink-dim)] uppercase font-bold tracking-widest mb-1">Sunk Capital (Dead Asset Value)</p>
-                                <p className="text-xl font-black text-[var(--accent-ink)] font-mono tabular-nums">
-                                    {formatRupiah(shownQuarantine.reduce((sum, item) => sum + ((item.damagedStock || 0) * Number(item.priceDistributor || item.hpp || 0)), 0))}
-                                </p>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 relative z-10 pr-2">
-                        {quarSubTab === 'active' ? (
-                            /* his option B: one crate per warehouse; the open crate's box holds its damaged squares, and a
-                               picked square gets the three actions below - the same buttons and handlers as before */
-                            <CrateVault facilities={vaultFacilities} rows={quarantineInventory} fac={openFac} onPick={setCrateFac}
-                                line={(item) => `${item.name} · ${item.damagedStock} Bks damaged · Total HPP Loss: ${formatRupiah(item.damagedStock * Number(item.priceDistributor || item.hpp || item.costPrice || 0))} · ${item.facility}`}
-                                actions={(item) => (
-                                    <div className="flex flex-col sm:flex-row gap-2">
-                                {isHighCommand && <button onClick={() => setResolutionModal({item, method: 'SAMPLING'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--raised)] hover:bg-[color-mix(in_srgb,var(--alt-ink)_12%,var(--raised))] border border-[var(--alt-edge)] text-[var(--alt-ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors active:scale-[0.97]">
-                                    <FlaskConical size={14}/> Convert to Sample
-                                </button>}
-                                {/* SELL AGAIN (his 2026-11-08 board, frame A): the siblings' box with a gold edge; not on a lot that
-                                    is itself damaged again - it has no pack of its own to follow */}
-                                {!item.damagedFrom && (
-                                <button onClick={() => setResolutionModal({item, method: 'SELL', cheap: false})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--raised)] hover:bg-[color-mix(in_srgb,var(--ink)_8%,var(--raised))] border border-[var(--accent-edge)] text-[var(--ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors active:scale-[0.97]">
-                                    <Tag size={14}/> Sell Again
-                                </button>
-                                )}
-                                {isHighCommand && <>
-                                <button onClick={() => setResolutionModal({item, method: 'RTV'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--raised)] hover:bg-[color-mix(in_srgb,var(--ink)_8%,var(--raised))] border border-[var(--line)] text-[var(--ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors active:scale-[0.97]">
-                                    <Undo2 size={14}/> RTV Factory
-                                </button>
-                                <button onClick={() => setResolutionModal({item, method: 'PENALTY'})} className="kpm-rim-neon flex-1 xl:flex-none px-4 py-2 bg-[var(--raised)] hover:bg-[color-mix(in_srgb,var(--danger)_14%,var(--raised))] border border-[var(--danger)] text-[var(--danger-ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors shadow-lg">
-                                    <BadgeDollarSign size={14}/> Penalty Charge
-                                </button>
-                                {/* Master Vault only (his 2026-11-02 "when damaged good enter the master vault they should have option
-                                    to repair or convert it as sampling") */}
-                                {item.facility === 'MASTER' && (
-                                <button onClick={() => setResolutionModal({item, method: 'REPAIR'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--raised)] hover:bg-[color-mix(in_srgb,var(--ink)_8%,var(--raised))] border border-[var(--line)] text-[var(--ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors active:scale-[0.97]">
-                                    <Wrench size={14}/> Repair
-                                </button>
-                                )}
-                                </>}
-                                    </div>
-                                )} />
-                        ) : (
-                            displayedQuarantineLogs.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center h-full opacity-50 space-y-3 pt-10">
-                                    <History size={48} className="text-[var(--ink-dim)]"/>
-                                    <p className="text-sm font-bold text-[var(--ink-dim)] uppercase tracking-widest">No liquidation history found.</p>
-                                </div>
-                            ) : (
-                                displayedQuarantineLogs.map(log => {
-                                    const timeStr = log.timestamp?.seconds ? new Date(log.timestamp.seconds * 1000).toLocaleString('id-ID') : 'Unknown Time';
-                                    return (
-                                        <div key={log.id} className="bg-[var(--sunk)] border border-[var(--line)] rounded-xl p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                                            <div>
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <span className={`text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded flex items-center gap-1 ${['SAMPLING', 'REPAIR'].includes(log.method) ? 'bg-[var(--sunk)] text-[var(--accent-ink)] border border-[var(--line)]' : log.method === 'RTV' ? 'bg-[var(--sunk)] text-[var(--accent-ink)] border border-[var(--line)]' : 'bg-[var(--danger)] text-[var(--danger-ink)] border border-[var(--danger)]'} `}>
-                                                        {log.method === 'SAMPLING' && <FlaskConical size={10}/>}
-                                                        {log.method === 'RTV' && <Undo2 size={10}/>}
-                                                        {log.method === 'PENALTY' && <BadgeDollarSign size={10}/>}
-                                                        {log.method === 'REPAIR' && <Wrench size={10}/>}
-                                                        {log.method}
-                                                    </span>
-                                                    <span className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-mono">{timeStr}</span>
-                                                </div>
-                                                <h4 className="font-bold text-[var(--ink)] uppercase text-sm">{log.qty} Bks • {log.productName}</h4>
-                                                <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-mono mt-1">Facility: {log.facility} | Executed By: {log.resolvedBy?.toUpperCase()}</p>
-                                                
-                                                <div className="mt-2 text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-mono bg-[var(--sunk)] p-2 rounded border border-[var(--line)]">
-                                                    {log.method === 'SAMPLING' && `Reason: ${log.details?.reason}${log.details?.to ? ` · promo goods in ${log.details.to}` : ''}`}
-                                                    {log.method === 'REPAIR' && `Repaired, back to good stock${log.details?.note ? ` · ${log.details.note}` : ''}`}
-                                                    {log.method === 'RTV' && `RTV Surat Jalan: ${log.details?.rtvRef}`}
-                                                    {log.method === 'PENALTY' && `Bounty Charged To: ${log.details?.agentName} (Rp ${new Intl.NumberFormat('id-ID').format(log.totalValueHpp)})`}
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-[11px] text-[var(--ink-dim)] uppercase font-bold tracking-widest">Liquidated Value (HPP)</p>
-                                                <p className="font-black text-[var(--ink-dim)] font-mono text-sm">{formatRupiah(log.totalValueHpp)}</p>
-                                            </div>
-                                        </div>
-                                    )
-                                })
-                            )
-                        )}
-                    </div>
-                </div>
+                    }
+                />
             )}
 
             {/* ======================================================== */}

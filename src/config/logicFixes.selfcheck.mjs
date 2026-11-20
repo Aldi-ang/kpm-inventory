@@ -2572,88 +2572,43 @@ ${opname.slice(lOpen + 1, lEnd)}
   ok('and no banned hue survives on it either', banned === 0, `${banned} left`); }
 
 
-/* --- S36 . the travelling rim on the penalty button --------------------------------------- */
-section('S36. The neon rim is one arc, and it obeys Lite Mode');
+/* --- S36 . Quarantine Pro: 20px glowing biohazard mark ONLY (no rim neon, Lite Mode static) - */
+section('S36. Quarantine removed rim neon and puts calm 2.4s glow only on the 20px biohazard symbol');
 
-/* Aldi, 2026-08-20: "red neon light moving effect around the side of this panel ... animation
-   should not be too much, minimalist expensive looks and HD". The restraint is the feature, so
-   it is pinned: one arc, one pixel, one revolution every five seconds, and nothing else moving. */
 { const css = read('src/styles/theme.css');
   const opname = read('src/StockOpnameView.jsx');
-  const from = css.indexOf('.kpm-rim-neon::before');
-  const to = css.indexOf('@keyframes kpm-rim-walk', from);
-  const rim = (from === -1 || to === -1) ? '' : css.slice(from, to);
-
-  ok('the rim exists and is its own block', rim.length > 300 && rim.length < 2500);
-  ok('the angle is declared with @property, or it would jump instead of sweep',
-     /@property --kpm-rim-angle/.test(css));
-  ok('it is masked down to the border box, so it follows the button radius exactly',
-     /mask-composite: exclude/.test(rim));
-  ok('the rim is one pixel - restraint is the whole request', /padding: 1px;/.test(rim));
-  /* No filter: the audit bans depending on one, because Lite Mode deletes them. The softness
-     comes from the gradient ramp instead, so the effect survives that deletion by not using it. */
-  ok('it uses no filter at all - Lite Mode deletes those', !/filter:/.test(rim));
-  ok('the softness comes from the gradient ramping up and back down',
-     (rim.match(/color-mix\(in srgb, var\(--danger-ink\) 45%/g) || []).length === 2);
-  ok('it walks once every five seconds, slowly', /animation: kpm-rim-walk 5s linear infinite/.test(rim));
-  ok('nothing pulses or changes colour - one arc only',
-     !/pulse|hue-rotate|alternate/.test(rim));
-  ok('HIS LAW: it does not rotate in Lite Mode',
-     /html\.lite-mode \.kpm-rim-neon::before \{ display: none; \}/.test(css));
-  ok('and reduced motion removes it too',
-     /prefers-reduced-motion: reduce\)[\s\S]{0,120}kpm-rim-neon::before \{ display: none/.test(css));
-  ok('the penalty button wears it', /kpm-rim-neon flex-1 xl:flex-none/.test(opname));
-  ok('and only that one button does - it is an accent, not a theme',
-     (opname.match(/kpm-rim-neon/g) || []).length === 1); }
+  const qb = read('src/components/QuarantineBoard.jsx');
+  ok('no travelling kpm-rim-neon remains on StockOpnameView or QuarantineBoard',
+     !opname.includes('kpm-rim-neon') && !qb.includes('kpm-rim-neon'));
+  ok('--bio and --bio-glow tokens exist in BOTH dark and light theme blocks',
+     (css.match(/--bio:/g) || []).length === 2 && (css.match(/--bio-glow:/g) || []).length === 2);
+  ok('.kpm-bio-hazard is 20px, uses --bio, and pulses smoothly at 2.4s',
+     /\.kpm-bio-hazard \{[^}]*width: 20px;[^}]*height: 20px;[^}]*color: var\(--bio\);[^}]*animation: kpm-bio-glow 2\.4s ease-in-out infinite;/s.test(css));
+  ok('HIS LAW: biohazard glow turns completely off in Lite Mode while the icon stays visible',
+     /html\.lite-mode \.kpm-bio-hazard[\s\S]{0,400}animation: none;/.test(css) &&
+     /html\.lite-mode \.kpm-bio-hazard \{ filter: none; opacity: 1; \}/.test(css));
+  ok('and reduced motion turns biohazard glow off too while keeping it static green',
+     /@media \(prefers-reduced-motion: reduce\) \{[\s\S]{0,450}\.kpm-bio-hazard \{ filter: none; opacity: 1; \}/.test(css));
+  ok('only Quarantine heading wears QuarantineBioIcon (one icon on screen)',
+     (opname.match(/<QuarantineBioIcon\s*\/>/g) || []).length === 1); }
 
 
-/* --- S37 . amber is an accent, not a surface -------------------------------------------- */
-section('S37. Quarantine and HQ Audits: gold is ink and edges, never a slab');
+/* --- S37 . Quarantine actions: clean outlined cards, no gold slab, no old red pulse --------- */
+section('S37. Quarantine actions and HQ Audits: outlined action cards, zero gold slab');
 
-/* Aldi, 2026-08-20, with five screenshots: "dont use put amber and black, too dominant, add some
-   color variety, thats fine for the symbol and few box line, as long as dark is 90% 5% light and
-   other color can be variative, reverse color on light mode of course".
-
-   Every unreadable thing he photographed was the same mistake - gold used as a big FILL with dim
-   or gold ink on top. Fixing the ink alone would have kept the screen 40% amber. So the fill is
-   what went: dark surface, one thin coloured line, coloured text. That answers the contrast AND
-   the ratio in one move. */
 { const css = read('src/styles/theme.css');
   const opname = read('src/StockOpnameView.jsx');
-
-  /* A third accent, because two colours cannot tell three actions apart. Violet is the only hue
-     left - blue and green are banned outright, and warm is taken by gold and red. */
-  ok('the third accent exists in BOTH themes, not just one',
-     (css.match(/--alt-ink:/g) || []).length === 2 && (css.match(/--alt-edge:/g) || []).length === 2);
-  ok('it is a real token, not a raw colour dropped into markup',
-     !/#C2A0D9|#4A2560/.test(opname));
-
-  /* Three actions, three readings. Sample is reversible, RTV is routine, penalty takes money -
-     and only the one that takes money is filled. */
-  const from = opname.indexOf('Convert to Sample');
-  const to = opname.indexOf('Penalty Charge', from);
-  const actions = (from === -1 || to === -1) ? '' : opname.slice(from - 700, to);
-  ok('the action row was found', actions.length > 500 && actions.length < 3000);
-  ok('sample carries the third accent', /border-\[var\(--alt-edge\)\] text-\[var\(--alt-ink\)\]/.test(actions));
-  ok('RTV stays neutral - it is the routine one', /border-\[var\(--line\)\] text-\[var\(--ink\)\]/.test(actions));
-  ok('none of the quarantine actions is a gold slab any more',
-     !/bg-\[var\(--gold\)\]/.test(actions));
-  ok('and they answer a press, which a slab never did (Sample, Sell Again, RTV)', (actions.match(/active:scale-\[0\.97\]/g) || []).length === 3);
-
-  /* The hazard mark. animate-pulse is opacity 1 -> 0,5 -> 1 every 2s: a blinking warning lamp,
-     and it is on screen the whole time someone works in Quarantine. Reduced, not improved. */
-  ok('the hazard mark no longer blinks', !/Biohazard size=\{24\}[^/]*animate-pulse/.test(opname));
-  ok('it is red, as he asked', /kpm-hazard text-\[var\(--danger-ink\)\]/.test(opname));
-  ok('it breathes slowly rather than flashing', /kpm-hazard-breathe 3\.6s/.test(css));
-  ok('and it never dips to half opacity, which would read as disabled',
-     /opacity: 0\.72/.test(css) && !/kpm-hazard-breathe[\s\S]{0,200}opacity: 0\.5/.test(css));
-  ok('HIS LAW: it does not move in Lite Mode',
-     /html\.lite-mode \.kpm-hazard \{ animation: none/.test(css));
-  ok('and reduced motion stops it too',
-     /prefers-reduced-motion: reduce\)[\s\S]{0,120}\.kpm-hazard \{ animation: none/.test(css));
-
-  /* The HQ audit row he photographed twice: a filled gold disc with --ink-dim on it, and an
-     APPROVED chip the same way. Both are dark now, ringed and inked in the accent. */
+  const qb = read('src/components/QuarantineBoard.jsx');
+  ok('the action grid in QuarantineBoard was found with all 5 real actions',
+     qb.includes('Repair to good stock') && qb.includes('Sell again as RUSAK') &&
+     qb.includes('Convert to sample (pcs)') && qb.includes('Return to factory (RTV)') &&
+     qb.includes('Charge staff'));
+  ok('no quarantine action button uses a filled --gold background slab',
+     !qb.includes('bg-[var(--gold)]') && !css.includes('.kpm-quar-actbtn { background: var(--gold)'));
+  ok('all quarantine action cards respond cleanly on press',
+     /\.kpm-quar-actbtn:active \{ transform: scale\(0\.985\); \}/.test(css));
+  ok('old kpm-hazard red pulse is gone from StockOpnameView heading',
+     !opname.includes('kpm-hazard'));
   ok('the audit status disc is a ring, not a filled coin',
      /p-3 rounded-full border bg-\[var\(--sunk\)\]/.test(opname));
   ok('and the APPROVED chip is dark with gold ink, not gold with dim ink',
@@ -7698,11 +7653,11 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /className="shrink-0 min-h-11 lg:min-h-\[40px\] px-4 rounded-lg text-\[11px\] lg:text-\[10px\] font-black/.test(so) &&
      !/shrink-0 min-h-\[40px\] px-4/.test(code(so)),
      'measured 305 x 32 and 280 x 40');
-  /* since 2026-09-30 the line lives in the crate vault's strip (CrateVault), under the box: it must still wrap */
+  /* Quarantine Pro replaces CrateVault with QuarantineBoard: facility subline wraps cleanly on phone */
   ok('the quarantine item\'s info line wraps on the phone instead of clipping its facility',
-     /<div className="rn">\{line\(picked\)\}<\/div>/.test(read('src/components/WarehouseChest.jsx')) && /\$\{item\.facility\}`\}/.test(so) &&
-     /\.kpm-vault \.strip \.rn \{(?![^}]*(nowrap|ellipsis))[^}]*\}/.test(read('src/styles/theme.css')),
-     '"MASTER" cut: 300 wide in a 285 box');
+     /<p className="text-xs text-\[var\(--ink-dim\)\] mt-0\.5 mb-0">/.test(read('src/components/QuarantineBoard.jsx')) &&
+     read('src/components/QuarantineBoard.jsx').includes('Available in damaged stock'),
+     'facility subline wraps naturally inside detail card');
 }
 
 /* 2026-09-18 21:30 - THE NIXIE COUNTER and the two Stock Opname looks he decided (boards 5 = A,
@@ -9692,18 +9647,22 @@ section('THE REGIONAL WAREHOUSE\'S CHEST (2026-09-30)');
      /\.kpm-wh2 \.kpm-c3 \{[^}]*animation: kpmIsleBob 5s/.test(whCss) && /html\.lite-mode \.kpm-sbox \*/.test(whCss) && /prefers-reduced-motion/.test(whCss));
   ok('a lid needs headroom INSIDE its row (70 px phone, 96 px wide) and the island its room below the chest',
      /\.kpm-wh2 \.kpm-c3 \{[^}]*margin: 70px 0 calc\(var\(--hb\) \* 1\.45\);/.test(whCss) && /@container kpmwh \(min-width: 700px\) \{[^}]*margin-top: 96px/.test(whCss));
-  /* Stock Opname's Quarantine Vault, option B: the crates are the way in, the resolve actions and the log stay */
+  /* Stock Opname's Quarantine Pro redesign: calm warehouse tabs + master-detail + action history, 3D chest removed from Quarantine */
   const sv = code(read('src/StockOpnameView.jsx')).replace(/\r/g, '');
-  ok('Stock Opname: the facility list is gone from the Active tab - one crate per warehouse (HQ + every branch) opens its box',
-     imports(sv, 'CrateVault') && !/setQuarantineFacility\(e\.target\.value\)/.test(sv) &&
-     /<CrateVault facilities=\{vaultFacilities\} rows=\{quarantineInventory\} fac=\{openFac\} onPick=\{setCrateFac\}/.test(sv) &&
+  const qb = code(read('src/components/QuarantineBoard.jsx')).replace(/\r/g, '');
+  ok('Stock Opname: Quarantine Pro replaces 3D CrateVault with warehouse tabs + QuarantineBoard',
+     !sv.includes('CrateVault') && sv.includes("import QuarantineBoard, { QuarantineBioIcon } from './components/QuarantineBoard.jsx';") &&
+     /<QuarantineBoard/.test(sv) &&
      /const vaultFacilities = useMemo\(\(\) => \[\{ key: 'MASTER', name: HQ_LABEL \}, \.\.\.uniqueBranches\.map\(b => \(\{ key: b, name: b \}\)\)\], \[uniqueBranches\]\);/.test(sv));
-  ok('the listener still loads EVERY warehouse (the crates need all their counts); the open crate filters on the screen',
-     /const \[quarantineFacility\] = useState\('ALL'\);/.test(sv) && /const shownQuarantine = quarantineInventory\.filter\(i => i\.facility === openFac\);/.test(sv));
-  ok('the three resolve actions are the screen\'s own buttons, moved under the box, not copied (the log and HQ approval unchanged)',
-     (sv.match(/setResolutionModal\(\{item, method: 'SAMPLING'\}\)/g) || []).length === 1 && (sv.match(/setResolutionModal\(\{item, method: 'PENALTY'\}\)/g) || []).length === 1 &&
-     /actions=\{\(item\) => \(/.test(sv) && /quarantine_logs/.test(sv) && /PENDING_HQ_APPROVAL/.test(sv));
-  ok('the sunk capital follows the open crate', /formatRupiah\(shownQuarantine\.reduce\(/.test(sv) && !/formatRupiah\(quarantineInventory\.reduce\(/.test(sv));
+  ok('the listener still loads EVERY warehouse (warehouse tabs need all their counts); active warehouse filters on screen',
+     /const \[quarantineFacility\] = useState\('ALL'\);/.test(sv) && qb.includes('i.facility === activeFacility'));
+  ok('all resolve actions route into StockOpnameView executeResolution and log to quarantine_logs',
+     qb.includes("onAction(selected, 'SAMPLING')") && qb.includes("onAction(selected, 'PENALTY')") &&
+     qb.includes("onAction(selected, 'SELL')") && qb.includes("onAction(selected, 'RTV')") && qb.includes("onAction(selected, 'REPAIR')") &&
+     /quarantine_logs/.test(sv) && /PENDING_HQ_APPROVAL/.test(sv));
+  ok('the sunk capital follows the selected warehouse',
+     qb.includes('facItems.reduce((sum, i) => sum + Number(i.damagedStock || 0) * sunkCostOf(i), 0)') &&
+     qb.includes('const facItems = useMemo('));
   /* his 2026-11-02 "convert into the promotional goods inside the regional warehouse instead" (A: a promo item per
      cigarette, B: a Master Vault crate picks the warehouse) + "when damaged good enter the master vault they should have
      option to repair or convert it as sampling" */
@@ -9715,9 +9674,9 @@ section('THE REGIONAL WAREHOUSE\'S CHEST (2026-09-30)');
      sv.includes("const toWh = fromFac === 'MASTER' ? toWarehouse : fromFac;"));
   ok('a Master Vault crate picks the regional warehouse; with none picked the press says so and writes nothing',
      /<select name="toWarehouse"/.test(sv) && sv.includes("if (resolutionModal.method === 'SAMPLING' && fromFac === 'MASTER' && !toWarehouse) return notify("));
-  ok('REPAIR (Master Vault only): the damaged Bks go back to good stock in ONE write, the button only on a Master Vault crate, nothing liquidated',
+  ok('REPAIR (Master Vault only): the damaged Bks go back to good stock in ONE write, the button only on a Master Vault product, nothing liquidated',
      sv.includes("batch.set(itemRef, { damagedStock: increment(-qtyToResolve), ...(resolutionModal.method === 'REPAIR' ? { stock: increment(qtyToResolve) } : {}) }, { merge: true });") &&
-     /\{item\.facility === 'MASTER' && \(\s*<button onClick=\{\(\) => setResolutionModal\(\{item, method: 'REPAIR'\}\)\}/.test(sv) &&
+     qb.includes("isHighCommand && selected.facility === 'MASTER'") && qb.includes("onAction(selected, 'REPAIR')") &&
      sv.includes("if (resolutionModal.method === 'REPAIR' && fromFac !== 'MASTER') return notify(") &&
      sv.includes("const totalValue = ['REPAIR', 'SELL'].includes(resolutionModal.method) ? 0 : qtyToResolve * hpp;"));
   /* his 2026-11-02 "make sure that the converted product have the same 3D design of that type but of course with
@@ -13831,8 +13790,8 @@ console.log('\nTabs: the chosen tab is a gold line, not an amber fill');
   const css = read('src/styles/theme.css'), so = read('src/StockOpnameView.jsx'), eod = read('src/EODReconciliationView.jsx'), sm = read('src/components/SamplingManager.jsx');
   const slab = /(viewMode|quarSubTab|rangeType) === ['a-z]+ \? 'bg-\[var\(--(gold|raised)\)\]/;
   ok('REGRESSION: no tab row he named keeps a filled chosen tab (Stock Opname, its Quarantine, EOD Setoran, Sampel)', ![so, eod, sm].some((s) => slab.test(s)));
-  ok('REGRESSION: all ten chosen states use the one line class (the tenth is Sell Again\'s Full price / Cheaper, 2026-11-08)',
-     (so.match(/\? 'kpm-tab-on' :/g) || []).length === 7 && (eod.match(/\? 'kpm-tab-on' :/g) || []).length === 2 && (sm.match(/\? 'kpm-tab-on' :/g) || []).length === 1);
+  ok('REGRESSION: all four remaining StockOpname tabs keep the single line class kpm-tab-on (plus EOD & Sampling)',
+     (so.match(/\? 'kpm-tab-on' :/g) || []).length === 4 && (eod.match(/\? 'kpm-tab-on' :/g) || []).length === 2 && (sm.match(/\? 'kpm-tab-on' :/g) || []).length === 1);
   ok('HIS PICK: a plain word with a 2 px gold line under it, no plate, no shadow, and nothing that moves',
      /\.kpm-tab-on \{[^}]*background: transparent;[^}]*color: var\(--ink\);/.test(css) && /\.kpm-tab-on::after \{[^}]*height: 2px;[^}]*background: var\(--accent-edge\);/.test(css) && !/\.kpm-tab-on[^{]*\{[^}]*(transition|animation)/.test(css));
   ok('HIS ASK 2026-11-08 "put some space or line to misah each of the regional warehouse": a hairline between warehouse tabs, with room on both sides of it, and the first tab still lined up with the panel',
@@ -13880,7 +13839,9 @@ console.log('\nQuarantine: Sell Again puts a damaged lot on sale, right after it
     ok('both Sell Again refusals show as failures (a red strip, not news)', refusals.length === 2 && refusals.every(isFailure)); }
   ok('the terminal shelf runs through lotsAfterPacks and the card wears the mark', ms.includes('const filteredItems = lotsAfterPacks(inventory.filter(') && ms.includes('{isDamagedPack(item) && <HazardMark className="right-0 bottom-0 w-[18px] h-[18px]'));
   ok('REGRESSION: a lot is never "low" (it is never restocked), in the one function every low-stock alarm reads', /export const isLowStock = \(product, appSettings\) =>\s*!product\?\.damagedFrom &&/.test(th));
-  ok('the Sell Again button sits after Convert to Sample, gold edge, and not on a lot that is damaged again', /Convert to Sample\s*<\/button>\}?\s*\{\/\*[^]*?\*\/\}\s*\{!item\.damagedFrom && \(\s*<button onClick=\{\(\) => setResolutionModal\(\{item, method: 'SELL', cheap: false\}\)\}[^>]*border-\[var\(--accent-edge\)\]/.test(so));
+  const qb = read('src/components/QuarantineBoard.jsx');
+  ok('the Sell Again button sits in QuarantineBoard detail, hidden on an Already RUSAK lot (damagedFrom)',
+     qb.includes('{!selected.damagedFrom && (') && qb.includes("onAction(selected, 'SELL')"));
 }
 
 /* Stage 2, his 2026-11-03 "only Tier 3 and up set that price" (a new Access Matrix key); rules CHANGE 24. */
@@ -13896,10 +13857,14 @@ console.log('\nQuarantine: Sell Again for Tier 3, the sell_damaged key');
   pm.injectDynamicPermissions(before, null);
   ok('BEHAVIOUR: once he saves the key, his switch wins: on for T4 only -> a T4 may, a T3 may not; a T5 never; Tier 1 always', t4 && !t3 && !t5 && t1);
   ok('the key is in his matrix, worded like its sibling', read('src/components/SettingsView.jsx').includes("{ id: 'sell_damaged', label: 'Quarantine: sell damaged packs again and set their price (Tier 4 and above only)' },") && read('src/config/permissions.js').includes("const SELL_DAMAGED_KEY = 'sell_damaged';"));
-  ok('a holder opens Quarantine and sees the crates', so.includes("const canSell = isHighCommand || canSellDamaged(userRole);") && so.includes("{canSell && <button onClick={() => setViewMode('quarantine')}") && so.includes("{viewMode === 'quarantine' && canSell && ("));
-  ok('REGRESSION: Sample, RTV, Penalty, Repair and the Liquidation History stay the owner\'s (the rules refuse a T3 those writes and the log reads)',
-     so.includes("{isHighCommand && <button onClick={() => setResolutionModal({item, method: 'SAMPLING'})}") && /\{isHighCommand && <>\s*<button onClick=\{\(\) => setResolutionModal\(\{item, method: 'RTV'\}\)\}/.test(so) &&
-     /\{isHighCommand && <div className="flex bg-\[var\(--sunk\)\] rounded-lg p-1 border border-\[var\(--accent-edge\)\]">\s*<button onClick=\{\(\) => setQuarSubTab\('active'\)\}/.test(so) &&
+  const qb = read('src/components/QuarantineBoard.jsx');
+  ok('a holder opens Quarantine and sees QuarantineBoard', so.includes("const canSell = isHighCommand || canSellDamaged(userRole);") && so.includes("{canSell && <button onClick={() => setViewMode('quarantine')}") && so.includes("{viewMode === 'quarantine' && canSell && ("));
+  ok('REGRESSION: Sample, RTV, Penalty, Repair and Action History stay owner-only (the rules refuse a T3 those writes and log reads)',
+     qb.includes("{isHighCommand && selected.facility === 'MASTER' && (") &&
+     qb.includes("onAction(selected, 'SAMPLING')") &&
+     qb.includes("onAction(selected, 'RTV')") &&
+     qb.includes("onAction(selected, 'PENALTY')") &&
+     qb.includes('{isHighCommand && (\n            <button') &&
      /if \(!isHighCommand \|\| !db \|\| !appId \|\| !masterId\) return;\s*const logsRef = collection\(db, `artifacts\/\$\{appId\}\/users\/\$\{masterId\}\/quarantine_logs`\)/.test(so));
   ok('the price box says who may set it (his board, frame B)', so.includes('>Only Tier 3 and up can set this price.</p>'));
   const rules = read('firestore.rules');
@@ -14891,6 +14856,30 @@ section('CUSTOMER DIRECTORY APPROVED QUEUE WORDING & HONEST WHY (Task 97, 2026-1
      noSalesmanWhy({ status: 'APPROVED', assignedAt: 123 }) === 'Previous salesman assignment was cleared' &&
      noSalesmanWhy({ status: 'APPROVED', nooAgentName: 'Budi' }) === 'Never had a salesman assigned' &&
      noSalesmanWhy({ status: 'APPROVED' }) === '');
+}
+section('QUARANTINE PRO IN REAL APP (Task 105, 2026-11-20)');
+{
+  const so = read('src/StockOpnameView.jsx');
+  const qb = read('src/components/QuarantineBoard.jsx');
+  const css = read('src/styles/theme.css');
+  ok('REGRESSION (Task 105): Quarantine Pro keeps in-page confirmAction, zero alert/confirm/prompt, zero banned green/blue classes in JSX, smooth modal close & leaving row transition, and 44px phone targets',
+     so.includes('await confirmAction(') &&
+     !/\bwindow\.(alert|confirm|prompt)\b/.test(so + qb) &&
+     !/(?:bg|text|border)-(?:green|emerald|blue|slate)-[0-9]/.test(qb) &&
+     so.includes('closeResolutionModal') &&
+     so.includes('setLeavingId(depletedId)') &&
+     qb.includes('Back to list') &&
+     qb.includes('min-h-11') &&
+     /\.kpm-quar-whbtn \{[^}]*min-height: 44px;/.test(css.slice(css.indexOf('@media (max-width: 1023px)', css.indexOf('QUARANTINE PRO VIEW')))));
+  ok('BEHAVIOUR (Task 105): Quarantine Pro keeps all 5 warehouse action permissions intact (Repair on MASTER only, Sell hidden on damagedFrom, Sample/RTV/Penalty/History gated by isHighCommand)',
+     qb.includes("isHighCommand && selected.facility === 'MASTER'") &&
+     qb.includes("!selected.damagedFrom") &&
+     qb.includes("['ALL', 'All']") &&
+     qb.includes("['REPAIR', 'Repair']") &&
+     qb.includes("['SELL', 'Sell again']") &&
+     qb.includes("['SAMPLING', 'Sample']") &&
+     qb.includes("['RTV', 'RTV']") &&
+     qb.includes("['PENALTY', 'Staff charge']"));
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
