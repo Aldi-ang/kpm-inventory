@@ -3953,7 +3953,7 @@ Updated `.bio-ic` in `.claude/drafts/quarantine-pro.html` (and left everything e
 - Verified in headless Chrome (`verify-task104.mjs`, `ERRORS: []`) across PC + Phone and Light + Dark themes (`size: [20, 20]`, `phSize: [20, 20]`, `phOverflow: false`, `liteCheck` & `reducedCheck` both `animName: "none"` & `filter: "none"`), and inspected `task104-dark-pc-top.png`, `task104-dark-ph-top.png`, `task104-light-pc-top.png`, `task104-light-ph-top.png`.
 
 ## Task 105 - READ-ONLY: Build plan for Step 2 Competitors global screen & firestore.rules draft
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-20 12:20 WIB (Alucard-Lead). Prepares Step 2 (`NEXT-SESSION.md`) from approved `.claude/drafts/competitors-pro.html` and `Brainstorm/2026-11-19_categories-subcategories-and-rival-catalog.md`.
 **Touch only:** this file. Never edit `firestore.rules` or `src/`.
 1. Propose exact Firestore paths & schema for rival brands/SKUs, per-region price docs (`competitors/{rivalId}/region_prices/{REGION}` so T4 cannot read other regions' raw docs per Trap #4), and salesman price-report approval queue (`pending -> approve update | keep as note`).
@@ -3961,11 +3961,188 @@ Updated `.bio-ic` in `.claude/drafts/quarantine-pro.html` (and left everything e
 3. List files to create/edit in execution order + self-check assertions.
 **Done when:** complete file:line Step 2 plan + draft rules checklist written under Result.
 **Result:**
+Verified read-only plan against live `e19369ad` (`competitors-pro.html` `L446-1042`, `firestore.rules` `L105-248, 693-700, 802-804`, `permissions.js` `L237-249, 433-447`, `SettingsView.jsx` `L1722-1727`, `BiohazardTheme.jsx` `L517-551`, `App.jsx` `L959-1110, 4417-4435, 5779`, `useDatabaseSync.js` `L92, 287-314`, `logicFixes.selfcheck.mjs` `L13347-13362, 14430-14436`):
+
+### 1. Firestore Paths & Schema (`artifacts/{appId}/users/{bossUid}/`)
+1. `competitors/{rivalId}` — global rival product catalog (shared across regions):
+   - Fields: `name`, `brand` (optional string, defaults `''`), `normName` (lowercase alphanumeric folded for duplicate check matching `findNearRival` in `competitors-pro.html:810`), `categoryId`, `subCategoryId`, `pairedProductId` (`null` or string matching `products/{id}`), `createdAt`, `updatedAt`, `updatedBy`, `updatedByUid`.
+   - Subscriptions (`useDatabaseSync.js`): real-time `onSnapshot` on `competitors` filtered with `!isPendingUndo('rival:' + c.id)`.
+2. `competitors/{rivalId}/region_prices/{regionKey}` — **ONE doc per normalized uppercase region/branch (`regionKey = location.trim().toUpperCase()`, e.g. `JAWA BARAT`)** so Trap #4 holds in Firestore rules:
+   - Fields: `region` (uppercase string == `{regionKey}`), `Retail` (number >= 0, optional `0`/unset), `Grosir` (number >= 0), `Ecer` (number >= 0), `updatedAt`, `updatedBy`, `updatedByUid`, `sourceReportId` (`null` or report doc id).
+   - Client listener rule (`firestore.rules:812` query-must-match-rule): users with `canSeeAllCompetitorRegions` (`T1–T3` default) read across `region_prices` (or `collectionGroup('region_prices')` / per-rival subcollection reads); users scoped to own region (`T4–T6` default) subscribe/fetch ONLY `doc(..., 'region_prices', myUpperRegion)` when `myUpperRegion` is non-empty, so Firestore never rejects a collection-wide `list` for T4–T6.
+3. `competitor_reports/{reportId}` — salesman field report approval queue (`competitors-pro.html:780-823, 903-959, 1004-1030`):
+   - Fields: `rivalId` (`null` for new rival product), `newRivalName`, `categoryId`, `subCategoryId`, `newCategoryName`, `newSubCategoryName`, `region` (uppercase branch/shop region), `shopId` (`null` or customer id), `shopName`, `customerType` (`'Retail' | 'Grosir' | 'Ecer'`), `price` (number > 0), `shelf` (`'Eye level' | 'Top shelf' | 'Bottom shelf' | 'Counter / till'`), `promo` (`'None' | 'Poster' | 'Discount' | 'Free gift'`), `speed` (`'Fast' | 'Medium' | 'Slow'`), `note`, `photo` (boolean / URL), `status` (`'pending' | 'approved_price' | 'approved_note' | 'rejected'`), `priceAction` (`'update' | 'note' | null`), `rejectReason`, `reportedByUid`, `reportedByName`, `createdAt`, `reviewedBy`, `reviewedByUid`, `reviewedAt`.
+   - Client listener: `T1–T3` / all-regions subscribes full `competitor_reports`; `T4–T6` queries `where('region', '==', myUpperRegion)` (and optional own `where('reportedByUid', '==', realUid)` for salesman own submissions), matching Firestore rules `read`.
+   - Approval flow (`M.approve` `competitors-pro.html:903-952`):
+     - If `!rep.rivalId`: approver creates `competitors/{rivalId}` (+ optional new `product_categories/{catId}` when `catMode === 'new'` via `handleSaveCategory` if `canManageCategories(userRole)` is true) and sets `rep.price` into `region_prices/{rep.region}[rep.customerType]`.
+     - If existing `rep.rivalId`: approver chooses **Update the region price** (batch-updates `region_prices/{rep.region}[rep.customerType] = rep.price` + `competitor_reports/{id}` -> `'approved_price'`) OR **Keep as a note only** (updates `competitor_reports/{id}` -> `'approved_note'`, leaving `region_prices` untouched). No price-per-stick field anywhere.
+4. Legacy `customers/{customerId}/benchmarks` (`firestore.rules:802-804`, `CustomerManager.jsx:40-50`):
+   - Keep `read: if isSalesman(bossUid)` until Step 3 Customers Competitor tab ships; tighten write on `benchmarks` to `isCompanyTopTier(bossUid)` once Step 2 + Step 3 replace the old ad-hoc per-shop form (Trap #5).
+
+### 2. Permission Matrix Keys (`src/config/permissions.js` + `src/components/SettingsView.jsx`)
+Use **ABSENCE-MEANS-TIER-DEFAULT** (matching `canManageCategories` at `permissions.js:437-447`; never add keys to `ROLE_PERMISSIONS` arrays `L182-203` so saved `settings/permission_matrix` never locks tiers out on upgrade):
+- `view_competitors` -> `canViewCompetitors(userRole)`: default `true` for all tiers (`T1–T6`) when absent.
+- `see_all_competitor_regions` -> `canSeeAllCompetitorRegions(userRole)`: default `T1–T3` when absent (`TIER_1`..`TIER_3`).
+- `manage_competitors` -> `canManageCompetitors(userRole)`: add/edit/delete rivals, link Cello pair, edit/delete region prices, approve/reject reports; default `T1–T4` when absent (still region-scoped unless `see_all_competitor_regions` is true).
+- `report_competitor_price` -> `canReportCompetitor(userRole)`: submit field reports; default `true` for all tiers (`T1–T6`) when absent.
+Add 4 rows in `SettingsView.jsx` `ALL_FEATURES` right after `manage_product_categories` (`L1724`). Also update `TAB_FEATURE` (`permissions.js:237-242`) + `canOpenTab` (`L243-249`), `BiohazardTheme.jsx` `allMenuItems` (`L517-535`) + `visibleMenu` (`L543-551`), and `src/config/demoMission.js` `TOUR.competitors` (keep 100% parity with `logicFixes.selfcheck.mjs:13352, 13357, 14435`).
+
+### 3. Draft Console Rules Text `[CHANGE 30 — DRAFT]` (Do NOT edit `firestore.rules` directly)
+Insert helpers right after `categoryManager(bossUid)` (`firestore.rules:168`):
+```
+    // [CHANGE 30 — DRAFT] COMPETITORS GLOBAL CATALOG, REGION PRICES & FIELD REPORTS.
+    function compMatrixFlag(bossUid, key, defaultRoles) {
+      let profile = getEmployeeProfile();
+      let role = profile != null ? profile.get('userRole', 'NONE') : 'NONE';
+      let m = getPermissionMatrixDoc(bossUid);
+      let saved = m != null && ('matrix' in m) ? m.matrix : {};
+      let known = key in saved.get('DEVELOPER', []) || key in saved.get('COMPANY_OWNER', []) || key in saved.get('AREA_ADMIN', []) ||
+        key in saved.get('FLEET_CAPTAIN', []) || key in saved.get('FIELD_OPERATIVE', []) || key in saved.get('ROOKIE', []);
+      return isAuthenticated() && profile != null && profile.bossUid == bossUid &&
+        (known ? key in saved.get(role, []) : role in defaultRoles);
+    }
+    function competitorAllRegions(bossUid) {
+      return isCompanyTopTier(bossUid) || compMatrixFlag(bossUid, 'see_all_competitor_regions', ['AREA_ADMIN']);
+    }
+    function competitorManager(bossUid) {
+      return isCompanyTopTier(bossUid) || compMatrixFlag(bossUid, 'manage_competitors', ['AREA_ADMIN', 'FLEET_CAPTAIN']);
+    }
+    function competitorReporter(bossUid) {
+      return isSalesman(bossUid) && compMatrixFlag(bossUid, 'report_competitor_price', ['COMPANY_OWNER', 'AREA_ADMIN', 'FLEET_CAPTAIN', 'FIELD_OPERATIVE', 'ROOKIE']);
+    }
+    function isOwnCompRegionKey(bossUid, regionKey) {
+      let profile = getEmployeeProfile();
+      let rawLoc = profile != null ? profile.get('location', '') : '';
+      let loc = rawLoc is string ? rawLoc.lower().trim() : '';
+      let rk = regionKey is string ? regionKey.lower().trim() : '';
+      return isSalesman(bossUid) && loc != '' && rk != '' && loc == rk;
+    }
+```
+Insert collection match blocks right after `match /product_categories/{catId}` (`firestore.rules:700`):
+```
+      // [CHANGE 30 — DRAFT] Competitors global catalog, region-isolated prices, and approval queue.
+      match /competitors/{rivalId} {
+        allow read: if isSalesman(bossUid);
+        allow create, update: if competitorManager(bossUid) &&
+          request.resource.data.keys().hasOnly(['name', 'brand', 'normName', 'categoryId', 'subCategoryId', 'pairedProductId', 'createdAt', 'updatedAt', 'updatedBy', 'updatedByUid']) &&
+          request.resource.data.name is string && request.resource.data.name.size() > 0;
+        // Deleting a whole rival (across regions) requires all-region authority or T1-T3 so T4 cannot erase another region's unseen prices.
+        allow delete: if competitorManager(bossUid) && competitorAllRegions(bossUid);
+
+        match /region_prices/{regionKey} {
+          allow read: if competitorAllRegions(bossUid) || isOwnCompRegionKey(bossUid, regionKey);
+          allow create, update: if competitorManager(bossUid) &&
+            (competitorAllRegions(bossUid) || isOwnCompRegionKey(bossUid, regionKey)) &&
+            request.resource.data.keys().hasOnly(['region', 'Retail', 'Grosir', 'Ecer', 'updatedAt', 'updatedBy', 'updatedByUid', 'sourceReportId']) &&
+            request.resource.data.region is string && request.resource.data.region.lower().trim() == regionKey.lower().trim();
+          allow delete: if competitorManager(bossUid) && (competitorAllRegions(bossUid) || isOwnCompRegionKey(bossUid, regionKey));
+        }
+      }
+      match /competitor_reports/{reportId} {
+        allow read: if competitorAllRegions(bossUid) ||
+          isOwnCompRegionKey(bossUid, resource.data.get('region', '')) ||
+          (isSalesman(bossUid) && resource.data.get('reportedByUid', '') == request.auth.uid);
+        allow create: if competitorReporter(bossUid) &&
+          request.resource.data.get('status', '') == 'pending' &&
+          request.resource.data.get('reportedByUid', '') == request.auth.uid &&
+          request.resource.data.price is number && request.resource.data.price > 0 &&
+          request.resource.data.customerType in ['Retail', 'Grosir', 'Ecer'] &&
+          request.resource.data.region is string && request.resource.data.region.size() > 0;
+        allow update: if competitorManager(bossUid) &&
+          resource.data.get('status', '') == 'pending' &&
+          request.resource.data.status in ['approved_price', 'approved_note', 'rejected'] &&
+          (competitorAllRegions(bossUid) || isOwnCompRegionKey(bossUid, resource.data.get('region', '')));
+        allow delete: if isCompanyTopTier(bossUid);
+      }
+```
+
+### 4. Backup / Mirror / Export / Restore / Wipe Paths (`src/App.jsx`)
+Per Trap #3 (`NEXT-SESSION.md`), update ALL 5 paths in `src/App.jsx`:
+1. `handleCloudMirror` (`L959-973`) & full backup (`L776`): fetch `competitors` + each rival's `region_prices` subcollection (stored as `rival.regionPrices` map/array inside export JSON, matching `customers[i].benchmarks` at `L768`/`L1052`) + `competitor_reports`.
+2. `handleWipeData` (`L976-1015`): in `type === 'products' || type === 'both'` (or dedicated `'competitors'`), chunk-delete `competitors/{id}/region_prices/*`, `competitors/{id}`, and `competitor_reports/*` via `commitInChunks`.
+3. `exportData` (`L1038-1068`): include `competitors` (with `regionPrices`) and `competitorReports`.
+4. `executePartialRestore` (`L1102-1106`) & full `handleRestore` (`L4418-4436`): strip nested `regionPrices` back into `competitors/{id}/region_prices/{regionKey}` via `operations` + `commitInChunks` and queue `competitor_reports`.
+
+### 5. Execution Order & Self-Check Assertions
+1. **Emulator rules proof first (`Task 107`):** write `rules-test/test-competitors.mjs` and pass in Firestore emulator before Console paste.
+2. **Aldi publishes `[CHANGE 30]` in Console** on demo (`kpm-demo-f4d74`) + main (`cello-inventory-manager`).
+3. **Code build (`Task 108`):**
+   - `src/config/permissions.js`: add `canViewCompetitors`, `canSeeAllCompetitorRegions`, `canManageCompetitors`, `canReportCompetitor`, `TAB_FEATURE.competitors`, update `canOpenTab`.
+   - `src/components/SettingsView.jsx`: add the 4 `ALL_FEATURES` toggles (`L1724`).
+   - `src/components/BiohazardTheme.jsx` + `src/config/demoMission.js`: add `competitors` sidebar item + `TOUR.competitors`.
+   - `src/hooks/useDatabaseSync.js`: subscribe `competitors`, scoped `region_prices`, and scoped `competitor_reports` + `isPendingUndo('rival:...')` / `isPendingUndo('rivalPrice:...')`.
+   - `src/components/CompetitorsView.jsx` (new standalone component matching `.claude/drafts/competitors-pro.html`): 4 KPI tiles, 4 tabs (`Rival products`, `Compare`, `Reports`, `Manage`), collapsed category groups + Expand/Collapse all, cross-category searchable Product Picker (`Same category` first), inline 8s Undo for `Delete rival price` (T1–T4 own region) & `Delete rival` (`T1–T3` / all-region), approval modal (`Update the region price` vs `Keep as a note only`, existing vs new shared category + duplicate warnings), Reject modal, and Field Report form (`Shelf / Promo / Speed / Note / Photo`).
+   - `src/App.jsx`: wire `{activeTab === 'competitors' && <CompetitorsView ... />}` (`L5779` area) + CRUD/approval handlers + 5 backup/restore/wipe paths.
+   - `src/config/patchNotes.js` + `src/config/logicFixes.selfcheck.mjs`: update menu count `17 -> 18` at `L13352, L14435`, update `canOpenTab` check at `L13357`, add regression/behaviour checks for region-scoped reads (never queries unscoped `region_prices`/`competitor_reports` for T4–T6), 3 customer types only (no price per stick), and 8s Undo on rival/price deletes.
 
 ## Task 106 - READ-ONLY: Checklist of remaining non-money Delete targets for 8s Undo (Task 86 follow-up)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-20 12:20 WIB (Alucard-Lead). Continues Task 86 plan after Task 96 shipped Map shop delete Undo.
 **Touch only:** this file.
 1. Inspect remaining delete buttons across `src/` (folders, promo offers, roster entries if non-money, map borders/routes, etc.) with `file:line`, confirm which are purely non-money/non-stock and safe for `scheduleDelayedWrite`, and list the smallest checklist + self-checks.
 **Done when:** classified table + checklist written under Result.
+**Result:**
+Scanned every `deleteDoc` and `confirmAction(...Delete/Remove/Hapus...)` site in `src/` on commit `e19369ad`:
+
+### A. Already Using 8s Undo (`scheduleDelayedWrite`)
+| File : Line | Handler / Target | Current Undo Key |
+| :--- | :--- | :--- |
+| `src/App.jsx:844-856` & `useDatabaseSync.js:292` | `handleDeleteCategory` (`product_categories`) | `cat:{id}` |
+| `src/components/CustomerManager.jsx:1127-1135` & `useDatabaseSync.js:288` | `handleDeleteStore` (`customers`) | `cust:{id}` |
+| `src/MapMissionControl.jsx:1278-1292` & `useDatabaseSync.js:288` | `handleDeleteStore` (`customers`) | `cust:{id}` |
+
+### B. SAFE Non-Money / Non-Stock -> Convert to 8s Undo (`scheduleDelayedWrite`)
+| File : Line | Action / Collection | Why Safe + Optimistic / Undo Implementation |
+| :--- | :--- | :--- |
+| `src/RestockVaultView.jsx:589-601` | `removePlace` (`places/{id}`) | Factory/destination address book only; UI explicitly notes past Surat Jalan keep saved names/addresses. Hold hidden key `place:{id}` (`isPendingUndo`) and delay `deleteDoc`. |
+| `src/RestockVaultView.jsx:793-801` | `handleDeleteTarget` (`production_targets/{id}`) | Monthly planning quota goal only (no stock/money mutation). Hold hidden key `target:{id}` and delay `deleteDoc`. |
+| `src/MapMissionControl.jsx:559-568, 589-596` | `handleDeleteBorder` / `deleteBoundaryFromFirebase` (`mapSettings/bnd_{id}`) | Polygon map overlay geometry + `saveBorderCache`. Optimistically filter `boundaries` + cache, restore `prevBoundaries` + cache on `onUndo`, delay `deleteDoc`. |
+| `src/MapMissionControl.jsx:703-727` | `handleDeleteFolder` (batch `mapSettings/bnd_*` in folder) | Polygon border folder cleanup only. Snapshot `prevBoundaries`, optimistically remove + save cache, restore on `onUndo`, delay `commitInChunks`. |
+| `src/components/PromoBundleFields.jsx:102-105` | `remove` (`regionOffers` / promo bundle rule) | Promo offer metadata array save (`bundles.filter(...)`); zero stock/ledger write. Capture `prevBundles` / `nextBundles`, show optimistically filtered list, restore on `onUndo`, delay `save(nextBundles)`. |
+| `src/App.jsx:3488-3494` | `handleDeleteMascotMessage` (`settings/general.mascotMessages`) | Capybara mascot quote string list. Keep hidden pending state or previous array, restore on `onUndo`, delay `setDoc(..., { merge: true })`. |
+| `src/components/CustomerManager.jsx:47-50` | `handleDeleteBenchmark` (`customers/{id}/benchmarks/{benchId}`) | Competitor intelligence note on shop profile. Optimistically filter displayed benchmarks (`hiddenBenchIds` / `isPendingUndo('bench:' + id)`), delay `deleteDoc` (note Step 2/3 will tighten write rules to T1/T2 once migrated). |
+| `src/components/CustomerManager.jsx:544-570` | `handleDeleteFolder` (`customers` folder reset to `Unknown *` via `commitInChunks`) | Address folder label grouping only (zero stock/money change, though touches N customer docs). Snapshot `prevCustomProv/Kab/Kec` + hidden folder marker, delay `commitInChunks`. **Run offline guard strictly** since multi-doc batch. |
+
+*(Note: `src/components/CustomerManager.jsx:1487-1491` store photo trash button only clears local `formData.storeImage` draft state until Save is clicked, and `src/components/SettingsView.jsx:1885-1895` `handleDeleteTier` only edits local `tiers`/`matrix` draft state until explicit Deploy — neither hits Firestore immediately, so leave alone.)*
+
+### C. LEAVE ALONE — Money / Stock / Ledger / Auth / Security / Data Wipe (NEVER delay with Undo)
+| File : Line | Action / Collection | Reason to Keep Immediate |
+| :--- | :--- | :--- |
+| `src/App.jsx:3918-3928` | `deleteProduct` (`products/{id}`) | Master Vault inventory SKU + stock/HPP valuation. |
+| `src/RestockVaultView.jsx:803-825` | `handleDeletePO` (`procurement` + `products.stock` decrement) | Mutates live Master Vault stock via `increment(-qtyToSubtract)`. |
+| `src/RestockVaultView.jsx:827-834` & `src/components/BranchWarehouseManager.jsx:887-900` | `handleDeleteRequest` (`stock_requests`) | Outbound warehouse stock dispatch paper trail. |
+| `src/App.jsx:2832-2840` | `handleResetEOD` (`eod_reports`) | Cash & stock EOD settlement verification reset. |
+| `src/App.jsx:3586-3645` | `handleDeleteSingleTransaction`, `handleDeleteConsignmentData`, `handleDeleteHistory` (`transactions` + `untallyOps`) | Financial sales/debt receipts and career ledger tallies. |
+| `src/App.jsx:4186-4230` | `handleDeleteSampling` (`samplings` + `runTransaction` stock restore) | Restores physical sample stock to Master Vault / Agent Canvas. |
+| `src/App.jsx:976-1015` | `handleWipeData` | Bulk destructive wipe with double confirmation. |
+| `src/components/CustomerManager.jsx:799-830` | `handleDeleteDuplicate` (`customers/{id}`) | Duplicate cleanup explicitly warns about orphaned sales/debt history (`id`, `lastVisit`, `assignedAgent`) — keep explicit permanent confirm. |
+| `src/FleetCanvasManager.jsx:548-563, 588-603` | `handleDeleteAgent` (`motorists` + `employee_directory` + `seats`), `handleResetVaultPassword` (`vault` delete) | Immediate employee termination / seat revocation / typed `confirm` credential reset. |
+| `src/App.jsx:1625-1634, 2988, 3105-3106` | `handleRemovePasskey`, invite/ghost ticket cleanup | Biometric credential & auth security cleanup. |
+| `src/components/CrownTransferProtocol.jsx:118` & `LandlordDashboard.jsx:59` | `system_admins`, `licenses` | System ownership transfer & tenant license revocation. |
+
+### D. Surgical Implementation & Self-Check Checklist (Smallest Order)
+1. **Batch 1 (single-doc metadata — highest value, lowest blast radius):** `RestockVaultView.jsx` (`removePlace` `place:{id}`, `handleDeleteTarget` `target:{id}`) + `MapMissionControl.jsx` (`handleDeleteBorder` `border:{id}`) + `PromoBundleFields.jsx` (`remove` `bundle:{id}`). Note `useDatabaseSync.js` isn't even needed if each component reads `usePendingUndo()` / `isPendingUndo(...)` from `utils/delayedWrite.js`!
+2. **Batch 2 (multi-doc folder / nested metadata):** `MapMissionControl.jsx` (`handleDeleteFolder`), `CustomerManager.jsx` (`handleDeleteBenchmark`, `handleDeleteFolder`), `App.jsx` (`handleDeleteMascotMessage`).
+3. **Self-checks (`src/config/logicFixes.selfcheck.mjs`):** assert each converted handler calls `scheduleDelayedWrite({ key, label, onOptimistic, commit, onUndo })` AND asserts ZERO stock/money handlers (`deleteProduct`, `handleDeletePO`, `handleDeleteSingleTransaction`, `handleDeleteConsignmentData`, `handleDeleteHistory`, `handleResetEOD`, `handleDeleteSampling`, `handleDeleteAgent`) touch `scheduleDelayedWrite`.
+
+## Task 107 - TEST (rules-test only): Emulator proof for Step 2 Competitors draft rules (Change 30)
+**Status:** OPEN
+**Written:** 2026-11-20 12:38 WIB (Alucard-Lead). Next step before Console paste & Step 2 build (`Task 105` plan).
+**Touch only:** `rules-test/test-competitors.mjs`, this file. Never edit `firestore.rules` or `src/`.
+1. Mirror `rules-test/test-product-categories.mjs`: load `firestore.rules` from disk, splice `[CHANGE 30 — DRAFT]` from Task 105 IN MEMORY only, and run inside Firestore emulator (`npx firebase emulators:exec --only firestore --project demo-kpm-rules "node rules-test/test-competitors.mjs"`).
+2. Cover all matrix & region-isolation cases:
+   - T4 (`FLEET_CAPTAIN`, `location: 'JAWA BARAT'`) CAN read/write `region_prices/JAWA BARAT` and `competitor_reports` for `JAWA BARAT`, CANNOT read/write `region_prices/JAWA TENGAH` or approve `JAWA TENGAH` reports, CANNOT delete global `competitors/{rivalId}` without `see_all_competitor_regions`.
+   - T5/T6 (`FIELD_OPERATIVE`/`ROOKIE`, `location: 'JAWA BARAT'`) CAN create `pending` `competitor_reports`, read own-region `region_prices/JAWA BARAT`, CANNOT write `competitors` or `region_prices`, CANNOT approve reports or forge `reportedByUid`.
+   - T3 (`AREA_ADMIN`) CAN read all regions' `region_prices`, approve any region report, edit any region price, and delete global rivals (defaults when keys absent from `permission_matrix`).
+   - Matrix overrides (`permission_matrix` explicitly grants `see_all_competitor_regions` to T4, or revokes `manage_competitors` from T4, or revokes `report_competitor_price` from T6) behave symmetrically in both directions; cross-company `bossUid` isolation holds everywhere.
+**Done when:** emulator suite passes 100%, `firestore.rules` & `src/` untouched, Result written.
+**Result:**
+
+## Task 108 - BUILD (local only): Build Step 2 Competitors global screen matching `.claude/drafts/competitors-pro.html` [WAIT FOR CONSOLE CHANGE 30]
+**Status:** OPEN
+**Written:** 2026-11-20 12:38 WIB (Alucard-Lead). Runs AFTER Task 107 emulator proof passes AND Aldi confirms publishing Change 30 on demo/main Console.
+**Touch only:** `src/config/permissions.js`, `src/components/SettingsView.jsx`, `src/components/BiohazardTheme.jsx`, `src/config/demoMission.js`, `src/hooks/useDatabaseSync.js`, `src/components/CompetitorsView.jsx`, `src/App.jsx`, `src/config/patchNotes.js`, `src/config/logicFixes.selfcheck.mjs`, this file.
+1. Execute Steps 2–5 from Task 105 Result, matching `.claude/drafts/competitors-pro.html` (no green, no blue, 44px phone targets, 8s Undo for price/rival delete, dual-region query safety for T4–T6).
+2. Run all 5 gates (`undef.check.mjs`, all `*.selfcheck.mjs`, `npm run build`, `integration.audit.mjs`, `graphify update .`) + render PC 1440 & Phone 390 in `ponder-lab` (`ERRORS: []`), commit locally, NEVER push without Aldi's `"push"`.
+**Done when:** all gates green, lab screenshots verified, Result written.
 **Result:**
