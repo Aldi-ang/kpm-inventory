@@ -188,6 +188,16 @@ export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit
 };          
 
 // --- UPGRADED: CUSTOMER MANAGEMENT ---
+/* Truthful one-line reason why a shop sits in "Shops without a salesman", from real doc fields only (empty when unknown). */
+export const noSalesmanWhy = (c) => {
+    if (!c) return '';
+    if (c.status === 'PENDING') return 'New shop (NOO) — no salesman assigned yet';
+    if (c.mapFolder) return 'Imported from map file — no salesman assigned yet';
+    if (c.assignedAt) return 'Previous salesman assignment was cleared';
+    if (c.nooAgentName && !c.assignedAt) return 'Never had a salesman assigned';
+    return '';
+};
+
 export const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin, userRole, employeeRegion, customerScope = null, tierSettings, onRequestCrop, croppedImage, onClearCroppedImage, onNavigateToMap, roster = [] }) => {
     const [viewMode, setViewMode] = useState('list');
     const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -234,7 +244,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
     const grosirAsks = useMemo(() => (customers || []).filter(c => c.requestedTier === 'Grosir'), [customers]);
     const decideGrosir = async (c, yes) => {
         const now = c.priceTier || 'Retail';
-        if (!await confirmAction(yes ? `Confirm Grosir for ${c.name}? From its next sale it sells at Grosir prices.` : `Keep ${c.name} at ${now}? The Grosir request is closed.`)) return;
+        if (!await confirmAction(yes ? `Approve Grosir price for ${c.name}? From its next sale it sells at Grosir prices.` : `Keep ${c.name} at ${now} price? The Grosir price request is closed.`)) return;
         const who = user.displayName || user.email?.split('@')[0] || 'Admin';
         try {
             await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', c.id), yes
@@ -257,14 +267,14 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
     const giveSalesman = async (c) => {
         const name = ownerPick[c.id];
         if (!name) return notify(`Choose a salesman for ${c.name} first.`);
-        if (!await confirmAction(`Give ${c.name} to ${name}? From now on it is ${name}'s shop, and its packages open for ${name}.`)) return;
+        if (!await confirmAction(`Assign ${c.name} to ${name}? From now on ${name} handles it, and its packages open for ${name}.`)) return;
         const who = user.displayName || user.email?.split('@')[0] || 'Admin';
         try {
             await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', c.id), { assignedAgent: name, assignedBy: who, assignedAt: serverTimestamp() });
-            logAudit('AGENT_ASSIGNED', `${who} gave ${c.name} to ${name}`);
-            triggerCapy(`${c.name} is ${name}'s shop now - its packages open for ${name}.`);
+            logAudit('AGENT_ASSIGNED', `${who} assigned ${c.name} to ${name}`);
+            triggerCapy(`${c.name} is now handled by ${name}.`);
         } catch (err) {
-            notify(`${c.name} was NOT given to ${name}: ${err?.code === 'permission-denied' ? 'this shop is outside what you may edit - ask Tier 1' : err?.message}`);
+            notify(`${c.name} was NOT assigned to ${name}: ${err?.code === 'permission-denied' ? 'this shop is outside what you may edit - ask Tier 1' : err?.message}`);
         }
     };
 
@@ -1597,46 +1607,52 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 />
             </div>
 
-            {/* 💰 GROSIR REQUESTS (P3, 2026-10-21) - only for those who may grant it. A salesman's Grosir waits here;
+            {/* 💰 GROSIR PRICE REQUESTS (P3, 2026-10-21) - only for those who may grant it. A salesman's Grosir waits here;
                 the shop itself is already in its folder and sells at its current price until an admin decides. */}
             {grantsGrosir && grosirAsks.length > 0 && (
-                <section aria-label="Grosir requests" className="mb-6 rounded-xl border border-[var(--accent-edge)] bg-[var(--raised)] overflow-hidden">
-                    <h4 className="px-3 lg:px-4 py-2 bg-[var(--inset)] border-b border-[var(--line-3)] text-[11px] lg:text-[10px] uppercase tracking-widest font-bold text-[var(--accent-ink)]">Grosir requests · {grosirAsks.length} waiting</h4>
+                <section aria-label="Grosir price requests" className="mb-6 rounded-xl border border-[var(--accent-edge)] bg-[var(--raised)] overflow-hidden">
+                    <h4 className="px-3 lg:px-4 py-2 bg-[var(--inset)] border-b border-[var(--line-3)] text-[11px] lg:text-[10px] uppercase tracking-widest font-bold text-[var(--accent-ink)]">Grosir price requests ({grosirAsks.length})</h4>
+                    <p className="px-3 lg:px-4 py-2 bg-[var(--inset)] border-b border-[var(--line-3)] text-xs text-[var(--ink-dim)] leading-relaxed">A salesman asked to sell to this shop at the Grosir (wholesale) price. Approve to switch the shop's price, or keep its current price.</p>
                     {grosirAsks.map(c => (
                         <div key={c.id} className="flex flex-wrap items-center gap-2 px-3 lg:px-4 py-2.5 border-b border-[var(--line-2)] last:border-b-0">
                             <div className="min-w-0 flex-1 basis-48">
                                 <p className="text-[15px] leading-5 font-bold text-[var(--ink)] truncate">{c.name}</p>
-                                <p className="text-[11px] text-[var(--ink-dim)] lg:truncate">{[c.city, c.region].filter(Boolean).join(' · ') || 'No area yet'} · asked by {c.nooAgentName || c.mappedBy || 'a salesman'} · sells at {c.priceTier || 'Retail'} now</p>
+                                <p className="text-[11px] text-[var(--ink-dim)] lg:truncate">{[c.city, c.region].filter(Boolean).join(' · ') || 'No area yet'} · requested by {c.nooAgentName || c.mappedBy || 'a salesman'} · sells at {c.priceTier || 'Retail'} now</p>
                             </div>
-                            <div className="flex gap-2 shrink-0">
-                                <button onClick={() => decideGrosir(c, false)} className="kpm-btn rounded min-h-[44px] lg:min-h-0"><span>Keep {c.priceTier || 'Retail'}</span></button>
-                                <button onClick={() => decideGrosir(c, true)} className="kpm-btn key rounded min-h-[44px] lg:min-h-0"><span>Confirm Grosir</span></button>
+                            <div className="flex flex-wrap gap-2 shrink-0 w-full sm:w-auto">
+                                <button onClick={() => decideGrosir(c, false)} className="kpm-btn rounded flex-1 sm:flex-none min-h-[44px] lg:min-h-0"><span>Keep {c.priceTier || 'Retail'} price</span></button>
+                                <button onClick={() => decideGrosir(c, true)} className="kpm-btn key rounded flex-1 sm:flex-none min-h-[44px] lg:min-h-0"><span>Approve Grosir price</span></button>
                             </div>
                         </div>
                     ))}
                 </section>
             )}
 
-            {/* 🏪 SHOPS WAITING FOR A SALESMAN (package rules stage C) - a shop with no salesman gets no package */}
+            {/* 🏪 SHOPS WITHOUT A SALESMAN (package rules stage C) - a shop with no salesman gets no package */}
             {grantsGrosir && ownerAsks.length > 0 && (
-                <section aria-label="Shops waiting for a salesman" className="mb-6 rounded-xl border border-[var(--accent-edge)] bg-[var(--raised)] overflow-hidden">
-                    <h4 className="px-3 lg:px-4 py-2 bg-[var(--inset)] border-b border-[var(--line-3)] text-[11px] lg:text-[10px] uppercase tracking-widest font-bold text-[var(--accent-ink)]">Shops waiting for a salesman · {ownerAsks.length} · no package until they have one</h4>
-                    {(ownerAll ? ownerAsks : ownerAsks.slice(0, 8)).map(c => (
+                <section aria-label="Shops without a salesman" className="mb-6 rounded-xl border border-[var(--accent-edge)] bg-[var(--raised)] overflow-hidden">
+                    <h4 className="px-3 lg:px-4 py-2 bg-[var(--inset)] border-b border-[var(--line-3)] text-[11px] lg:text-[10px] uppercase tracking-widest font-bold text-[var(--accent-ink)]">Shops without a salesman ({ownerAsks.length})</h4>
+                    <p className="px-3 lg:px-4 py-2 bg-[var(--inset)] border-b border-[var(--line-3)] text-xs text-[var(--ink-dim)] leading-relaxed">Nobody is in charge of these shops, so they get no visits and no stock package. Pick the salesman who will look after each shop and press Assign.</p>
+                    {(ownerAll ? ownerAsks : ownerAsks.slice(0, 8)).map(c => {
+                        const why = noSalesmanWhy(c);
+                        return (
                         <div key={c.id} className="flex flex-wrap items-center gap-2 px-3 lg:px-4 py-2.5 border-b border-[var(--line-2)] last:border-b-0">
                             <div className="min-w-0 flex-1 basis-48">
                                 <p className="text-[15px] leading-5 font-bold text-[var(--ink)] truncate">{c.name}</p>
-                                <p className="text-[11px] text-[var(--ink-dim)] lg:truncate">{[c.city, c.region].filter(Boolean).join(' · ') || 'No area yet'} · added by {c.nooAgentName || c.mappedBy || 'a salesman'}{c.requestedTier === 'Grosir' ? ' · its Grosir is a separate request above' : ''}</p>
+                                <p className="text-[11px] text-[var(--ink-dim)] lg:truncate">{[c.city, c.region].filter(Boolean).join(' · ') || 'No area yet'} · opened by {c.nooAgentName || c.mappedBy || 'a salesman'}{c.requestedTier === 'Grosir' ? ' · Grosir price request above' : ''}</p>
+                                {why && <p className="text-[11px] text-[var(--accent-ink)] mt-0.5">{why}</p>}
                             </div>
                             <div className="flex gap-2 shrink-0 w-full sm:w-auto">
                                 <select aria-label={`Salesman for ${c.name}`} value={ownerPick[c.id] || ''} onChange={e => setOwnerPick(p => ({ ...p, [c.id]: e.target.value }))}
-                                    className="flex-1 sm:flex-none sm:w-44 min-h-[44px] lg:min-h-0 px-2 text-sm rounded border border-[var(--line)] bg-[var(--raised)] text-[var(--ink)] font-bold outline-none">
+                                    className="flex-1 min-w-0 sm:flex-none sm:w-44 min-h-[44px] lg:min-h-0 px-2 text-sm rounded border border-[var(--line)] bg-[var(--raised)] text-[var(--ink)] font-bold outline-none">
                                     <option value="">{roster.length ? 'Choose salesman' : 'No salesmen on the roster'}</option>
                                     {roster.map(n => <option key={n} value={n}>{n}</option>)}
                                 </select>
-                                <button onClick={() => giveSalesman(c)} disabled={!ownerPick[c.id]} className="kpm-btn key rounded min-h-[44px] lg:min-h-0 disabled:opacity-50"><span>Give</span></button>
+                                <button onClick={() => giveSalesman(c)} disabled={!ownerPick[c.id]} className="kpm-btn key rounded shrink-0 min-h-[44px] lg:min-h-0 disabled:opacity-50"><span>Assign</span></button>
                             </div>
                         </div>
-                    ))}
+                        );
+                    })}
                     {ownerAsks.length > 8 && (
                         <button onClick={() => setOwnerAll(v => !v)} className="w-full px-3 py-2.5 min-h-[44px] lg:min-h-0 text-[12px] font-bold text-[var(--accent-ink)] hover:bg-[var(--inset)]">
                             {ownerAll ? 'Show fewer' : `Show all ${ownerAsks.length}`}
@@ -1758,7 +1774,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                                         {c.priceTier || 'Retail'}
                                                     </span>
                                                     {c.requestedTier === 'Grosir' && (
-                                                        <span title="A salesman asked for Grosir - it sells at its current price until an admin confirms" className="text-[11px] px-2 py-0.5 rounded-md border font-bold uppercase tracking-widest border-[var(--accent-edge)] text-[var(--accent-ink)] bg-[var(--inset)] whitespace-nowrap">Grosir?</span>
+                                                        <span title="A salesman asked for Grosir price - it sells at its current price until an admin approves" className="text-[11px] px-2 py-0.5 rounded-md border font-bold uppercase tracking-widest border-[var(--accent-edge)] text-[var(--accent-ink)] bg-[var(--inset)] whitespace-nowrap">GROSIR REQUESTED</span>
                                                     )}
                                                 </div>
                                             </div>

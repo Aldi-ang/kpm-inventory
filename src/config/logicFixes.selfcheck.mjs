@@ -14157,8 +14157,8 @@ section('PACKAGE RULES STAGE C (his 2026-11-12 "regional manager tier 4 ... conf
   const cm = code(read('src/components/CustomerManager.jsx')).replace(/\r/g, ''), app = code(read('src/App.jsx')).replace(/\r/g, '');
   ok('the list shows only to tier 1-4 and only shops this person may edit; the name comes from the roster; the give is confirmed and reports',
      /grantsGrosir \? \(customers \|\| \[\]\)\.filter\(c => hasNoSalesman\(c\) && canEditCustomer\(c\)\)/.test(cm) && /\{grantsGrosir && ownerAsks\.length > 0 && \(/.test(cm) &&
-     /roster\.map\(n => <option key=\{n\} value=\{n\}>/.test(cm) && /assignedAgent: name, assignedBy: who/.test(cm) && /confirmAction\(`Give \$\{c\.name\} to/.test(cm) &&
-     /triggerCapy\(`\$\{c\.name\} is \$\{name\}'s shop now/.test(cm) && /was NOT given to/.test(cm));
+     /roster\.map\(n => <option key=\{n\} value=\{n\}>/.test(cm) && /assignedAgent: name, assignedBy: who/.test(cm) && /confirmAction\(`Assign \$\{c\.name\} to/.test(cm) &&
+     /triggerCapy\(`\$\{c\.name\} is now handled by \$\{name\}\.`\)/.test(cm) && /was NOT assigned to/.test(cm));
   ok('a new shop from tier 5-6 rings the bell; the app passes the roster and lets tier 1-4 read those bells',
      /if \(!editingId && !grantsGrosir\) await addDoc\([^\n]*newShopNotice\(/.test(cm) && /roster=\{motorists\.map\(m => String\(m\.name/.test(app) &&
      /n\.agentId === 'ADMIN' && ASK_NOTICE_TYPES\.includes\(n\.type\) && canConfirmGrosir\(userRole\)/.test(app));
@@ -14865,6 +14865,32 @@ section('MAP SHOP DELETE 8-SECOND UNDO (Task 96, 2026-11-20)');
      mmc.includes("import { scheduleDelayedWrite } from './utils/delayedWrite.js'") &&
      /const handleDeleteStore = async \(\) => \{[\s\S]{0,420}scheduleDelayedWrite\(\{[\s\S]{0,220}key:\s*`cust:\$\{storeId\}`[\s\S]{0,220}onOptimistic:\s*\(\) => setSelectedStore\(null\)/.test(mmc) &&
      sync.includes('!isPendingUndo(`cust:${c.id}`)'));
+}
+section('CUSTOMER DIRECTORY APPROVED QUEUE WORDING & HONEST WHY (Task 97, 2026-11-20)');
+{
+  const cm = read('src/components/CustomerManager.jsx');
+  const whyMatch = cm.match(/export const noSalesmanWhy = ([\s\S]*?)\n\};/);
+  const noSalesmanWhy = whyMatch ? new Function(`return (${whyMatch[1]}\n})`)() : null;
+  ok('REGRESSION (Task 97): CustomerManager uses approved wording ("Shops without a salesman", "Assign", "is now handled by", "Grosir price requests", "GROSIR REQUESTED", "Keep <tier> price", "Approve Grosir price"), no old "Grosir?"/"Confirm Grosir", and 44px phone buttons',
+     cm.includes('Shops without a salesman ({ownerAsks.length})') &&
+     cm.includes('Nobody is in charge of these shops, so they get no visits and no stock package. Pick the salesman who will look after each shop and press Assign.') &&
+     cm.includes('<span>Assign</span>') &&
+     cm.includes('${c.name} is now handled by ${name}.') &&
+     cm.includes('Grosir price requests ({grosirAsks.length})') &&
+     cm.includes('<span>Keep {c.priceTier || \'Retail\'} price</span>') &&
+     cm.includes('<span>Approve Grosir price</span>') &&
+     cm.includes('GROSIR REQUESTED') &&
+     !cm.includes('Grosir?') &&
+     !cm.includes('Confirm Grosir') &&
+     cm.includes('flex-1 min-w-0') &&
+     cm.includes('min-h-[44px]'));
+  ok('BEHAVIOUR (Task 97): noSalesmanWhy derives true reason from real shop fields and returns empty string when data cannot tell',
+     typeof noSalesmanWhy === 'function' &&
+     noSalesmanWhy({ status: 'PENDING' }) === 'New shop (NOO) — no salesman assigned yet' &&
+     noSalesmanWhy({ status: 'APPROVED', mapFolder: 'Route A' }) === 'Imported from map file — no salesman assigned yet' &&
+     noSalesmanWhy({ status: 'APPROVED', assignedAt: 123 }) === 'Previous salesman assignment was cleared' &&
+     noSalesmanWhy({ status: 'APPROVED', nooAgentName: 'Budi' }) === 'Never had a salesman assigned' &&
+     noSalesmanWhy({ status: 'APPROVED' }) === '');
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

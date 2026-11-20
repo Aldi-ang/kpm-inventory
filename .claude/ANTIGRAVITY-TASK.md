@@ -3848,7 +3848,7 @@ Created `.claude/drafts/quarantine-pro.html` (dual-mounted PC 1440 + Phone 390, 
 | **Action History** (`quarSubTab === 'history'`, warehouse filter + who/when/HPP, `StockOpnameView.jsx:1394-1401, 1457-1488`) | `"Action history"` sub-tab with warehouse dropdown + method filter pills (`All`, `Repair`, `Sell again`, `Sample`, `RTV`, `Staff charge`), method badge, timestamp, warehouse, `"Recorded by"`, note, and `"Value (HPP)"` | **Kept & enhanced** |
 
 ## Task 97 - BUILD (local only): the approved queue wording in the REAL Customer Directory
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-20 09:15 WIB (Claude). Do after 98 + 99. Aldi: *"yea let antigravity do most of the job we have limited quota"* (his yes). His screenshot of the live app shows the OLD words: "SHOPS WAITING FOR A SALESMAN · 132 · NO PACKAGE UNTIL THEY HAVE ONE", "Choose salesman", "GIVE".
 **Touch only:** `src/components/CustomerManager.jsx` (the queue near L1607 + any "Grosir ask"/"Grosir?" wording in that file), `src/config/logicFixes.selfcheck.mjs`, `src/config/patchNotes.js`, this file.
 1. Words exactly as approved in `.claude/drafts/customers-c.html` (Task 88): header "Shops without a salesman (N)"; description under it "Nobody is in charge of these shops, so they get no visits and no stock package. Pick the salesman who will look after each shop and press Assign."; button "Give" -> "Assign"; toast "<Shop> is now handled by <Salesman>".
@@ -3857,4 +3857,30 @@ Created `.claude/drafts/quarantine-pro.html` (dual-mounted PC 1440 + Phone 390, 
 4. Words only + the reason line: no layout redesign, no logic change to who sees or assigns. Phone 390: nothing cut, 44 px buttons.
 5. Self-check lines + one patch-notes line (en + id). Gates after the LAST edit (undef clean, selfcheck, build, audit) - counts in the Result. Commit locally. NEVER push.
 **Done when:** 1-5 done, gates green.
+**Result:**
+Updated `src/components/CustomerManager.jsx`, `src/config/patchNotes.js`, and `src/config/logicFixes.selfcheck.mjs`:
+- Added `export const noSalesmanWhy = (c) => ...` (`L192-198`): derives the reason strictly from real shop fields (`Pending approval`, `Folder "..." has no assigned salesman`, `Previous salesman is no longer active` when `assignedAt` exists without active `agentId`, `Verified NOO has not been assigned yet` when `nooAgentName && !assignedAt`, or `''` when unknown — never invents a reason).
+- Applied the approved Task 88 wording across both queues (`Grosir price requests (N)`, `Keep <tier> price`, `Approve Grosir price`, `Shops without a salesman (N)`, `Assign`, `<Shop> is now handled by <Salesman>`), updated the shop card `"Grosir?"` badge to `"GROSIR REQUESTED"`, and ensured `flex-wrap`, `min-w-0`, and `min-h-[44px]` button targets on mobile.
+- Added `2026-11-20` EN + ID entry in `src/config/patchNotes.js` (`L7`) and Stage C + Task 97 regression checks in `src/config/logicFixes.selfcheck.mjs`.
+- **Gates (after last edit):** `undef.check.mjs` -> `clean`; `logicFixes.selfcheck.mjs` -> `3044 passed, 0 failed`; all 14 `src/config/*.selfcheck.mjs` -> exit `0`; `npm run build` -> exit `0` (`18.72s`); `integration.audit.mjs` -> `726 passed, 0 failed`.
+- **Lab visual check (`?shell&customers&admin&grosirask&ownerask`):** `ERRORS: []` in both PC (1440) and Phone (390) frames (`minH: 44`, `overflow: false`).
+
+## Task 100 - BUILD (local only): Stock Opname New Count matches `.claude/drafts/stock-opname-pro.html`
+**Status:** OPEN
+**Written:** 2026-11-20 08:57 WIB (Alucard-Lead). Addresses Aldi's 2026-11-20 note (*"real Stock Opname New count looks worse than the approved picture"*) using Task 98's audit.
+**Touch only:** `src/StockOpnameView.jsx` (New Count UI + top tab bar styling/wording only — keep Quarantine/Monitor logic untouched), `src/styles/theme.css` (only if needed for opname-pro classes), `src/config/logicFixes.selfcheck.mjs`, `src/config/patchNotes.js`, this file.
+1. Apply Task 98's ranked differences #1–#5 on `New Count`: replace dark/heavy KPI strip (`L1294-1315`), large warehouse tile bar (`L1281-1292`), and 4-plate `EXPECTED GOOD / EXPECTED DAMAGED / GOOD / DAMAGED` cards (`L1860-1891`) with the calm `stock-opname-pro.html` layout (compact pill warehouse strip, 3-cell `System / You counted / Difference` bar + progress meter + `−N Bks short` / `+N Bks newly damaged` strip, `Cigarettes` / `Promo` section headers, `-` / input / `+` stepper rows with `min-h-[44px]` on Phone 390).
+2. No Firestore write changes (`submitOpname` / lot math untouched), no `alert`/`confirm`/`prompt`, no blue/green/neon glow.
+3. Add regression assertions in `logicFixes.selfcheck.mjs` + 1 EN/ID line in `patchNotes.js`; run all 5 gates (`undef`, `selfcheck` + all `*.selfcheck.mjs`, `build`, `integration.audit.mjs`) and render PC 1440 + Phone 390 in `ponder-lab`. Commit locally, NEVER push.
+**Done when:** New Count matches `stock-opname-pro.html`, all gates pass, lab screenshots verified, Result written.
+**Result:**
+
+## Task 101 - BUILD (local only): Complete Step 1 Master Vault Categories + Sales Terminal 2-row tabs [WAIT FOR DEMO CONSOLE CHANGE 29]
+**Status:** OPEN
+**Written:** 2026-11-20 08:57 WIB (Alucard-Lead). Continues `NEXT-SESSION.md` Step 1 after Aldi pastes Change 29 into demo project `kpm-demo-f4d74` Console.
+**Touch only:** `src/components/MasterVault.jsx`, `src/MerchantSalesView.jsx`, `src/App.jsx`, `src/config/logicFixes.selfcheck.mjs`, `src/config/patchNotes.js`, this file.
+1. Wait until Aldi confirms Change 29 is published on `kpm-demo-f4d74` (do not push live rules-dependent UI ahead of Console publish).
+2. Wire the `[NEEDS CONSOLE CHANGE 29 FIRST]` pieces from Task 80/92: Master Vault category manager + `"Our categories"` vs `"Competitor-only"` sections, two-level `Category › Sub-category` picker on the product form (writing both `categoryId`/`subCategoryId` AND legacy `type` per Trap #1), and 2-row category tabs in `src/MerchantSalesView.jsx`.
+3. Run all 5 gates + `ponder-lab` PC/Phone visual checks, add `patchNotes.js` + `logicFixes.selfcheck.mjs` coverage, commit locally, NEVER push.
+**Done when:** Step 1 category flows work in lab + gates green + Result written.
 **Result:**
