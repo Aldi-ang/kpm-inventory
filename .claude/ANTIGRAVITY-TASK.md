@@ -3909,3 +3909,17 @@ Polished animations strictly inside `.claude/drafts/quarantine-pro.html` using `
 - **Warehouse tab switch:** Smooth `.work` + `.kpi` entrance (`translateY(6px)`, `190 ms`) on facility change without re-animating chrome.
 - **Row leaving list after action:** Depleted lots animate `.row.is-leaving` (`translateX(-16px) scale(0.985)`, `190 ms`) before removal and next-row selection.
 - **Verified (`verify-task102.mjs` in headless Chrome):** `staticChecks` all `true`, PC + Phone animations verified across all 6 flows (`minPhBtn: 44`, `phOverflow: false`), `liteFlow` + `reducedFlow` both `0s` + `backdropFilter: none` + `0ms` sync close/delete, visual inspection of `task102-pc.png`, `task102-dialog-pc.png`, `task102-phone-detail.png`, `task102-phone-dialog.png`, and `ERRORS: []`.
+
+## Task 103 - PICTURE (drafts only): Clean glowing biohazard symbol beside Quarantine heading in `.claude/drafts/quarantine-pro.html`
+**Status:** DONE
+**Written:** 2026-11-20 10:37 WIB (Alucard-Lead). Aldi on `quarantine-pro.html` v2: *"nothing special really but its working and the ui is fine i think we still need the biohazard glowing symbol somewhere inside here just to make it clear that this is the damaged segment"*.
+**Touch only:** `.claude/drafts/quarantine-pro.html`, this file.
+1. Add ONE biohazard symbol (inline SVG, clean line icon, not a game sprite) beside the `"Quarantine"` heading area on PC and phone, coloured with `--danger-ink` / `--danger` / `--gold` tokens (no green, no blue).
+2. Slow soft glow pulse (`opacity` / `filter` on the icon only, `2.4 s`, calm). Glow fully OFF in `Lite` mode and `prefers-reduced-motion: reduce` (symbol stays static). Nothing else on the page changes.
+3. Verify in headless Chrome (`ERRORS: []`, PC + phone, Lite + reduced-motion static check) and inspect rendered screenshots. Commit only `.claude/drafts/quarantine-pro.html` + this file, never push.
+**Done when:** clean glowing biohazard symbol renders on PC + Phone, glow disables in Lite + reduced-motion, `ERRORS: []`, Result written.
+**Result:**
+Added ONE clean inline SVG biohazard line icon (`svg.bio-ic`) directly beside the `Quarantine` tab heading on both PC (`1440px`) and Phone (`390px`) in `.claude/drafts/quarantine-pro.html`, leaving everything else unchanged:
+- Coloured with `--danger-ink` (`rgb(231, 144, 127)` dark / `#7A2118` light) and a calm `2.4 s` `ease-in-out` glow pulse (`bio-glow`) cycling only `opacity` (`0.78 -> 1`) and `filter: drop-shadow(...)` between `--danger` and `--gold` (zero green, zero blue).
+- Glow & animation turned completely off (`animation: none !important; filter: none !important; opacity: 1 !important`) in both `Lite` mode and `@media (prefers-reduced-motion: reduce)` while keeping the biohazard symbol clearly visible and static.
+- Verified in headless Chrome (`verify-task103.mjs`, `ERRORS: []`): `pcCount: 1`, `phCount: 1`, `animName: "bio-glow"`, `animDur: "2.4s"`, `liteCheck` + `reducedCheck` both `animName: "none"` & `filter: "none"` with `stillVisible: true`, `phOverflow: false`, and inspected `task103-bio-pc-top.png`, `task103-bio-ph-top.png`, `task103-pc.png`, `task103-phone.png`.
