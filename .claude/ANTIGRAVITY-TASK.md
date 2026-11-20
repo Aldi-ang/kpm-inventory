@@ -3923,3 +3923,18 @@ Added ONE clean inline SVG biohazard line icon (`svg.bio-ic`) directly beside th
 - Coloured with `--danger-ink` (`rgb(231, 144, 127)` dark / `#7A2118` light) and a calm `2.4 s` `ease-in-out` glow pulse (`bio-glow`) cycling only `opacity` (`0.78 -> 1`) and `filter: drop-shadow(...)` between `--danger` and `--gold` (zero green, zero blue).
 - Glow & animation turned completely off (`animation: none !important; filter: none !important; opacity: 1 !important`) in both `Lite` mode and `@media (prefers-reduced-motion: reduce)` while keeping the biohazard symbol clearly visible and static.
 - Verified in headless Chrome (`verify-task103.mjs`, `ERRORS: []`): `pcCount: 1`, `phCount: 1`, `animName: "bio-glow"`, `animDur: "2.4s"`, `liteCheck` + `reducedCheck` both `animName: "none"` & `filter: "none"` with `stillVisible: true`, `phOverflow: false`, and inspected `task103-bio-pc-top.png`, `task103-bio-ph-top.png`, `task103-pc.png`, `task103-phone.png`.
+
+## Task 104 - PICTURE (drafts only): Green 20px biohazard symbol & visible glow in `.claude/drafts/quarantine-pro.html`
+**Status:** DONE
+**Written:** 2026-11-20 10:46 WIB (Alucard-Lead). Aldi on `quarantine-pro.html` v3: *"make sure the glow is green and easy too see"* (explicit palette exception for the biohazard symbol ONLY).
+**Touch only:** `.claude/drafts/quarantine-pro.html`, this file.
+1. Add `--bio` and `--bio-glow` tokens on each theme (`light`, system-dark, explicit `[data-theme="dark"]`) so toxic green reads cleanly on both dark (`#4ADE80`) and light (`#147A2E` / `#16A34A` glow) themes. Green nowhere else on the page.
+2. Raise `.tab .bio-ic` from `15px` to `20px` (with crisp `stroke-width: 2`), colour it `var(--bio)`, and make `bio-glow` a clearly visible green `drop-shadow` pulse (`2.4 s`, calm).
+3. Keep glow completely OFF (`animation: none; filter: none; opacity: 1`) in `Lite` mode and `prefers-reduced-motion: reduce` while the icon stays static green.
+4. Verify in headless Chrome (`ERRORS: []`, PC + Phone, Light + Dark themes, Lite + reduced-motion static green check) and inspect screenshots. Commit only `.claude/drafts/quarantine-pro.html` + this file, never push.
+**Done when:** 20px toxic green biohazard icon + strong calm glow works on both themes, static green in Lite + reduced-motion, `ERRORS: []`, Result written.
+**Result:**
+Updated `.bio-ic` in `.claude/drafts/quarantine-pro.html` (and left everything else untouched):
+- Added `--bio` and `--bio-glow` theme tokens (`#147A2E` + `rgba(22,163,74,.72)` on Light Warm Stone; `#4ADE80` + `rgba(74,222,128,.88)` on System-Dark and Dark Espresso), raised `.tab .bio-ic` to `20px` (`stroke-width: 2`), and updated `bio-glow` (`2.4 s` `ease-in-out`) with layered `drop-shadow` pulses so the green glow stands out cleanly on both themes with zero green anywhere else (`strayGreen: false`).
+- Glow & animation stay completely OFF (`animation: none; filter: none; opacity: 1`) in `Lite` mode and `prefers-reduced-motion: reduce` while the biohazard icon remains static green.
+- Verified in headless Chrome (`verify-task104.mjs`, `ERRORS: []`) across PC + Phone and Light + Dark themes (`size: [20, 20]`, `phSize: [20, 20]`, `phOverflow: false`, `liteCheck` & `reducedCheck` both `animName: "none"` & `filter: "none"`), and inspected `task104-dark-pc-top.png`, `task104-dark-ph-top.png`, `task104-light-pc-top.png`, `task104-light-ph-top.png`.

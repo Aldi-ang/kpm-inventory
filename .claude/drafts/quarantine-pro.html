@@ -10,6 +10,7 @@
   --ground:#D6CEBA;--panel:#E3DCCB;--raised:#EAE4D6;--inset:#DCD4C1;--line:#B8AF9C;--line-2:#9F9785;
   --ink:#131211;--ink-muted:#3A3733;--ink-dim:#5E584F;--gold:#8A5A12;--accent-ink:#5A3B05;--accent-edge:#8A6420;
   --danger-ink:#7A2118;--danger:#9E2F23;--danger-wash:rgba(158,47,35,.10);
+  --bio:#147A2E;--bio-glow:rgba(22,163,74,.72);
   --page:#C9C0AA;--sel:rgba(138,90,18,.09);--wash:rgba(138,90,18,.13);
   --f:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
   --ease-out:cubic-bezier(0.23,1,0.32,1);
@@ -18,12 +19,14 @@
   --ground:#0B0A09;--panel:#121110;--raised:#171513;--inset:#0E0D0C;--line:#24211D;--line-2:#3A3631;
   --ink:#ECE7E0;--ink-muted:#A9A196;--ink-dim:#7C756C;--gold:#D08A2E;--accent-ink:#E0A04A;--accent-edge:#9C6924;
   --danger-ink:#E7907F;--danger:#C45242;--danger-wash:rgba(196,82,66,.12);
+  --bio:#4ADE80;--bio-glow:rgba(74,222,128,.88);
   --page:#050504;--sel:rgba(208,138,46,.07);--wash:rgba(208,138,46,.12);color-scheme:dark;
 }}
 :root[data-theme="dark"]{
   --ground:#0B0A09;--panel:#121110;--raised:#171513;--inset:#0E0D0C;--line:#24211D;--line-2:#3A3631;
   --ink:#ECE7E0;--ink-muted:#A9A196;--ink-dim:#7C756C;--gold:#D08A2E;--accent-ink:#E0A04A;--accent-edge:#9C6924;
   --danger-ink:#E7907F;--danger:#C45242;--danger-wash:rgba(196,82,66,.12);
+  --bio:#4ADE80;--bio-glow:rgba(74,222,128,.88);
   --page:#050504;--sel:rgba(208,138,46,.07);--wash:rgba(208,138,46,.12);color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -53,9 +56,9 @@ svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;stro
 .tabs{display:flex;gap:22px;overflow-x:auto;scrollbar-width:none}
 .tab{padding-bottom:11px;border-bottom:2px solid transparent;font-size:13px;font-weight:600;color:var(--ink-dim);white-space:nowrap}
 .tab.on{color:var(--ink);border-color:var(--gold)}
-.tab.tab-bio{display:inline-flex;align-items:center;gap:6px}
-.tab .bio-ic{width:15px;height:15px;color:var(--danger-ink);flex:none;will-change:opacity,filter;animation:bio-glow 2.4s ease-in-out infinite}
-@keyframes bio-glow{0%,100%{opacity:.78;filter:drop-shadow(0 0 2px var(--danger))}50%{opacity:1;filter:drop-shadow(0 0 6px var(--gold))}}
+.tab.tab-bio{display:inline-flex;align-items:center;gap:7px;padding-bottom:9px}
+.tab .bio-ic{width:20px;height:20px;stroke-width:2;color:var(--bio);flex:none;will-change:opacity,filter;animation:bio-glow 2.4s ease-in-out infinite}
+@keyframes bio-glow{0%,100%{opacity:.82;filter:drop-shadow(0 0 3px var(--bio-glow))}50%{opacity:1;filter:drop-shadow(0 0 6px var(--bio-glow)) drop-shadow(0 0 12px var(--bio-glow))}}
 
 .subbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px 18px;padding:12px 24px;border-bottom:1px solid var(--line);background:var(--panel)}
 .segtabs{display:inline-flex;border:1px solid var(--line-2);border-radius:10px;padding:3px;gap:3px;background:var(--inset)}
