@@ -3822,7 +3822,7 @@ Put `usePendingUndo()` and the `!isPendingUndo(\`cust:\${c.id}\`)` filter in **`
 6. **Top tab bar (`L1236-1269`) and Quarantine/Monitor wording + neon/pulse glow (`L1240-1248, 1332, 1379, 1437`)** — causes a jarring clash when switching between `HQ Audits` (`OpnameWorklist`) and the other three tabs (`New Count`, `Quarantine`, `Monitor`).
 
 ## Task 99 - PICTURE (drafts only): Quarantine in the professional look, no game chest
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-20 09:00 WIB (Claude). Do after 98.
 **Touch only:** `.claude/drafts/quarantine-pro.html` (new), this file.
 1. Read A-Brain `Wiki/Concepts/Aldi's Design Taste.md` and `Design Inspiration Sources.md` first. Same standard as `stock-opname-pro.html` and `customers-c.html`: slate + gold, no blue, no green, no chest, no game words, plain English labels.
@@ -3830,6 +3830,22 @@ Put `usePendingUndo()` and the `!isPendingUndo(\`cust:\${c.id}\`)` filter in **`
 3. PC 1440 + phone 390 frames, 44 px phone buttons, toast on every action, no `alert/confirm/prompt`, headless `ERRORS: []`.
 **Done when:** the picture works in both frames and the Result has a feature-by-feature "real app -> picture" table.
 **Result:**
+Created `.claude/drafts/quarantine-pro.html` (dual-mounted PC 1440 + Phone 390, Warm Stone / Espresso System/Light/Dark, Motion/Lite switch, T2 Owner vs T3 Sell-Again role toggle, in-page blurred confirm dialogs, self-drawing gold check toast, zero 3D chests/glow/blue/green/alert/confirm/prompt) and verified in headless Chrome (`verify-task99.mjs`, `ERRORS: []`, `minPhBtn: 44`, `phOverflow: false`) + visual inspection of PC, Phone list, Phone detail, and Action history screenshots.
+
+### Feature-by-feature: Real App (`src/StockOpnameView.jsx` + `WarehouseChest.jsx`) -> Picture (`.claude/drafts/quarantine-pro.html`)
+
+| Real app feature (`file:line`) | Picture implementation (`.claude/drafts/quarantine-pro.html`) | Status |
+|---|---|---|
+| Top tab & sub-tab switcher (`Active Quarantine` / `Liquidation History`, `StockOpnameView.jsx:1241, 1383-1390`) | Plain `"Stock Opname"` header + underline `"Quarantine"` tab + outlined segmented control `"Damaged stock"` / `"Action history (N)"` (T3 hides Action history, matching real rules) | **Kept & restyled** |
+| Sunk Capital KPI (`StockOpnameView.jsx:1405-1412`) | Compact top-right summary `"Sunk value (HPP) Rp X · N Bks in <Warehouse>"` updated live on every resolution | **Kept & restyled** |
+| Facility / warehouse selector (`CrateVault` 3D crates, `StockOpnameView.jsx:1419`, `WarehouseChest.jsx:141-223`) | Outlined wrapping warehouse tabs (`Master Vault`, `BANDUNG`, `MUNTILAN`) with live damaged `Bks` count pills — **zero 3D crates or inventory square slots** | **Replaced chest** |
+| Product list & damaged qty + HPP loss (`CrateVault` squares + `line()`, `StockOpnameView.jsx:1420`) | Master-detail product list with search box (`"Search damaged products"`), HPP/Bks sub-line, damaged `Bks` + HPP total per product, and full product detail card on the right (Phone: pushes cleanly to detail view with `"Back to list"`) | **Kept & restyled** |
+| **Repair** (`REPAIR`, Master Vault only, `StockOpnameView.jsx:909-911, 1198-1204, 1442`) | `"Repair to good stock"` (shown on `Master Vault` only) -> qty + optional note -> in-page confirm -> moves back to good stock (`HPP loss = Rp 0`), logs to history, toast | **Kept (plain English)** |
+| **Sell Again as RUSAK** (`SELL`, Full vs Lower price, hidden on `damagedFrom` lots, `StockOpnameView.jsx:945-958, 1171-1196, 1428`) | `"Sell again as RUSAK"` (hidden on `Already RUSAK lot`, shown for T2 & T3) -> `"Full price · Rp X"` vs `"Lower price"` segmented control + validation (`0 < p < full`) -> confirms & logs | **Kept & restyled** |
+| **Convert to Sample** (`SAMPLING`, 1 Bks = 1 pcs, Master asks destination warehouse, `StockOpnameView.jsx:926-943, 1150-1169, 1423`) | `"Convert to sample (pcs)"` -> asks destination warehouse when on `Master Vault` + required reason -> confirms & logs | **Kept (no biohazard glow)** |
+| **Return to Factory / RTV** (`RTV`, Surat Jalan Retur ref, `StockOpnameView.jsx:964-967, 1206-1211, 1434`) | `"Return to factory (RTV)"` -> asks `Surat Jalan Retur` reference -> writes off HPP & logs | **Kept & restyled** |
+| **Penalty / Charge staff** (`PENALTY`, agent picker + EOD deduction warning, `StockOpnameView.jsx:968-999, 1213-1226, 1437`) | `"Charge staff"` (replaces `"Penalty Charge"` / `"Bounty"` + drops `kpm-rim-neon` glow) -> staff picker + EOD Setoran warning -> confirms & logs | **Kept (plain English)** |
+| **Action History** (`quarSubTab === 'history'`, warehouse filter + who/when/HPP, `StockOpnameView.jsx:1394-1401, 1457-1488`) | `"Action history"` sub-tab with warehouse dropdown + method filter pills (`All`, `Repair`, `Sell again`, `Sample`, `RTV`, `Staff charge`), method badge, timestamp, warehouse, `"Recorded by"`, note, and `"Value (HPP)"` | **Kept & enhanced** |
 
 ## Task 97 - BUILD (local only): the approved queue wording in the REAL Customer Directory
 **Status:** OPEN

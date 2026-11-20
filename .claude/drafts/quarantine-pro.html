@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quarantine — Professional Edition</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --ground:#D6CEBA;--panel:#E3DCCB;--raised:#EAE4D6;--inset:#DCD4C1;--line:#B8AF9C;--line-2:#9F9785;
+  --ink:#131211;--ink-muted:#3A3733;--ink-dim:#5E584F;--gold:#8A5A12;--accent-ink:#5A3B05;--accent-edge:#8A6420;
+  --danger-ink:#7A2118;--danger:#9E2F23;--danger-wash:rgba(158,47,35,.10);
+  --page:#C9C0AA;--sel:rgba(138,90,18,.09);--wash:rgba(138,90,18,.13);
+  --f:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0B0A09;--panel:#121110;--raised:#171513;--inset:#0E0D0C;--line:#24211D;--line-2:#3A3631;
+  --ink:#ECE7E0;--ink-muted:#A9A196;--ink-dim:#7C756C;--gold:#D08A2E;--accent-ink:#E0A04A;--accent-edge:#9C6924;
+  --danger-ink:#E7907F;--danger:#C45242;--danger-wash:rgba(196,82,66,.12);
+  --page:#050504;--sel:rgba(208,138,46,.07);--wash:rgba(208,138,46,.12);color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --ground:#0B0A09;--panel:#121110;--raised:#171513;--inset:#0E0D0C;--line:#24211D;--line-2:#3A3631;
+  --ink:#ECE7E0;--ink-muted:#A9A196;--ink-dim:#7C756C;--gold:#D08A2E;--accent-ink:#E0A04A;--accent-edge:#9C6924;
+  --danger-ink:#E7907F;--danger:#C45242;--danger-wash:rgba(196,82,66,.12);
+  --page:#050504;--sel:rgba(208,138,46,.07);--wash:rgba(208,138,46,.12);color-scheme:dark;
+}
+*{box-sizing:border-box}
+::selection{background:var(--wash);color:var(--ink)}
+body{margin:0;background:var(--page);color:var(--ink);font:14px/1.45 var(--f);font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;padding:20px 24px 72px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;background:transparent;border:0;padding:0}
+svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* Top draft controls */
+.ctrl{max-width:1440px;margin:0 auto 18px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:10px 16px;border:1px solid var(--line-2);border-radius:12px;background:var(--panel)}
+.ctrl .title{font-weight:700;font-size:13px;letter-spacing:.02em;margin-right:auto}
+.segbox{display:inline-flex;border:1px solid var(--line-2);border-radius:9px;padding:2px;background:var(--inset);gap:2px}
+.segbox button{min-height:32px;padding:0 11px;border-radius:7px;font-size:12px;font-weight:600;color:var(--ink-dim);border:1px solid transparent;white-space:nowrap}
+.segbox button.on{background:var(--wash);border-color:var(--accent-edge);color:var(--ink)}
+
+.cap{max-width:1440px;margin:20px auto 10px;color:var(--ink-dim);font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.frame{background:var(--ground);border:1px solid var(--line-2);border-radius:12px;overflow:hidden;box-shadow:0 18px 40px -24px rgba(0,0,0,.55)}
+.pc{max-width:1440px;margin:0 auto;height:740px;display:flex;flex-direction:column;position:relative}
+.phone-wrap{max-width:1440px;margin:26px auto 0;display:flex;flex-direction:column;align-items:flex-start}
+.phone{width:390px;max-width:100%;height:780px;border-radius:22px;display:flex;flex-direction:column;position:relative}
+
+/* App chrome matching stock-opname-pro.html */
+.top{display:flex;align-items:flex-end;gap:28px;padding:16px 24px 0;border-bottom:1px solid var(--line);background:var(--ground)}
+.top h1{margin:0 0 12px;font-size:17px;font-weight:700;letter-spacing:-.01em}
+.tabs{display:flex;gap:22px;overflow-x:auto;scrollbar-width:none}
+.tab{padding-bottom:11px;border-bottom:2px solid transparent;font-size:13px;font-weight:600;color:var(--ink-dim);white-space:nowrap}
+.tab.on{color:var(--ink);border-color:var(--gold)}
+
+.subbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px 18px;padding:12px 24px;border-bottom:1px solid var(--line);background:var(--panel)}
+.segtabs{display:inline-flex;border:1px solid var(--line-2);border-radius:10px;padding:3px;gap:3px;background:var(--inset)}
+.segtabs button{min-height:36px;padding:0 14px;border-radius:7px;font-size:12.5px;font-weight:600;color:var(--ink-muted);border:1px solid var(--line);background:var(--panel);display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.segtabs button.on{background:var(--wash);border-color:var(--accent-edge);color:var(--ink);font-weight:700}
+
+.kpi{margin-left:auto;display:flex;align-items:center;gap:18px;font-size:13px;color:var(--ink-muted);flex-wrap:wrap}
+.kpi .val{font-size:17px;font-weight:700;color:var(--accent-ink);margin-left:4px}
+.kpi b{color:var(--ink);font-weight:700}
+.kpi .sep{width:1px;height:16px;background:var(--line-2)}
+
+/* Warehouse selector tabs (no 3D chest) */
+.whbar{display:flex;align-items:center;gap:8px;padding:10px 24px;border-bottom:1px solid var(--line);background:var(--ground);overflow-x:auto;scrollbar-width:none}
+.whbtn{min-height:36px;padding:6px 14px;border-radius:9px;border:1px solid var(--line-2);background:var(--panel);color:var(--ink-muted);font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.whbtn.on{background:var(--wash);border-color:var(--accent-edge);color:var(--ink);font-weight:700}
+.whbtn .badge{padding:1px 7px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid var(--line);background:var(--inset);color:var(--ink-muted)}
+.whbtn.on .badge{border-color:var(--accent-edge);color:var(--accent-ink)}
+.whbtn.hasdmg .badge{color:var(--danger-ink);border-color:var(--danger)}
+
+/* Workspace: master-detail */
+.work{flex:1;min-height:0;display:flex}
+.list{width:430px;flex:none;border-right:1px solid var(--line);display:flex;flex-direction:column;background:var(--panel);min-height:0}
+.search-row{padding:12px 16px;border-bottom:1px solid var(--line)}
+.search-box{display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;border:1px solid var(--line-2);border-radius:9px;background:var(--inset)}
+.search-box input{flex:1;min-width:0;border:0;background:transparent;outline:none;font-size:13px}
+.rows{flex:1;overflow-y:auto;padding:8px 0}
+.row{width:100%;text-align:left;padding:12px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;border-left:3px solid transparent;transition:background-color .15s}
+.row:hover{background:var(--inset)}
+.row.sel{background:var(--sel);border-left-color:var(--gold)}
+.row .ic{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--inset);display:flex;align-items:center;justify-content:center;color:var(--ink-dim);flex:none}
+.row.sel .ic{border-color:var(--accent-edge);color:var(--accent-ink)}
+.row .meta{flex:1;min-width:0}
+.row .nm{font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.3}
+.row .sub{font-size:12px;color:var(--ink-dim);margin-top:2px}
+.row .rgt{text-align:right;flex:none}
+.row .qty{font-size:15px;font-weight:700;color:var(--danger-ink)}
+.row .hpp{font-size:11.5px;color:var(--ink-dim);margin-top:1px}
+.tag-rsk{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:5px;border:1px solid var(--accent-edge);font-size:10.5px;font-weight:700;color:var(--accent-ink);vertical-align:middle}
+
+.detail{flex:1;min-width:0;overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;gap:16px;background:var(--ground)}
+.card{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:16px 18px}
+.sec-lbl{font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:8px}
+.dhead{display:flex;align-items:center;gap:14px}
+.dhead .big{width:48px;height:48px;border-radius:12px;border:1px solid var(--line-2);background:var(--raised);display:flex;align-items:center;justify-content:center;color:var(--accent-ink);flex:none}
+.dhead h2{margin:0;font-size:18px;font-weight:700}
+.dhead p{margin:3px 0 0;font-size:12.5px;color:var(--ink-dim)}
+.dstats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.dstats small{display:block;font-size:11.5px;color:var(--ink-dim);margin-bottom:2px}
+.dstats strong{font-size:16px;font-weight:700}
+.dstats strong.bad{color:var(--danger-ink)}
+
+/* Action buttons (all outlined, zero neon, zero gradient glow) */
+.acts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.actbtn{min-height:42px;padding:10px 14px;border-radius:10px;border:1px solid var(--line-2);background:var(--raised);display:flex;align-items:center;gap:10px;text-align:left;transition:background-color .15s,border-color .15s}
+.actbtn:hover{border-color:var(--accent-edge);background:var(--wash)}
+.actbtn.primary{border-color:var(--accent-edge);background:var(--wash)}
+.actbtn.danger{border-color:var(--danger);color:var(--danger-ink)}
+.actbtn.danger:hover{background:var(--danger-wash)}
+.actbtn .atxt{flex:1;min-width:0}
+.actbtn .atxt b{display:block;font-size:13px;font-weight:700}
+.actbtn .atxt span{display:block;font-size:11.5px;color:var(--ink-dim);margin-top:1px}
+.actbtn.danger .atxt span{color:var(--danger-ink);opacity:.85}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:36px;padding:0 14px;border-radius:9px;border:1px solid var(--accent-edge);background:var(--wash);color:var(--ink);font-size:12.5px;font-weight:600;white-space:nowrap}
+.btn.quiet{border-color:var(--line-2);background:var(--panel);color:var(--ink-muted)}
+.btn.danger{border-color:var(--danger);background:var(--danger-wash);color:var(--danger-ink)}
+
+/* History view */
+.hist-wrap{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--ground)}
+.hist-tools{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 24px;border-bottom:1px solid var(--line);background:var(--panel)}
+.hist-tools select,.hist-tools .search-box{height:36px;border-radius:9px;border:1px solid var(--line-2);background:var(--inset);padding:0 10px;font-size:12.5px}
+.pill-row{display:flex;flex-wrap:wrap;gap:6px}
+.pill{min-height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--line-2);background:var(--ground);font-size:12px;font-weight:600;color:var(--ink-muted)}
+.pill.on{border-color:var(--accent-edge);background:var(--wash);color:var(--ink)}
+.hist-list{flex:1;overflow-y:auto;padding:16px 24px;display:flex;flex-direction:column;gap:12px}
+.hrow{border:1px solid var(--line);border-radius:11px;background:var(--panel);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:14px}
+.hbadge{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:6px;border:1px solid var(--accent-edge);font-size:11px;font-weight:700;color:var(--accent-ink);background:var(--wash)}
+.hbadge.danger{border-color:var(--danger);color:var(--danger-ink);background:var(--danger-wash)}
+.hrow .hmeta{font-size:12px;color:var(--ink-dim);margin-top:4px}
+.hrow .hnote{font-size:12.5px;color:var(--ink-muted);margin-top:6px;padding:6px 10px;border-radius:7px;background:var(--inset);border:1px solid var(--line)}
+
+/* In-page blurred dialog */
+.ov{position:absolute;inset:0;z-index:50;background:rgba(10,8,6,.55);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px}
+.dlg{width:100%;max-width:440px;border:1px solid var(--line-2);border-radius:14px;background:var(--panel);box-shadow:0 24px 60px -20px rgba(0,0,0,.65);overflow:hidden}
+.dlg-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);background:var(--raised)}
+.dlg-hd h3{margin:0;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+.dlg-bd{padding:16px 18px;display:flex;flex-direction:column;gap:14px;max-height:72vh;overflow-y:auto}
+.fld label{display:block;font-size:12px;font-weight:600;color:var(--ink-muted);margin-bottom:5px}
+.fld input,.fld select{width:100%;min-height:40px;padding:0 12px;border-radius:9px;border:1px solid var(--line-2);background:var(--inset);outline:none;font-size:13.5px}
+.fld input:focus,.fld select:focus{border-color:var(--accent-edge)}
+.dlg-ft{display:flex;justify-content:flex-end;gap:10px;padding:12px 18px;border-top:1px solid var(--line);background:var(--raised)}
+
+/* Toast with self-drawing gold check */
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:99;display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:10px;border:1px solid var(--accent-edge);background:var(--panel);box-shadow:0 14px 36px -12px rgba(0,0,0,.6);font-size:13.5px;font-weight:600;max-width:calc(100vw - 28px)}
+.ck{width:20px;height:20px;stroke:var(--gold);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ck path{stroke-dasharray:30;stroke-dashoffset:0;animation:draw .35s ease-out both}
+@keyframes draw{from{stroke-dashoffset:30}to{stroke-dashoffset:0}}
+.lite *{transition:none!important;animation:none!important}
+.lite .ov{backdrop-filter:none!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* Phone 390px adjustments */
+.phone .sb{height:26px;display:flex;justify-content:space-between;align-items:center;padding:0 16px;font-size:11px;color:var(--ink-dim)}
+.phone .top{padding:6px 16px 0;gap:0;flex-direction:column;align-items:stretch}
+.phone .top h1{margin:0 0 8px;font-size:16px}
+.phone .tabs{gap:16px}
+.phone .subbar{padding:10px 14px;gap:8px}
+.phone .segtabs{width:100%}
+.phone .segtabs button{flex:1;min-height:44px;justify-content:center}
+.phone .kpi{margin-left:0;width:100%;justify-content:space-between;font-size:12px;gap:8px}
+.phone .whbar{padding:8px 14px;flex-wrap:wrap}
+.phone .whbtn{min-height:44px;padding:6px 12px}
+.phone .work{flex-direction:column}
+.phone .list{width:100%;border-right:0;flex:1}
+.phone .row{min-height:56px;padding:10px 14px}
+.phone .detail{padding:14px}
+.phone .dstats{grid-template-columns:1fr 1fr;gap:10px}
+.phone .acts{grid-template-columns:1fr}
+.phone .actbtn,.phone .btn,.phone .pill{min-height:44px}
+.phone .hist-tools{padding:10px 14px}
+.phone .hist-list{padding:12px 14px}
+.phone .hrow{flex-direction:column;align-items:stretch}
+.phone .backbar{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+.phone .backbar button{min-height:44px;padding:0 12px;border-radius:9px;border:1px solid var(--line-2);font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.phone .fld input,.phone .fld select{min-height:44px}
+.phone .dlg-hd button{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+.phone .ov{align-items:flex-end;padding:0}
+.phone .dlg{border-radius:18px 18px 0 0;max-width:100%}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-pack" viewBox="0 0 24 24"><path d="M7 3h10l1 3v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V6z"/><path d="M6 8h12"/><path d="M10 3v5M14 3v5"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
+  <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/></symbol>
+  <symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6"/><path d="M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6A2 2 0 0 0 19 18l-5-9V3"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+  <symbol id="i-fine" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M14.5 9.5a2.5 2.5 0 0 0-5 0c0 2 5 1.5 5 4a2.5 2.5 0 0 1-5 0"/><path d="M12 6.5v11"/></symbol>
+  <symbol id="i-hist" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.3 7l8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></symbol>
+</svg>
+
+<div class="ctrl">
+  <div class="title">Stock Opname · Quarantine redesign (no 3D chest, no biohazard glow)</div>
+  <div class="segbox" role="group" aria-label="Theme">
+    <button type="button" data-theme-set="system" class="on" onclick="setTheme('system')">System</button>
+    <button type="button" data-theme-set="light" onclick="setTheme('light')">Light</button>
+    <button type="button" data-theme-set="dark" onclick="setTheme('dark')">Dark</button>
+  </div>
+  <div class="segbox" role="group" aria-label="Motion">
+    <button type="button" data-motion-set="full" class="on" onclick="setMotion('full')">Motion On</button>
+    <button type="button" data-motion-set="lite" onclick="setMotion('lite')">Lite</button>
+  </div>
+  <div class="segbox" role="group" aria-label="Role">
+    <button type="button" data-role-set="T2" class="on" onclick="setRole('T2')">T2 Owner (all 5 actions)</button>
+    <button type="button" data-role-set="T3" onclick="setRole('T3')">T3 Sell Again only</button>
+  </div>
+</div>
+
+<p class="cap">PC · 1440px wide</p>
+<div id="pc-root" class="frame pc"></div>
+
+<div class="phone-wrap">
+  <p class="cap">Phone · 390px wide</p>
+  <div id="ph-root" class="frame phone"></div>
+</div>
+
+<div id="toast-root"></div>
+
+<script>
+const rp = (n) => 'Rp ' + new Intl.NumberFormat('id-ID').format(Math.round(Number(n) || 0));
+const num = (n) => new Intl.NumberFormat('id-ID').format(Math.round(Number(n) || 0));
+
+const FACILITIES = [
+  { key: 'MASTER', name: 'Master Vault' },
+  { key: 'BANDUNG', name: 'BANDUNG' },
+  { key: 'MUNTILAN', name: 'MUNTILAN' },
+];
+const STAFF = [
+  { id: 's1', name: 'Budi Santoso', role: 'Sales Canvas' },
+  { id: 's2', name: 'Dedi Pratama', role: 'Sales Motorist' },
+  { id: 's3', name: 'Rina Wijaya', role: 'Warehouse Lead' },
+];
+
+const STATE = {
+  theme: 'system',
+  motion: 'full',
+  role: 'T2',
+  subTab: 'active',
+  fac: 'MASTER',
+  search: '',
+  selId: 'q1',
+  phOpen: false,
+  histFac: 'ALL',
+  histMethod: 'ALL',
+  modal: null,
+  items: [
+    { id: 'q1', name: 'Cello Chocolate', facility: 'MASTER', damagedStock: 18, hpp: 10000, retail: 14000, damagedFrom: null },
+    { id: 'q2', name: 'Cello Coffee & Caramel kretek', facility: 'MASTER', damagedStock: 9, hpp: 8500, retail: 12000, damagedFrom: null },
+    { id: 'q3', name: 'Cello Green', facility: 'BANDUNG', damagedStock: 14, hpp: 9500, retail: 13500, damagedFrom: null },
+    { id: 'q4', name: 'Cello Mmrapi', facility: 'BANDUNG', damagedStock: 5, hpp: 9000, retail: 13000, damagedFrom: 'm1' },
+    { id: 'q5', name: 'American Spirit - Turquoise', facility: 'MUNTILAN', damagedStock: 7, hpp: 18000, retail: 25000, damagedFrom: null },
+  ],
+  logs: [
+    { id: 'l1', method: 'SELL', time: '20 Nov 2026 · 08:15', qty: 10, productName: 'Cello Green', facility: 'BANDUNG', by: 'Owner', detail: 'Put on sale as "Cello Green · RUSAK" at Rp 11.500 per Bks', hpp: 0 },
+    { id: 'l2', method: 'REPAIR', time: '19 Nov 2026 · 16:40', qty: 6, productName: 'Cello Chocolate', facility: 'MASTER', by: 'Owner', detail: 'Repaired and moved back to good Master Vault stock · Re-wrapped, excise seal intact', hpp: 0 },
+    { id: 'l3', method: 'SAMPLING', time: '18 Nov 2026 · 14:10', qty: 12, productName: 'Cello Mmrapi', facility: 'MASTER', by: 'Owner', detail: 'Converted to promo sample (12 pcs) in BANDUNG · Slightly torn outer box', hpp: 108000 },
+    { id: 'l4', method: 'RTV', time: '17 Nov 2026 · 11:05', qty: 8, productName: 'American Spirit - Turquoise', facility: 'MUNTILAN', by: 'Owner', detail: 'Returned to factory · Surat Jalan Retur SJR-2026-014', hpp: 144000 },
+    { id: 'l5', method: 'PENALTY', time: '16 Nov 2026 · 17:50', qty: 4, productName: 'Cello Coffee & Caramel kretek', facility: 'BANDUNG', by: 'Owner', detail: 'Charged to Dedi Pratama (deducted in daily EOD Setoran)', hpp: 48000 },
+  ],
+  toast: null,
+};
+
+let toastTimer = null;
+function showToast(msg) {
+  STATE.toast = { id: Date.now(), text: msg };
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { STATE.toast = null; renderToast(); }, 4500);
+  renderToast();
+}
+function renderToast() {
+  const r = document.getElementById('toast-root');
+  if (!STATE.toast) { r.innerHTML = ''; return; }
+  r.innerHTML = `<div class="toast" role="status"><svg class="ck" viewBox="0 0 22 22"><circle cx="11" cy="11" r="10"/><path d="M6.5 11.4l3 3 6-6.4"/></svg><span>${esc(STATE.toast.text)}</span></div>`;
+}
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, (m) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+}
+
+function setTheme(t) {
+  STATE.theme = t;
+  if (t === 'system') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', t);
+  document.querySelectorAll('[data-theme-set]').forEach(b => b.classList.toggle('on', b.dataset.themeSet === t));
+}
+function setMotion(m) {
+  STATE.motion = m;
+  document.documentElement.classList.toggle('lite', m === 'lite');
+  document.querySelectorAll('[data-motion-set]').forEach(b => b.classList.toggle('on', b.dataset.motionSet === m));
+}
+function setRole(role) {
+  STATE.role = role;
+  if (role === 'T3' && STATE.subTab === 'history') STATE.subTab = 'active';
+  document.querySelectorAll('[data-role-set]').forEach(b => b.classList.toggle('on', b.dataset.roleSet === role));
+  renderAll();
+}
+
+function methodMeta(m) {
+  return {
+    REPAIR:   { label: 'Repair',            badge: 'Repaired',          icon: '#i-wrench', danger: false },
+    SELL:     { label: 'Sell again (RUSAK)', badge: 'Sold as RUSAK',     icon: '#i-tag',    danger: false },
+    SAMPLING: { label: 'Sample goods',      badge: 'Converted to sample', icon: '#i-flask', danger: false },
+    RTV:      { label: 'Return to factory', badge: 'Returned (RTV)',    icon: '#i-undo',   danger: false },
+    PENALTY:  { label: 'Charge staff',      badge: 'Staff charge',      icon: '#i-fine',   danger: true },
+  }[m];
+}
+
+function openAction(id, method, host = 'pc') {
+  const item = STATE.items.find(x => x.id === id);
+  if (!item) return;
+  STATE.modal = { host, item, method, cheap: false, step: 'form', values: { qty: item.damagedStock, reason: '', rtvRef: '', agentId: 's1', toWarehouse: 'BANDUNG', price: Math.max(1000, item.retail - 2000) } };
+  renderAll();
+}
+function closeModal() { STATE.modal = null; renderAll(); }
+function stepConfirm(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const m = STATE.modal;
+  const qty = Number(fd.get('qty') || 0);
+  if (!(qty >= 1 && qty <= m.item.damagedStock)) { showToast('Enter a quantity between 1 and ' + m.item.damagedStock + ' Bks'); return; }
+  m.values = {
+    qty,
+    reason: String(fd.get('reason') || '').trim(),
+    rtvRef: String(fd.get('rtvRef') || '').trim().toUpperCase(),
+    agentId: String(fd.get('agentId') || ''),
+    toWarehouse: String(fd.get('toWarehouse') || ''),
+    price: Number(fd.get('price') || 0),
+  };
+  if (m.method === 'SELL' && m.cheap && !(m.values.price > 0 && m.values.price < m.item.retail)) {
+    showToast('Lower price must be more than Rp 0 and less than ' + rp(m.item.retail));
+    return;
+  }
+  if (m.method === 'SAMPLING' && !m.values.reason) { showToast('Write a short reason'); return; }
+  if (m.method === 'RTV' && !m.values.rtvRef) { showToast('Enter the Surat Jalan Retur number'); return; }
+  m.step = 'confirm';
+  renderAll();
+}
+function commitAction() {
+  const { item, method, cheap, values } = STATE.modal;
+  const qty = values.qty;
+  item.damagedStock -= qty;
+  if (item.damagedStock <= 0) STATE.items = STATE.items.filter(x => x.id !== item.id);
+  const priceUsed = cheap ? values.price : item.retail;
+  let detail = '';
+  let hpp = 0;
+  if (method === 'REPAIR') {
+    detail = 'Repaired and returned to good Master Vault stock' + (values.reason ? ' · ' + values.reason : '');
+  } else if (method === 'SELL') {
+    detail = `Put on sale as "${item.name} · RUSAK" at ${rp(priceUsed)} per Bks`;
+  } else if (method === 'SAMPLING') {
+    const dest = item.facility === 'MASTER' ? values.toWarehouse : item.facility;
+    detail = `Converted to promo sample (${qty} pcs) in ${dest} · ${values.reason}`;
+    hpp = qty * item.hpp;
+  } else if (method === 'RTV') {
+    detail = `Returned to factory · Surat Jalan Retur ${values.rtvRef}`;
+    hpp = qty * item.hpp;
+  } else if (method === 'PENALTY') {
+    const st = STAFF.find(s => s.id === values.agentId);
+    hpp = qty * item.retail;
+    detail = `Charged to ${st ? st.name : 'Staff'} (${rp(hpp)} added to daily EOD Setoran)`;
+  }
+  STATE.logs.unshift({
+    id: 'l' + Date.now(),
+    method,
+    time: 'Just now',
+    qty,
+    productName: item.name,
+    facility: item.facility,
+    by: STATE.role === 'T2' ? 'Owner' : 'Area Admin',
+    detail,
+    hpp,
+  });
+  const facRows = STATE.items.filter(x => x.facility === STATE.fac);
+  if (!facRows.some(x => x.id === STATE.selId)) {
+    STATE.selId = facRows[0]?.id || null;
+    if (!STATE.selId) STATE.phOpen = false;
+  }
+  STATE.modal = null;
+  showToast(`${methodMeta(method).label}: ${qty} Bks ${item.name} saved.`);
+  renderAll();
+}
+
+function renderHost(targetId, isPhone) {
+  const root = document.getElementById(targetId);
+  const hostKey = isPhone ? 'ph' : 'pc';
+  const isT2 = STATE.role === 'T2';
+  const facItems = STATE.items.filter(i => i.facility === STATE.fac && i.damagedStock > 0);
+  const filtered = facItems.filter(i => i.name.toLowerCase().includes(STATE.search.toLowerCase()));
+  const sel = filtered.find(i => i.id === STATE.selId) || facItems.find(i => i.id === STATE.selId) || filtered[0] || facItems[0] || null;
+  const totalBks = facItems.reduce((s, i) => s + i.damagedStock, 0);
+  const totalHpp = facItems.reduce((s, i) => s + i.damagedStock * i.hpp, 0);
+
+  const histRows = STATE.logs.filter(l => (STATE.histFac === 'ALL' || l.facility === STATE.histFac) && (STATE.histMethod === 'ALL' || l.method === STATE.histMethod));
+
+  const detailHtml = sel ? `
+    <div class="card">
+      <div class="dhead">
+        <span class="big"><svg class="i"><use href="#i-pack"/></svg></span>
+        <div>
+          <h2>${esc(sel.name)}${sel.damagedFrom ? '<span class="tag-rsk">Already RUSAK lot</span>' : ''}</h2>
+          <p>${esc(FACILITIES.find(f => f.key === sel.facility)?.name || sel.facility)} · Available in damaged stock</p>
+        </div>
+      </div>
+      <div class="dstats">
+        <div><small>Damaged stock</small><strong class="bad">${num(sel.damagedStock)} Bks</strong></div>
+        <div><small>Value at cost (HPP)</small><strong>${rp(sel.damagedStock * sel.hpp)}</strong></div>
+        <div><small>Retail price</small><strong>${rp(sel.retail)} / Bks</strong></div>
+      </div>
+    </div>
+    <div>
+      <div class="sec-lbl">Ways to resolve this stock</div>
+      <div class="acts">
+        ${isT2 && sel.facility === 'MASTER' ? `
+          <button type="button" class="actbtn primary" onclick="openAction('${sel.id}','REPAIR','${hostKey}')">
+            <svg class="i"><use href="#i-wrench"/></svg>
+            <span class="atxt"><b>Repair to good stock</b><span>Move fixed Bks back to Master Vault (no write-off)</span></span>
+          </button>` : ''}
+        ${!sel.damagedFrom ? `
+          <button type="button" class="actbtn primary" onclick="openAction('${sel.id}','SELL','${hostKey}')">
+            <svg class="i"><use href="#i-tag"/></svg>
+            <span class="atxt"><b>Sell again as RUSAK</b><span>Create a discounted or full-price RUSAK lot</span></span>
+          </button>` : ''}
+        ${isT2 ? `
+          <button type="button" class="actbtn" onclick="openAction('${sel.id}','SAMPLING','${hostKey}')">
+            <svg class="i"><use href="#i-flask"/></svg>
+            <span class="atxt"><b>Convert to sample (pcs)</b><span>Turn damaged packs into promo giveaway pieces</span></span>
+          </button>
+          <button type="button" class="actbtn" onclick="openAction('${sel.id}','RTV','${hostKey}')">
+            <svg class="i"><use href="#i-undo"/></svg>
+            <span class="atxt"><b>Return to factory (RTV)</b><span>Write off against a Surat Jalan Retur number</span></span>
+          </button>
+          <button type="button" class="actbtn danger" onclick="openAction('${sel.id}','PENALTY','${hostKey}')">
+            <svg class="i"><use href="#i-fine"/></svg>
+            <span class="atxt"><b>Charge staff</b><span>Charge damaged value to an agent's daily EOD Setoran</span></span>
+          </button>` : ''}
+      </div>
+    </div>` : `<div class="card"><p style="margin:0;color:var(--ink-dim)">No damaged goods left in this warehouse.</p></div>`;
+
+  const listHtml = `
+    <div class="search-row">
+      <div class="search-box">
+        <svg class="i" style="color:var(--ink-dim)"><use href="#i-search"/></svg>
+        <input value="${esc(STATE.search)}" oninput="STATE.search=this.value;renderAll()" placeholder="Search damaged products">
+      </div>
+    </div>
+    <div class="rows">
+      ${filtered.length ? filtered.map(it => `
+        <button type="button" class="row ${sel && sel.id === it.id ? 'sel' : ''}" onclick="STATE.selId='${it.id}';${isPhone ? 'STATE.phOpen=true;' : ''}renderAll()">
+          <span class="ic"><svg class="i"><use href="#i-pack"/></svg></span>
+          <span class="meta">
+            <span class="nm" style="display:block">${esc(it.name)}${it.damagedFrom ? '<span class="tag-rsk">RUSAK</span>' : ''}</span>
+            <span class="sub" style="display:block">${rp(it.hpp)} HPP / Bks</span>
+          </span>
+          <span class="rgt">
+            <span class="qty" style="display:block">${num(it.damagedStock)} Bks</span>
+            <span class="hpp" style="display:block">${rp(it.damagedStock * it.hpp)}</span>
+          </span>
+        </button>`).join('') : `<p style="padding:20px;color:var(--ink-dim);margin:0">No damaged products in ${esc(FACILITIES.find(f => f.key === STATE.fac)?.name || STATE.fac)}.</p>`}
+    </div>`;
+
+  let modalHtml = '';
+  if (STATE.modal && STATE.modal.host === hostKey) {
+    const m = STATE.modal;
+    const meta = methodMeta(m.method);
+    const full = m.item.retail;
+    if (m.step === 'confirm') {
+      const targetPrice = m.cheap ? m.values.price : full;
+      const summary = m.method === 'SELL'
+        ? `Put ${m.values.qty} Bks of ${m.item.name} back on sale as "${m.item.name} · RUSAK" at ${rp(targetPrice)} per Bks?`
+        : `${meta.label} for ${m.values.qty} Bks of ${m.item.name}?`;
+      modalHtml = `
+        <div class="ov">
+          <div class="dlg" role="dialog" aria-modal="true" aria-label="Confirm action">
+            <div class="dlg-hd"><h3>Confirm action</h3><button type="button" onclick="closeModal()" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+            <div class="dlg-bd"><p style="margin:0;line-height:1.5">${esc(summary)}</p></div>
+            <div class="dlg-ft">
+              <button type="button" class="btn quiet" onclick="STATE.modal.step='form';renderAll()">Back</button>
+              <button type="button" class="btn ${meta.danger ? 'danger' : ''}" onclick="commitAction()">Confirm</button>
+            </div>
+          </div>
+        </div>`;
+    } else {
+      modalHtml = `
+        <div class="ov">
+          <form class="dlg" onsubmit="stepConfirm(event)" role="dialog" aria-modal="true" aria-label="${esc(meta.label)}">
+            <div class="dlg-hd"><h3><svg class="i"><use href="${meta.icon}"/></svg>${esc(meta.label)}</h3><button type="button" onclick="closeModal()" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+            <div class="dlg-bd">
+              <div style="padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--raised)">
+                <div style="font-weight:700">${esc(m.item.name)}</div>
+                <div style="font-size:12px;color:var(--accent-ink);margin-top:2px">Available in damaged stock: ${num(m.item.damagedStock)} Bks</div>
+              </div>
+              <div class="fld">
+                <label>Quantity (Bks)</label>
+                <input name="qty" type="number" min="1" max="${m.item.damagedStock}" value="${m.values.qty}" required>
+              </div>
+              ${m.method === 'REPAIR' ? `
+                <div class="fld">
+                  <label>Repair note (optional)</label>
+                  <input name="reason" value="${esc(m.values.reason)}" placeholder="e.g., Re-wrapped, excise seal intact">
+                </div>` : ''}
+              ${m.method === 'SELL' ? `
+                <div class="fld">
+                  <label>Price per Bks</label>
+                  <div class="segbox" style="width:100%;margin-bottom:8px">
+                    <button type="button" style="flex:1" class="${!m.cheap ? 'on' : ''}" onclick="STATE.modal.cheap=false;renderAll()">Full price · ${rp(full)}</button>
+                    <button type="button" style="flex:1" class="${m.cheap ? 'on' : ''}" onclick="STATE.modal.cheap=true;renderAll()">Lower price</button>
+                  </div>
+                  ${m.cheap ? `<input name="price" type="number" min="1" max="${full - 1}" value="${m.values.price}" required placeholder="Rp per Bks">` : ''}
+                </div>` : ''}
+              ${m.method === 'SAMPLING' ? `
+                ${m.item.facility === 'MASTER' ? `
+                  <div class="fld"><label>Send promo pieces to</label>
+                    <select name="toWarehouse">${FACILITIES.filter(f => f.key !== 'MASTER').map(f => `<option value="${f.key}">${f.name}</option>`).join('')}</select>
+                  </div>` : ''}
+                <div class="fld"><label>Reason</label><input name="reason" value="${esc(m.values.reason)}" placeholder="e.g., Torn outer wrap, sealed packs" required></div>` : ''}
+              ${m.method === 'RTV' ? `
+                <div class="fld"><label>Surat Jalan Retur (RTV number)</label><input name="rtvRef" value="${esc(m.values.rtvRef)}" placeholder="e.g., SJR-2026-015" required></div>` : ''}
+              ${m.method === 'PENALTY' ? `
+                <div class="fld"><label>Charge staff member</label>
+                  <select name="agentId">${STAFF.map(s => `<option value="${s.id}">${s.name} (${s.role})</option>`).join('')}</select>
+                </div>
+                <div style="padding:10px 12px;border-radius:9px;border:1px solid var(--danger);background:var(--danger-wash);color:var(--danger-ink);font-size:12px">
+                  This adds a fine to the selected person's daily EOD Setoran at ${rp(m.item.retail)} per Bks.
+                </div>` : ''}
+            </div>
+            <div class="dlg-ft">
+              <button type="button" class="btn quiet" onclick="closeModal()">Cancel</button>
+              <button type="submit" class="btn ${meta.danger ? 'danger' : ''}">${m.method === 'SELL' ? 'Put on sale' : 'Review & confirm'}</button>
+            </div>
+          </form>
+        </div>`;
+    }
+  }
+
+  root.innerHTML = `
+    ${isPhone ? `<div class="sb"><span>09:41</span><span>KPM</span></div>` : ''}
+    <div class="top">
+      <h1>Stock Opname</h1>
+      <div class="tabs">
+        ${isT2 ? `<span class="tab">Monitor</span>` : ''}
+        <span class="tab">HQ Audits</span>
+        <span class="tab on">Quarantine</span>
+        <span class="tab">New Count</span>
+      </div>
+    </div>
+    <div class="subbar">
+      <div class="segtabs">
+        <button type="button" class="${STATE.subTab === 'active' ? 'on' : ''}" onclick="STATE.subTab='active';renderAll()">Damaged stock</button>
+        ${isT2 ? `<button type="button" class="${STATE.subTab === 'history' ? 'on' : ''}" onclick="STATE.subTab='history';renderAll()"><svg class="i"><use href="#i-hist"/></svg>Action history (${STATE.logs.length})</button>` : ''}
+      </div>
+      ${STATE.subTab === 'active' ? `
+        <div class="kpi">
+          <span>Sunk value (HPP)<b class="val">${rp(totalHpp)}</b></span>
+          <span class="sep"></span>
+          <span><b>${num(totalBks)} Bks</b> in ${esc(FACILITIES.find(f => f.key === STATE.fac)?.name || STATE.fac)}</span>
+        </div>` : ''}
+    </div>
+    ${STATE.subTab === 'active' ? `
+      <div class="whbar" role="tablist" aria-label="Warehouses">
+        ${FACILITIES.map(f => {
+          const rows = STATE.items.filter(x => x.facility === f.key && x.damagedStock > 0);
+          const bks = rows.reduce((s, x) => s + x.damagedStock, 0);
+          return `<button type="button" role="tab" aria-selected="${STATE.fac === f.key}" class="whbtn ${STATE.fac === f.key ? 'on' : ''} ${bks > 0 ? 'hasdmg' : ''}" onclick="STATE.fac='${f.key}';STATE.selId=null;STATE.phOpen=false;renderAll()">
+            <span>${esc(f.name)}</span>
+            <span class="badge">${num(bks)} Bks</span>
+          </button>`;
+        }).join('')}
+      </div>
+      <div class="work">
+        ${isPhone ? (
+          STATE.phOpen && sel ? `
+            <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+              <div class="backbar">
+                <button type="button" onclick="STATE.phOpen=false;renderAll()"><svg class="i"><use href="#i-left"/></svg>Back to list</button>
+                <span style="margin-left:auto;font-size:12px;color:var(--ink-dim)">${esc(FACILITIES.find(f => f.key === STATE.fac)?.name || STATE.fac)}</span>
+              </div>
+              <div class="detail">${detailHtml}</div>
+            </div>` : `<div class="list">${listHtml}</div>`
+        ) : `
+          <div class="list">${listHtml}</div>
+          <div class="detail">${detailHtml}</div>`}
+      </div>` : `
+      <div class="hist-wrap">
+        <div class="hist-tools">
+          <select aria-label="Warehouse filter" onchange="STATE.histFac=this.value;renderAll()">
+            <option value="ALL" ${STATE.histFac === 'ALL' ? 'selected' : ''}>All warehouses</option>
+            ${FACILITIES.map(f => `<option value="${f.key}" ${STATE.histFac === f.key ? 'selected' : ''}>${esc(f.name)}</option>`).join('')}
+          </select>
+          <div class="pill-row">
+            ${[['ALL','All'],['REPAIR','Repair'],['SELL','Sell again'],['SAMPLING','Sample'],['RTV','RTV'],['PENALTY','Staff charge']].map(([k, l]) => `
+              <button type="button" class="pill ${STATE.histMethod === k ? 'on' : ''}" onclick="STATE.histMethod='${k}';renderAll()">${l}</button>`).join('')}
+          </div>
+        </div>
+        <div class="hist-list">
+          ${histRows.map(l => {
+            const meta = methodMeta(l.method);
+            return `<div class="hrow">
+              <div style="min-width:0">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <span class="hbadge ${meta.danger ? 'danger' : ''}">${esc(meta.badge)}</span>
+                  <span style="font-size:12px;color:var(--ink-dim)">${esc(l.time)}</span>
+                </div>
+                <div style="font-weight:700;margin-top:5px">${num(l.qty)} Bks · ${esc(l.productName)}</div>
+                <div class="hmeta">${esc(FACILITIES.find(f => f.key === l.facility)?.name || l.facility)} · Recorded by ${esc(l.by)}</div>
+                <div class="hnote">${esc(l.detail)}</div>
+              </div>
+              <div style="text-align:right;flex:none">
+                <div style="font-size:11px;color:var(--ink-dim)">Value (HPP)</div>
+                <div style="font-weight:700">${rp(l.hpp)}</div>
+              </div>
+            </div>`;
+          }).join('') || `<p style="color:var(--ink-dim)">No action history matches this filter.</p>`}
+        </div>
+      </div>`}
+    ${modalHtml}
+  `;
+}
+
+function renderAll() {
+  renderHost('pc-root', false);
+  renderHost('ph-root', true);
+}
+renderAll();
+</script>
+</body>
+</html>
