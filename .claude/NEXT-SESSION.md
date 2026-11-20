@@ -1,7 +1,7 @@
 # The one job - Categories + Competitors: from approved pictures to the build (step 0 + step 1)
 
 
-**Status 2026-11-19 18:55 WIB (Claude, quota 95%):** Antigravity 86-92 reviewed OK, local. Undo for shop delete built (5b178ee0, gates re-run by Claude: undef clean, selfcheck 3031/0, build 0, audit 726/0) LIVE d2b04b51 (pushed 2026-11-19 on his "u can push it now", unrendered - he tests it live). Console steps READY in `.claude/drafts/console-change-29.md` (Aldi publishes). Step 1 checklist = Task 92 in ANTIGRAVITY-TASK.md; Task 94 builds its pre-Console steps; Task 93 checks other screens still showing a deleted shop.
+**Status 2026-11-20 08:35 WIB (Claude, quota ~95%):** Antigravity 86-94 reviewed. LIVE 1b13865f: Undo for shop delete + step 1 pre-Console helpers (categories readers, `canManageCategories`) + Claude fix (benchmark fallback). Console steps for Change 29 READY in `.claude/drafts/console-change-29.md` - Aldi publishes; then the [NEEDS CONSOLE CHANGE 29 FIRST] steps of Task 92. Antigravity 95 (Undo fixes from Task 93) + 96 (next Undo row) OPEN.
 **Written 2026-11-19 09:05 WIB (Claude).** Design is DECIDED. Full note with his words: A-Brain `Brainstorm/2026-11-19_categories-subcategories-and-rival-catalog.md` (DECISION section).
 
 ## What he decided (2026-11-19)

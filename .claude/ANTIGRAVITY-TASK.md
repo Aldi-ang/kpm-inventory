@@ -3723,3 +3723,24 @@ Put `usePendingUndo()` and the `!isPendingUndo(\`cust:\${c.id}\`)` filter in **`
    - Every `src/config/*.selfcheck.mjs` (14 suites): **all 14 exited 0 (`0 RED`)**
    - `npm run build`: **exit 0** (`built in 16.39s`)
    - `node src/config/integration.audit.mjs`: **`726 passed, 0 failed, 726 checks`**
+
+## Task 95 - BUILD (local only): Task 93's fixes for the shop Undo
+**Status:** OPEN
+**Written:** 2026-11-20 08:35 WIB (Claude). Claude reviewed 93 (8bf3afc4) + 94 (b89dcfa5) and pushed both LIVE as 1b13865f, with one fix: `DashboardBenchmarks.jsx` went back to `(p.type || p.category || item.type || '')` - `resolveCategoryName({})` returns 'MISC', so the sale line's own type was never reached for a deleted product. Check pinned in `logicFixes.selfcheck.mjs:14839`.
+**Touch only:** `src/hooks/useDatabaseSync.js` (or the exact file Task 93 named), `src/utils/delayedWrite.js`, `src/components/CustomerManager.jsx`, `src/components/ResidentEvilInventory.jsx`, `src/config/logicFixes.selfcheck.mjs`, this file.
+1. Move the `isPendingUndo` filter to the ONE line Task 93 named, so every screen hides the shop for the 8 s; remove the now-double filter in `CustomerManager.jsx`.
+2. Remove `e.preventDefault(); e.returnValue = '';` from the `beforeunload` handler; keep `flushAllPendingWrites()`.
+3. Remove the dead `usedCatCounts` + `void usedCatCounts;` in `ResidentEvilInventory.jsx` (Task 94 left it unused).
+4. One self-check line per point. Gates after the LAST edit (undef clean, selfcheck, build, audit) - counts in the Result. Commit locally. NEVER push.
+**Done when:** 1-4 done, gates green.
+**Result:**
+
+## Task 96 - BUILD (local only): Undo for the NEXT delete row from Task 90's table
+**Status:** OPEN
+**Written:** 2026-11-20 08:35 WIB (Claude).
+**Touch only:** the one component file that row names, `src/config/logicFixes.selfcheck.mjs`, `src/config/patchNotes.js`, this file. Do after 95.
+1. Pick the smallest, most-used row left in Task 90's table (not #10). Say which and why in the Result.
+2. Use `scheduleDelayedWrite` exactly as #10 does (key prefix per collection, e.g. `prod:`/`user:`). No new helper. Hide the record through the same shared filter style Task 95 used, if that row's list has one; else say what stays visible.
+3. Self-check line + one patch-notes line (en + id, plain words). Gates green, counts in the Result. Commit locally. NEVER push.
+**Done when:** that one row has the 8 s Undo, gates green.
+**Result:**
