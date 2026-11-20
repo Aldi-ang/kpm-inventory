@@ -3792,3 +3792,15 @@ Put `usePendingUndo()` and the `!isPendingUndo(\`cust:\${c.id}\`)` filter in **`
 3. PC 1440 + phone 390 frames, 44 px phone buttons, toast on every action, no `alert/confirm/prompt`, headless `ERRORS: []`.
 **Done when:** the picture works in both frames and the Result has a feature-by-feature "real app -> picture" table.
 **Result:**
+
+## Task 97 - BUILD (local only): the approved queue wording in the REAL Customer Directory
+**Status:** OPEN
+**Written:** 2026-11-20 09:15 WIB (Claude). Do after 98 + 99. Aldi: *"yea let antigravity do most of the job we have limited quota"* (his yes). His screenshot of the live app shows the OLD words: "SHOPS WAITING FOR A SALESMAN · 132 · NO PACKAGE UNTIL THEY HAVE ONE", "Choose salesman", "GIVE".
+**Touch only:** `src/components/CustomerManager.jsx` (the queue near L1607 + any "Grosir ask"/"Grosir?" wording in that file), `src/config/logicFixes.selfcheck.mjs`, `src/config/patchNotes.js`, this file.
+1. Words exactly as approved in `.claude/drafts/customers-c.html` (Task 88): header "Shops without a salesman (N)"; description under it "Nobody is in charge of these shops, so they get no visits and no stock package. Pick the salesman who will look after each shop and press Assign."; button "Give" -> "Assign"; toast "<Shop> is now handled by <Salesman>".
+2. WHY each shop is there, one small line per card, from REAL data only (e.g. its salesman is no longer on the team / never had one). If the data cannot tell, show nothing - never invent a reason.
+3. Every "Grosir ask" / "Grosir?" in that file -> "Grosir price request" / "GROSIR REQUESTED"; buttons "Keep <tier> price" / "Approve Grosir price".
+4. Words only + the reason line: no layout redesign, no logic change to who sees or assigns. Phone 390: nothing cut, 44 px buttons.
+5. Self-check lines + one patch-notes line (en + id). Gates after the LAST edit (undef clean, selfcheck, build, audit) - counts in the Result. Commit locally. NEVER push.
+**Done when:** 1-5 done, gates green.
+**Result:**
