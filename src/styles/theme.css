@@ -3467,6 +3467,58 @@ html.lite-mode .kpm-quar-ov { background: rgba(5, 4, 3, 0.8); backdrop-filter: n
   .kpm-quar-ov { background: rgba(5, 4, 3, 0.8); backdrop-filter: none; }
 }
 
+/* NEW COUNT PRO ADDITIONS (StockOpnameView.jsx, matches stock-opname-pro.html). Placed above .kpm-mod so Lite Mode rules stay crisp. */
+.kpm-oc-sep { width: 1px; height: 15px; background: var(--line-2); flex: none; }
+.kpm-oc-meter { display: flex; align-items: center; gap: 3px; flex: none; }
+.kpm-oc-meter i { display: block; width: 11px; height: 6px; border-radius: 2px; background: var(--line-2); transition: background-color 180ms ease-out; }
+.kpm-oc-meter i.f { background: var(--gold); }
+.kpm-oc-meter i.n { background: var(--accent-edge); opacity: 0.65; }
+.kpm-oc-gh { display: flex; justify-content: space-between; align-items: center; padding: 11px 16px 5px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-dim); }
+.kpm-oc-cmp { display: grid; grid-template-columns: 1fr 1fr 1.3fr; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); overflow: hidden; }
+.kpm-oc-cmp > div { padding: 12px 16px; min-width: 0; }
+.kpm-oc-cmp > div + div { border-left: 1px solid var(--line); }
+.kpm-oc-cmp small { display: block; font-size: 11.5px; color: var(--ink-dim); margin-bottom: 3px; }
+.kpm-oc-cmp strong { font-size: 16px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.kpm-oc-cmp .off strong { color: var(--danger-ink); }
+.kpm-oc-cmp .cmp-sub { font-size: 12px; color: var(--ink-muted); margin-left: 6px; font-variant-numeric: tabular-nums; }
+.kpm-oc-seg { display: flex; flex-wrap: wrap; gap: 8px; }
+.kpm-oc-pill { min-height: 36px; padding: 6px 13px; border: 1px solid var(--line-2); border-radius: 9px; font-size: 13px; color: var(--ink-muted); background: transparent; display: inline-flex; align-items: center; gap: 6px; transition: border-color 150ms ease-out, color 150ms ease-out, background-color 150ms ease-out, transform 150ms cubic-bezier(0.23, 1, 0.32, 1); }
+.kpm-oc-pill.on { border-color: var(--accent-edge); color: var(--ink); background: color-mix(in srgb, var(--gold) 12%, transparent); font-weight: 600; }
+.kpm-oc-pill.req { border-color: var(--danger); }
+.kpm-oc-pill:active:not(:disabled) { transform: scale(0.985); }
+.kpm-oc-dmg-chip { min-height: 38px; padding: 4px 10px 4px 12px; border: 1px solid var(--line-2); border-radius: 9px; font-size: 13px; color: var(--ink-muted); background: transparent; display: inline-flex; align-items: center; gap: 6px; transition: border-color 150ms ease-out, color 150ms ease-out, background-color 150ms ease-out; }
+.kpm-oc-dmg-chip.on { border-color: var(--accent-edge); color: var(--ink); background: color-mix(in srgb, var(--gold) 12%, transparent); font-weight: 600; }
+.kpm-oc-dmg-qty { width: 46px; height: 28px; text-align: center; border-radius: 6px; border: 1px solid var(--line); background: var(--sunk); color: var(--accent-ink); font: 700 13px var(--font-body, inherit); font-variant-numeric: tabular-nums; outline: none; -moz-appearance: textfield; }
+.kpm-oc-dmg-qty::-webkit-outer-spin-button, .kpm-oc-dmg-qty::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.kpm-oc-dmg-qty:focus { border-color: var(--accent-edge); }
+.kpm-oc-blindnote { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 9px; border: 1px solid var(--line); background: var(--panel); font-size: 12.5px; color: var(--ink-muted); }
+.kpm-oc-veil { position: fixed; inset: 0; z-index: 60; background: var(--scrim-sm, rgba(5, 4, 3, 0.56)); display: flex; align-items: flex-end; justify-content: center; animation: kpm-quar-ov-in 180ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+.kpm-oc-veil.is-closing { animation: kpm-quar-ov-out 160ms cubic-bezier(0.23, 1, 0.32, 1) forwards; pointer-events: none; }
+.kpm-oc-sheet { width: 100%; max-width: 520px; max-height: 88vh; display: flex; flex-direction: column; background: var(--raised); border-top: 1px solid var(--line-2); border-radius: 20px 20px 0 0; overflow: hidden; animation: kpm-quar-sheet-in 210ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+.kpm-oc-veil.is-closing .kpm-oc-sheet { animation: kpm-quar-sheet-out 165ms cubic-bezier(0.23, 1, 0.32, 1) forwards; }
+.kpm-oc-grab { width: 38px; height: 4px; border-radius: 2px; background: var(--line-2); margin: 10px auto 4px; flex: none; }
+.kpm-oc-hand { animation: kpm-quar-in 175ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+@media (hover: hover) and (pointer: fine) {
+  .kpm-oc-pill:hover:not(:disabled), .kpm-oc-dmg-chip:hover { border-color: var(--accent-edge); color: var(--ink); }
+}
+@media (max-width: 1023px) {
+  .kpm-oc-cmp { grid-template-columns: 1fr 1fr; }
+  .kpm-oc-cmp > div:nth-child(3) { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); }
+  .kpm-oc-pill, .kpm-oc-dmg-chip { min-height: 44px; padding: 8px 13px; }
+  .kpm-oc-dmg-qty { width: 52px; height: 34px; font-size: 14px; }
+}
+html.lite-mode .kpm-oc-meter i,
+html.lite-mode .kpm-oc-pill,
+html.lite-mode .kpm-oc-dmg-chip,
+html.lite-mode .kpm-oc-veil,
+html.lite-mode .kpm-oc-sheet,
+html.lite-mode .kpm-oc-hand { animation: none; transition: none; }
+html.lite-mode .kpm-oc-veil { background: rgba(5, 4, 3, 0.8); }
+@media (prefers-reduced-motion: reduce) {
+  .kpm-oc-meter i, .kpm-oc-pill, .kpm-oc-dmg-chip, .kpm-oc-veil, .kpm-oc-sheet, .kpm-oc-hand { animation: none; transition: none; }
+  .kpm-oc-veil { background: rgba(5, 4, 3, 0.8); }
+}
+
 /* ============================================================================
    THE CONTROL SYSTEM — Aldi's ask, 2026-08-13, verbatim:
    *"i want better presentation of all of this button and features to be more

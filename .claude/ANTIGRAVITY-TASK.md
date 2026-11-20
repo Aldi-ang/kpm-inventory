@@ -3866,7 +3866,7 @@ Updated `src/components/CustomerManager.jsx`, `src/config/patchNotes.js`, and `s
 - **Lab visual check (`?shell&customers&admin&grosirask&ownerask`):** `ERRORS: []` in both PC (1440) and Phone (390) frames (`minH: 44`, `overflow: false`).
 
 ## Task 100 - BUILD (local only): Stock Opname New Count matches `.claude/drafts/stock-opname-pro.html`
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-20 08:57 WIB (Alucard-Lead). Addresses Aldi's 2026-11-20 note (*"real Stock Opname New count looks worse than the approved picture"*) using Task 98's audit.
 **Touch only:** `src/StockOpnameView.jsx` (New Count UI + top tab bar styling/wording only — keep Quarantine/Monitor logic untouched), `src/styles/theme.css` (only if needed for opname-pro classes), `src/config/logicFixes.selfcheck.mjs`, `src/config/patchNotes.js`, this file.
 1. Apply Task 98's ranked differences #1–#5 on `New Count`: replace dark/heavy KPI strip (`L1294-1315`), large warehouse tile bar (`L1281-1292`), and 4-plate `EXPECTED GOOD / EXPECTED DAMAGED / GOOD / DAMAGED` cards (`L1860-1891`) with the calm `stock-opname-pro.html` layout (compact pill warehouse strip, 3-cell `System / You counted / Difference` bar + progress meter + `−N Bks short` / `+N Bks newly damaged` strip, `Cigarettes` / `Promo` section headers, `-` / input / `+` stepper rows with `min-h-[44px]` on Phone 390).
@@ -3874,6 +3874,12 @@ Updated `src/components/CustomerManager.jsx`, `src/config/patchNotes.js`, and `s
 3. Add regression assertions in `logicFixes.selfcheck.mjs` + 1 EN/ID line in `patchNotes.js`; run all 5 gates (`undef`, `selfcheck` + all `*.selfcheck.mjs`, `build`, `integration.audit.mjs`) and render PC 1440 + Phone 390 in `ponder-lab`. Commit locally, NEVER push.
 **Done when:** New Count matches `stock-opname-pro.html`, all gates pass, lab screenshots verified, Result written.
 **Result:**
+Rebuilt `New Count` in `src/StockOpnameView.jsx` + `src/styles/theme.css` (above `.kpm-mod`) to match `.claude/drafts/stock-opname-pro.html` while keeping every write, draft, blind-count gate, recount rule, and damage validation untouched:
+- **Calm header & summary strip:** Plain `Stock Opname` heading + warehouse subline, segmented progress meter (`.kpm-oc-meter` gold/amber/muted), separators (`.kpm-oc-sep`), owner-only `−N Bks · Rp X short` + `+N Bks newly damaged` (`!showExpectedWhileCounting` hides both).
+- **Grouped list & Phone 390 bottom sheet:** `Cigarettes` (`Bks`) and `Promo` (`pcs`) section headers (`.kpm-oc-gh`), clean `44 px` list rows opening `.kpm-oc-veil` / `.kpm-oc-sheet` bottom sheet on mobile (`min-h-11`, `Escape`/backdrop/`×` close, animations disabled in `lite-mode` + `prefers-reduced-motion`).
+- **Product in hand:** Calm `.kpm-oc-blindnote` banner in Blind Count, 3-cell `.kpm-oc-cmp` (`System / You counted / Difference` with `Rp` loss & `kpm-verdict-down`/`kpm-verdict-up`), direct segmented cause pills (`VARIANCE_REASONS` post-recount, cannot un-set) and damage-kind pills + inline numeric qty (`DAMAGE_REASONS`, functional `qty` updater), plus EN/ID entry in `src/config/patchNotes.js` and updated + new `Task 100` regression/behaviour checks in `src/config/logicFixes.selfcheck.mjs`.
+- **Gates (after final edit):** `undef.check.mjs` -> `clean`; all 14 `src/config/*.selfcheck.mjs` -> exit `0` (`logicFixes.selfcheck.mjs`: `3033 passed, 0 failed`); `npm run build` -> exit `0` (`11.09s`); `integration.audit.mjs` -> `726 passed, 0 failed`; `graphify update .` -> `3575 nodes, 6946 edges`.
+- **Lab verification (`verify-task100-lab.mjs` on `ponder-lab`):** PC 1440 (`dark` & `light`), Phone 390 Owner List + Sheet (`minRowH: 44`, `minPillH: 44`, `closeH: 44`, `overflow: false`), Lite Mode (`sheetAnim: "none"`), Blind Phone 390 (`hasBlindNote: true`, `hasCmpLeak: false`), rapid double-tap (`dmgQty: "2"`), and `ERRORS: []`; screenshots inspected visually.
 
 ## Task 101 - BUILD (local only): Complete Step 1 Master Vault Categories + Sales Terminal 2-row tabs [WAIT FOR DEMO CONSOLE CHANGE 29]
 **Status:** OPEN

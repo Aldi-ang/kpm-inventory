@@ -309,9 +309,11 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
     const activeInventory = isAreaAdmin ? (branchInventory || []) : [...safeInventory, ...promoItems];
 
     const [search, setSearch] = useState("");
-    /* the count: which product is in hand, which rows the list shows, and whether the hand sits beside the list (PC) or opens under its row (phone) - view only */
+    /* the count: which product is in hand, which rows the list shows, and whether the hand sits beside the list (PC) or opens in a bottom sheet (phone) - view only */
     const [countPick, setCountPick] = useState(null);
     const [countShow, setCountShow] = useState('all');
+    const [countSheetOpen, setCountSheetOpen] = useState(false);
+    const [closingCountSheet, setClosingCountSheet] = useState(false);
     const wideScreen = useWide();
     const [counts, setCounts] = useState({}); 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -336,10 +338,11 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
     const [leavingId, setLeavingId] = useState(null);
     const [crateFac, setCrateFac] = useState(null);
 
+    const isMotionReduced = () => typeof document !== 'undefined' && (document.documentElement.classList.contains('lite-mode') || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches));
+
     const closeResolutionModal = () => {
         if (!resolutionModal) return;
-        const off = typeof document !== 'undefined' && (document.documentElement.classList.contains('lite-mode') || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches));
-        if (off) {
+        if (isMotionReduced()) {
             setClosingModal(false);
             setResolutionModal(null);
             return;
@@ -351,14 +354,30 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
         }, 160);
     };
 
+    const closeCountSheet = () => {
+        if (!countSheetOpen) return;
+        if (isMotionReduced()) {
+            setClosingCountSheet(false);
+            setCountSheetOpen(false);
+            return;
+        }
+        setClosingCountSheet(true);
+        setTimeout(() => {
+            setClosingCountSheet(false);
+            setCountSheetOpen(false);
+        }, 165);
+    };
+
     useEffect(() => {
-        if (!resolutionModal) return;
+        if (!resolutionModal && !countSheetOpen) return;
         const onKey = (e) => {
-            if (e.key === 'Escape' && !isProcessingAudit) closeResolutionModal();
+            if (e.key !== 'Escape') return;
+            if (resolutionModal && !isProcessingAudit) closeResolutionModal();
+            else if (countSheetOpen) closeCountSheet();
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [resolutionModal, isProcessingAudit]);
+    }, [resolutionModal, isProcessingAudit, countSheetOpen]);
 
     const uniqueBranches = useMemo(() => {
         const branches = new Set();
@@ -524,29 +543,15 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
         });
     };
 
-    /* --- the damage reel: which kind is showing, and whether the panel is open ---
-       UI state only, kept out of `counts` so clearing a row's numbers cannot strand it. */
-    /* the cause reel's position. -1 means he has not pressed it, which is a state the control can
-       leave but never re-enter. */
-    const [varPos, setVarPos] = useState({});
-    const [varSnap, setVarSnap] = useState({});
-
-    const stepVarianceReason = (id, dir) => {
-        const n = VARIANCE_REASONS.length;
-        const current = varPos[id];
-        const started = current !== undefined && current >= 0;
-        const next = !started ? 0
-                   : (dir > 0 ? (current + 1) % n : (current - 1 + n) % n);
-        const wraps = started && ((dir > 0 && current === n - 1) || (dir < 0 && current === 0));
-        setVarPos(prev => ({ ...prev, [id]: next }));
+    /* A confirmed or three-way count must name one of the five causes before Submit accepts it;
+       once selected it can switch causes, never go back to empty. */
+    const selectVarianceReason = (id, value) => {
+        if (!value || !String(value).trim()) return;
         setCounts(prev => {
             const entry = prev[id];
             if (!entry) return prev;
-            return { ...prev, [id]: { ...entry, varianceReason: VARIANCE_REASONS[next].value } };
+            return { ...prev, [id]: { ...entry, varianceReason: value } };
         });
-        if (!wraps) return;
-        setVarSnap(prev => ({ ...prev, [id]: true }));
-        setTimeout(() => setVarSnap(prev => { const c = { ...prev }; delete c[id]; return c; }), 240);
     };
 
     /* BLIND STAYS BLIND. His 2026-11-05: "we have blind count for tier 4 and below right"; the matrix key view_expected_count decides.
@@ -570,11 +575,10 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
         const moved = draftRead.current && draftRead.current.place !== countPlace;
         draftRead.current = { key: draftKey, place: countPlace };
         const saved = readOpnameDraft(draftKey);
-        if (moved) { clearCounts(); setVarPos({}); }
+        if (moved) { clearCounts(); }
         if (!saved) return;
         setCounts(saved.counts);
         setCheckedRows(saved.checkedRows || {});
-        setVarPos(Object.fromEntries(Object.entries(saved.counts).filter(([, e]) => e.varianceReason).map(([id, e]) => [id, VARIANCE_REASONS.findIndex(r => r.value === e.varianceReason)])));
         const n = Object.keys(saved.counts).length;
         /* next tick: opened straight on this screen, this effect runs before the toast host has mounted, and the message would be lost */
         if (!countClosed) setTimeout(() => notify(`Your count came back: ${n} product${n === 1 ? '' : 's'}, as you left ${n === 1 ? 'it' : 'them'}. Nothing is sent until you press Submit.${saved.noPhotos ? ' Photos did not fit on this phone: take them again.' : ''}`), 0);
@@ -582,12 +586,6 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
     /* the week's count went in (from another phone, or Submit lost its reply): the numbers here belong to no count now.
        ponytail: a draft from before a whole count went in can still reach a recount if this phone never opened in between; the commit sends only the reopened rows. */
     useEffect(() => { if (weekDone && !recounting) clearCounts(); }, [weekDone, recounting]);
-
-    const [dmgPos, setDmgPos] = useState({});
-    const [dmgOpen, setDmgOpen] = useState({});
-    const [dmgSnap, setDmgSnap] = useState({});
-
-    const toggleDamagePanel = (id) => setDmgOpen(prev => ({ ...prev, [id]: !prev[id] }));
 
     /* Bank the attempt and blank the boxes. Everything about the row's TARGET is kept —
        `expStock` / `expDamaged` must survive, or the recount re-opens the moving-target bug —
@@ -601,19 +599,6 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
             const passes = [...(entry.passes || []), { good: Number(entry.good || 0), damaged: Number(entry.damaged || 0) }];
             return { ...prev, [id]: { ...entry, good: '', damaged: '', passes } };
         });
-        setDmgOpen(prev => ({ ...prev, [id]: false }));
-    };
-
-    /* One step through the kinds. Forward normally; on the last one it wraps to the first and
-       `is-snap` gives that single long move the faster curve, which is the flick he asked for. */
-    const stepDamageKind = (id, dir) => {
-        const n = DAMAGE_REASONS.length;
-        const current = dmgPos[id] || 0;
-        const wraps = (dir > 0 && current === n - 1) || (dir < 0 && current === 0);
-        setDmgPos(prev => ({ ...prev, [id]: (current + dir + n) % n }));
-        if (!wraps) return;
-        setDmgSnap(prev => ({ ...prev, [id]: true }));
-        setTimeout(() => setDmgSnap(prev => { const next = { ...prev }; delete next[id]; return next; }), 240);
     };
 
     const setDamageKindQty = (id, reason, value) => {
@@ -621,7 +606,9 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
             const next = { ...prev };
             if (!next[id]) next[id] = { good: '', damaged: '', photo: null };
             const kinds = { ...(next[id].kinds || {}) };
-            const qty = Math.max(0, parseInt(value) || 0);
+            const curQty = Number(kinds[reason] || 0);
+            const raw = typeof value === 'function' ? value(curQty) : value;
+            const qty = Math.max(0, parseInt(raw) || 0);
             if (qty === 0) delete kinds[reason]; else kinds[reason] = qty;
             next[id] = { ...next[id], kinds };
             return next;
@@ -1334,16 +1321,16 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                 );
             })()}
 
-            <div className={`flex flex-col md:flex-row justify-between items-start md:items-start bg-[var(--sunk)] border border-[var(--line)] p-4 rounded-xl gap-4 shrink-0 z-10 relative ${viewMode === 'review' ? 'kpm-wl-fold' : 'shadow-lg'}`}>
+            <div className={`flex flex-col md:flex-row justify-between items-start md:items-start bg-[var(--sunk)] border border-[var(--line)] p-4 rounded-xl gap-4 shrink-0 z-10 relative ${viewMode === 'review' ? 'kpm-wl-fold' : viewMode === 'monitor' ? 'shadow-lg' : ''}`}>
                 <div className={viewMode === 'review' ? 'hidden' : ''}>
                     <h2 className="text-xl lg:text-2xl font-black text-[var(--ink)] flex items-center gap-2 tracking-widest uppercase">
-                        {viewMode === 'count' && <><ClipboardList size={24} className="text-[var(--ink-dim)]"/> Warehouse Opname</>}
+                        {viewMode === 'count' && <><ClipboardList size={22} className="text-[var(--ink-dim)]"/> Stock Opname</>}
                         {viewMode === 'review' && <><ShieldAlert size={24} className="text-[var(--ink-dim)]"/> HQ Recon Board</>}
                         {viewMode === 'quarantine' && <><QuarantineBioIcon /> Quarantine</>}
                         {viewMode === 'monitor' && <><BarChart size={24} className="text-[var(--ink-dim)] animate-pulse"/> Supply Telemetry</>}
                     </h2>
-                    <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-mono mt-1 flex items-center gap-2">
-                        {viewMode === 'count' && `AUDITING: ${countPlace}`}
+                    <p className={`${viewMode === 'count' || viewMode === 'quarantine' ? 'text-xs text-[var(--ink-dim)] mt-0.5' : 'text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-mono mt-1'} flex items-center gap-2 flex-wrap`}>
+                        {viewMode === 'count' && countPlace}
                         {viewMode === 'review' && 'VERIFY REGIONAL STOCK OVERWRITES'}
                         {viewMode === 'quarantine' && 'Damaged stock resolution & history'}
                         {viewMode === 'monitor' && 'REAL-TIME FACILITY OVERWATCH'}
@@ -1785,12 +1772,20 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                             || ((r.recount.confirmed || r.recount.disagreement) && !!varianceReasonMissing(r.entry, r.recount))
                             || (r.damagedDiff >= 1 && !!damageBlocked(r.entry)))));
                         const shown = rows.filter((r) => countShow === 'all' || (countShow === 'needs' ? needsYou(r) : !r.hasEntry));
+                        const cigRows = shown.filter((r) => !isPromo(r.item));
+                        const promoRows = shown.filter((r) => isPromo(r.item));
                         const cur = shown.find((r) => r.item.id === countPick) || shown[0];
                         const priceOfItem = (it) => Number(it?.priceDistributor || it?.hpp || it?.costPrice || 0);
                         const offRows = showExpectedWhileCounting ? rows.filter((r) => r.isRevealed && r.goodDiff <= -1) : [];
+                        const shortBks = offRows.reduce((s, r) => s + Math.abs(r.goodDiff), 0);
                         const shortRp = offRows.reduce((s, r) => s + Math.abs(r.goodDiff) * priceOfItem(r.item), 0);
+                        const newDmgBks = showExpectedWhileCounting ? rows.filter((r) => r.isRevealed && r.damagedDiff >= 1).reduce((s, r) => s + r.damagedDiff, 0) : 0;
                         const countedN = rows.filter((r) => r.hasEntry).length;
                         const needN = rows.filter(needsYou).length;
+                        const cleanN = rows.filter((r) => r.hasEntry && !needsYou(r)).length;
+                        const meterSlots = Math.min(20, rows.length);
+                        const meterFill = rows.length ? Math.round((cleanN / rows.length) * meterSlots) : 0;
+                        const meterNeed = rows.length ? Math.round((needN / rows.length) * meterSlots) : 0;
                         /* a count in Bks read as the shelf reads it: Bal, Slop, Bks (view only - nothing is saved in these units) */
                         const shelf = (it, n) => {
                             const ps = Number(it.packsPerSlop) || 10, sb = Number(it.slopsPerBal) || 20, bal = ps * sb;
@@ -1809,27 +1804,42 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                             }
                             return <Check size={15} className="text-[var(--accent-ink)]" aria-label="Counted"/>;
                         };
-                        const hand = (r) => {
-                            const { item, entry, goodVal, damagedVal, goodDiff, damagedDiff, target, isRevealed, recount, locked, tone } = r;
+                        const hand = (r, inSheet = false) => {
+                            const { item, entry, goodVal, damagedVal, goodDiff, damagedDiff, target, isRevealed, recount, locked } = r;
                             const promo = isPromo(item);
+                            const unit = promo ? 'pcs' : 'Bks';
                             const sh = !promo && Number(goodVal) > 0 ? shelf(item, Number(goodVal)) : null;
                             const pk = promo ? null : shelf(item, 0);
                             const at = shown.findIndex((x) => x.item.id === item.id);
                             const next = shown[at + 1];
-                            /* THE COUNTING CARD (the product in hand). Labels sit ABOVE their fields (his 2026-08-20 screenshot: a label
-                               on top of the box hid the number); the two boxes are the same inputs as before - same handler, same lock,
-                               same guide mark - with a − and + either side. data-half sits on the card so the guide rings an empty box
-                               here on the PC, where the box is not inside its list row. */
+                            const goodMatch = withinTolerance(goodDiff);
+                            const dmgMatch = withinTolerance(damagedDiff);
+                            const cmpDiff = !goodMatch ? goodDiff : !dmgMatch ? damagedDiff : 0;
+                            const cmpRp = cmpDiff !== 0 ? Math.abs(cmpDiff) * priceOfItem(item) : 0;
+                            /* THE COUNTING CARD (the product in hand). Labels sit ABOVE their fields; the two boxes
+                               are the same inputs as before - same handler, same lock, same guide mark - with − and + either side.
+                               On PC this lives beside the list; on phones it opens cleanly in a bottom sheet. */
                             return (
-                                <div className="flex flex-col gap-5" data-half={counts[item.id] !== undefined && countBoxEmpty(counts[item.id]) ? '' : undefined}>
+                                <div key={item.id} className="kpm-oc-hand flex flex-col gap-4" data-half={counts[item.id] !== undefined && countBoxEmpty(counts[item.id]) ? '' : undefined}>
                                     <div className="flex items-center gap-3.5">
                                         <span className="kpm-oc-ic big" aria-hidden="true">{promo ? <Gift size={20}/> : <Package size={20}/>}</span>
-                                        <div className="min-w-0">
+                                        <div className="min-w-0 flex-1">
                                             <div className="text-base font-bold text-[var(--ink)] lg:truncate">{item.name}</div>
                                             <div className="text-xs text-[var(--ink-dim)] truncate">{promo ? 'Promo · count in pcs' : `1 Bal = ${pk.sb} Slop = ${pk.bal} Bks`}</div>
                                         </div>
                                         <span className="ml-auto text-xs text-[var(--ink-dim)] tabular-nums whitespace-nowrap">{at + 1} of {shown.length}</span>
+                                        {inSheet && (
+                                            <button type="button" onClick={closeCountSheet} aria-label="Close product panel" className="min-w-11 min-h-11 -mr-2 inline-flex items-center justify-center rounded-lg text-[var(--ink-dim)] hover:text-[var(--ink)]">
+                                                <X size={18}/>
+                                            </button>
+                                        )}
                                     </div>
+                                    {!showExpectedWhileCounting && (
+                                        <div className="kpm-oc-blindnote">
+                                            <EyeOff size={15} className="shrink-0"/>
+                                            <span>Count what is on the shelf. HQ checks it after you submit.</span>
+                                        </div>
+                                    )}
                                     <div className="grid grid-cols-2 lg:grid-cols-[1.4fr_1fr] gap-3 lg:gap-4">
                                         <div className="min-w-0">
                                             <label className="flex flex-col gap-1.5 min-w-0">
@@ -1851,72 +1861,55 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                                     <button type="button" disabled={locked} aria-label="One more damaged" onClick={() => step(r, 'damaged', 1)}><Plus size={15}/></button>
                                                 </span>
                                             </label>
+                                            <div className="mt-1.5 text-xs text-[var(--ink-dim)] tabular-nums">
+                                                {showExpectedWhileCounting && isRevealed && Number(target.damaged) > 0 && Number(damagedVal || 0) !== Number(target.damaged)
+                                                    ? <>was {formatNumber(target.damaged)} · <b className="text-[var(--ink-muted)] font-semibold">{damagedDiff >= 0 ? '+' : '−'}{formatNumber(Math.abs(damagedDiff))} {damagedDiff >= 0 ? 'new' : 'less'}</b></>
+                                                    : damagedVal === '' ? 'type 0 if none' : Number(damagedVal) === 0 ? 'none' : ''}
+                                            </div>
                                         </div>
                                     </div>
-                                    {showExpectedWhileCounting && isRevealed && goodDiff <= -1 && priceOfItem(item) > 0 && (
-                                        <div className="text-xs text-[var(--ink-muted)]">Short by <b className="text-[var(--danger-ink)] font-semibold"><RollingNumber text={formatNumber(Math.abs(goodDiff))} /> {promo ? 'pcs' : 'Bks'} · <RollingNumber text={formatRupiah(Math.abs(goodDiff) * priceOfItem(item))} /></b></div>
-                                    )}
                                     {/* the verdict block slides open under the boxes on the first typed number -
                                         the same grid-rows fold as ADMIN TOOLS; Lite Mode makes it a jump */}
                                     <div className="grid transition-[grid-template-rows] duration-[260ms] ease-out" style={{ gridTemplateRows: isRevealed ? '1fr' : '0fr' }}>
                                       <div className="overflow-hidden">
                                     {isRevealed && (
-                                        <div className="flex flex-col gap-3">
-                                          <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
-                                            {/* FOUR figures, not three, and every label written out in full.
-                                                "SYS EXPECTED" printed healthy stock only while "FOUND" counted good +
-                                                damaged, so 100 healthy + 5 damaged counted perfectly read
-                                                "EXPECTED 100 -> FOUND 105 -> MATCH 0" and looked like five extra
-                                                boxes. The expected damage now has a plate of its own, so both halves
-                                                of the comparison measure the same thing.
-                                                ⚠️ THE VERDICT IS AN EDGE, NOT A GOLD SLAB. Aldi, 2026-08-21: "stop
-                                                using amber background i said, i hate it, use it for little things". */}
+                                        <div className="flex flex-col gap-3.5 pt-0.5">
                                             {showExpectedWhileCounting && (
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-[var(--line)] rounded-lg overflow-hidden text-center w-full md:w-auto md:inline-grid">
-                                                <div className="bg-[var(--sunk)] px-3 py-2 md:px-4 border border-transparent kpm-plate">
-                                                    <div className="text-[11px] lg:text-[9px] text-[var(--ink-dim)] font-bold uppercase tracking-widest whitespace-nowrap">Expected good</div>
-                                                    <div className="text-sm font-black font-mono tabular-nums text-[var(--ink)]">{formatNumber(target.stock)}</div>
+                                                <div className="kpm-oc-cmp">
+                                                    <div>
+                                                        <small>System</small>
+                                                        <strong>{formatNumber(target.stock)}</strong>
+                                                        {Number(target.damaged) > 0 && <span className="cmp-sub">+{formatNumber(target.damaged)} dmg</span>}
+                                                    </div>
+                                                    <div>
+                                                        <small>You counted</small>
+                                                        <strong>{formatNumber(Number(goodVal || 0))}</strong>
+                                                        {(Number(damagedVal || 0) > 0 || Number(target.damaged) > 0) && <span className="cmp-sub">+{formatNumber(Number(damagedVal || 0))} dmg</span>}
+                                                    </div>
+                                                    <div className={cmpDiff !== 0 ? 'off' : ''}>
+                                                        <small>Difference</small>
+                                                        <strong key={`${goodDiff}_${damagedDiff}`} className={`inline-block ${cmpDiff === 0 ? '' : cmpDiff < 0 ? 'kpm-verdict-down' : 'kpm-verdict-up'}`}>
+                                                            {cmpDiff === 0 ? 'Match' : `${cmpDiff > 0 ? '+' : '−'}${formatNumber(Math.abs(cmpDiff))} ${goodMatch ? 'dmg' : unit}`}
+                                                        </strong>
+                                                        {cmpRp > 0 && <span className="cmp-sub">{formatRupiah(cmpRp)}</span>}
+                                                        {!goodMatch && !dmgMatch && <div className="text-xs text-[var(--danger-ink)] mt-0.5 tabular-nums">{damagedDiff > 0 ? '+' : '−'}{formatNumber(Math.abs(damagedDiff))} damaged</div>}
+                                                    </div>
                                                 </div>
-                                                <div className="bg-[var(--sunk)] px-3 py-2 md:px-4 border border-transparent kpm-plate">
-                                                    <div className="text-[11px] lg:text-[9px] text-[var(--ink-dim)] font-bold uppercase tracking-widest whitespace-nowrap">Expected damaged</div>
-                                                    <div className="text-sm font-black font-mono tabular-nums text-[var(--ink)]">{formatNumber(target.damaged)}</div>
-                                                </div>
-                                                {[['Good', goodDiff], ['Damaged', damagedDiff]].map(([label, diff]) => {
-                                                    const same = withinTolerance(diff);
-                                                    /* A BORDER, NOT A RING. Tailwind's `ring` is a box-shadow, and Lite Mode
-                                                       strips box-shadow — the verdict would have lost its only edge on a
-                                                       cheap phone. Every plate carries a transparent border so the coloured
-                                                       one costs no shift. */
-                                                    return (
-                                                        <div key={label} className={`bg-[var(--sunk)] px-3 py-2 md:px-4 border kpm-plate flex flex-col justify-between ${same ? 'border-[var(--accent-edge)]' : tone === 'bad' ? 'border-[var(--danger)]' : 'border-[var(--accent-edge)]'} `}>
-                                                            <div className={`text-[11px] lg:text-[9px] font-bold uppercase tracking-widest ${same ? 'text-[var(--accent-ink)]' : tone === 'bad' ? 'text-[var(--danger-ink)]' : 'text-[var(--accent-ink)]'} `}>{label} {same ? 'match' : 'difference'}</div>
-                                                            {/* THE VERDICT FIGURE. Aldi, 2026-09-22: the nixie "doesnt look natural compared to other
-                                                        number box right there" — "just make it on red color with some animation on negative
-                                                        and also specific animation on positive but just let the format be the same with
-                                                        other text beside it". So: the same mono figure as the three plates beside it; red
-                                                        when there is a difference, plain ink on zero; keyed on the value so it moves ONCE per
-                                                        new count — a shortfall drops in, a surplus rises (theme.css THE VERDICT FIGURE).
-                                                        Lite Mode strips the motion and keeps the red. */}
-                                                            <div key={diff} className={`text-sm font-black font-mono tabular-nums ${diff === 0 ? 'text-[var(--ink)]' : 'text-[var(--danger-ink)] ' + (diff < 0 ? 'kpm-verdict-down' : 'kpm-verdict-up')}`}>{diff > 0 ? '+' : diff < 0 ? '-' : ''}{formatNumber(Math.abs(diff))}</div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
                                             )}
 
                                             {goodDiff >= 1 && damagedDiff <= -1 && (
-                                                <p className="w-full text-xs leading-relaxed font-bold text-[var(--danger-ink)]">Damaged packs go in the Damaged box, even for the same product. Good stock is only the healthy ones.</p>
+                                                <p className="w-full text-xs leading-relaxed font-bold text-[var(--danger-ink)] m-0">Damaged packs go in the Damaged box, even for the same product. Good stock is only the healthy ones.</p>
                                             )}
+
                                             {Number(damagedVal) > 0 && (
-                                                <div className="w-full md:w-auto">
+                                                <div className="flex items-center">
                                                     {entry.photo ? (
-                                                        <div className="flex items-center gap-2 bg-[var(--sunk)] border border-[var(--accent-edge)] px-3 py-1.5 rounded"><ImageIcon size={14} className="text-[var(--accent-ink)]"/><span className="text-[11px] lg:text-[10px] text-[var(--accent-ink)] font-bold uppercase tracking-widest">Damage Proof Attached</span><button onClick={() => handleClearPhoto(item.id)} className="ml-2 text-[var(--danger-ink)] hover:text-[var(--danger-ink)]"><X size={12}/></button></div>
+                                                        <div className="flex items-center gap-2 bg-[var(--sunk)] border border-[var(--accent-edge)] px-3 py-1.5 rounded-lg"><ImageIcon size={14} className="text-[var(--accent-ink)]"/><span className="text-[11px] lg:text-[10px] text-[var(--accent-ink)] font-bold uppercase tracking-widest">Damage Proof Attached</span><button type="button" onClick={() => handleClearPhoto(item.id)} className="ml-1 text-[var(--danger-ink)]"><X size={13}/></button></div>
                                                     ) : (
-                                                        <label className="cursor-pointer min-h-11 lg:min-h-0 flex items-center gap-2 bg-transparent hover:bg-[var(--inset)] border border-[var(--line-2)] px-4 py-2 rounded text-[11px] lg:text-[10px] font-bold text-[var(--ink-muted)] uppercase tracking-widest transition-colors"><Camera size={14}/> Upload Damaged Proof<input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload(item.id, e.target.files[0])} /></label>
+                                                        <label className="cursor-pointer min-h-11 lg:min-h-0 flex items-center gap-2 bg-transparent hover:bg-[var(--inset)] border border-[var(--line-2)] px-4 py-2 rounded-lg text-[11px] lg:text-[10px] font-bold text-[var(--ink-muted)] uppercase tracking-widest transition-colors"><Camera size={14}/> Upload Damaged Proof<input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload(item.id, e.target.files[0])} /></label>
                                                     )}
                                                 </div>
                                             )}
-                                          </div>
 
                                             {/* ---- COUNT IT AGAIN ----
                                                 ⚠️ NEVER NAMES THE DIFFERENCE. "You are 5 short" hands a blind
@@ -1924,8 +1917,8 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                                 tier exactly what to type to make the warning go away. */}
                                             {recount.needsRecount && (
                                                 <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 p-3 rounded-lg bg-[var(--sunk)] border border-[var(--accent-edge)]">
-                                                    <span className="flex-1 min-w-0 text-[11px] font-bold text-[var(--ink)] leading-relaxed">
-                                                        <span className="font-black uppercase tracking-widest text-[var(--accent-ink)]">Count this one again.</span>{' '}
+                                                    <span className="flex-1 min-w-0 text-xs font-medium text-[var(--ink)] leading-relaxed">
+                                                        <b className="text-[var(--accent-ink)]">Count this one again.</b>{' '}
                                                         Most differences are miscounts. It is only reported once the same number comes up twice.
                                                     </span>
                                                     <button type="button" onClick={() => startRecount(item.id)}
@@ -1935,131 +1928,98 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                                 </div>
                                             )}
                                             {recount.confirmed && (
-                                                <div className="px-3 py-2 rounded-lg bg-[var(--sunk)] border border-[var(--accent-edge)] text-[11px] lg:text-[10px] font-black uppercase tracking-widest text-[var(--accent-ink)]">
+                                                <div className="px-3 py-2 rounded-lg bg-[var(--sunk)] border border-[var(--accent-edge)] text-xs font-semibold text-[var(--accent-ink)]">
                                                     Counted twice — same answer, this goes to HQ
                                                 </div>
                                             )}
                                             {recount.disagreement && (
-                                                <div className="px-3 py-2 rounded-lg bg-[var(--sunk)] border border-[var(--alt-edge)] text-[11px] lg:text-[10px] font-black uppercase tracking-widest text-[var(--alt-ink)]">
+                                                <div className="px-3 py-2 rounded-lg bg-[var(--sunk)] border border-[var(--alt-edge)] text-xs font-semibold text-[var(--alt-ink)]">
                                                     Three different counts — all three go to HQ
                                                 </div>
                                             )}
 
-                                            {/* ---- WHY IT DISAGREES ----
-                                                Only once the difference has survived the recount. A cause typed
-                                                on the first guess is a guess. Same reel as the damage kinds -
-                                                he approved that control by eye, and a second control that looked
-                                                different on the same screen would be the mistake here. */}
+                                            {/* ---- WHY IT DISAGREES (SEGMENTED PILLS) ----
+                                                Only once the difference has survived the recount. Starts unset and never returns to empty;
+                                                blind mode never names the difference figure. */}
                                             {(recount.confirmed || recount.disagreement) && (() => {
-                                                const vPos = varPos[item.id];
-                                                const chosen = vPos !== undefined && vPos >= 0;
+                                                const chosenReason = entry?.varianceReason || '';
                                                 const missing = varianceReasonMissing(entry, recount);
+                                                const reasonPrompt = showExpectedWhileCounting && !goodMatch
+                                                    ? `Why is it ${formatNumber(Math.abs(goodDiff))} ${goodDiff < 0 ? 'short' : 'over'}?`
+                                                    : 'What happened with this count?';
                                                 return (
-                                                    <div className="flex gap-2 items-stretch">
-                                                        <div className={`kpm-dmg-win ${varSnap[item.id] ? 'is-snap' : ''} flex-1 min-w-0 rounded-lg bg-[var(--sunk)] border ${missing ? 'border-[var(--danger)]' : 'border-[var(--accent-edge)]'} `}>
-                                                            <div className="kpm-dmg-reel" style={{ '--i': chosen ? VARIANCE_REASONS.length - 1 - vPos : VARIANCE_REASONS.length }}>
-                                                                {VARIANCE_REASONS.slice().reverse().map(r => (
-                                                                    <button key={r.value} type="button" onClick={() => stepVarianceReason(item.id, 1)}
-                                                                        className="kpm-dmg-face w-full text-left text-[11px] font-black uppercase tracking-wider text-[var(--accent-ink)]">
-                                                                        <span className="truncate">{r.label}</span>
-                                                                    </button>
-                                                                ))}
-                                                                {/* face 0 of the strip, and the one it can never come back to */}
-                                                                <button type="button" onClick={() => stepVarianceReason(item.id, 1)}
-                                                                    className="kpm-dmg-face w-full text-left text-[11px] font-black uppercase tracking-wider text-[var(--danger-ink)]">
-                                                                    <span className="truncate">Tap to say what happened</span>
-                                                                </button>
-                                                            </div>
+                                                    <div className="flex flex-col gap-2">
+                                                        <div className="flex items-center justify-between gap-2">
+                                                            <span className="text-[13px] font-semibold text-[var(--ink)]">{reasonPrompt}</span>
+                                                            {missing && <span className="text-xs font-semibold text-[var(--danger-ink)]">Pick one</span>}
                                                         </div>
-                                                        <div className="flex flex-col gap-1 shrink-0">
-                                                            <button type="button" aria-label="Previous cause" onClick={() => stepVarianceReason(item.id, -1)}
-                                                                className="w-11 lg:w-9 flex-1 rounded-md border border-[var(--line)] text-[var(--ink-dim)] text-sm lg:text-[10px] hover:text-[var(--accent-ink)] hover:border-[var(--accent-edge)] transition-colors">{'▲'}</button>
-                                                            <button type="button" aria-label="Next cause" onClick={() => stepVarianceReason(item.id, 1)}
-                                                                className="w-11 lg:w-9 flex-1 rounded-md border border-[var(--line)] text-[var(--ink-dim)] text-sm lg:text-[10px] hover:text-[var(--accent-ink)] hover:border-[var(--accent-edge)] transition-colors">{'▼'}</button>
+                                                        <div className="kpm-oc-seg">
+                                                            {VARIANCE_REASONS.map((vr) => (
+                                                                <button
+                                                                    key={vr.value}
+                                                                    type="button"
+                                                                    aria-pressed={chosenReason === vr.value}
+                                                                    onClick={() => selectVarianceReason(item.id, vr.value)}
+                                                                    className={`kpm-oc-pill${chosenReason === vr.value ? ' on' : missing ? ' req' : ''}`}
+                                                                >
+                                                                    {vr.label}
+                                                                </button>
+                                                            ))}
                                                         </div>
                                                     </div>
                                                 );
                                             })()}
 
-                                            {/* ---- WHAT KIND OF DAMAGE ----
-                                                One line until pressed, because a wall-to-wall count is forty rows and
-                                                an open panel on each is unusable. Closed, the line still carries the
-                                                number, the progress and the red state, so nothing is hidden that has
-                                                a problem in it. */}
+                                            {/* ---- WHAT KIND OF DAMAGE (SEGMENTED PILLS + QTY) ---- */}
                                             {damagedDiff >= 1 && (() => {
                                                 const dmgTotal = damagedDiff;
                                                 const kinds = entry?.kinds || {};
                                                 const sorted = damageSorted(entry);
                                                 const blocked = damageBlocked(entry);
-                                                const pos = dmgPos[item.id] || 0;
-                                                const isOpen = !!dmgOpen[item.id];
-                                                const kindCount = Object.keys(kinds).length;
                                                 return (
-                                                    <div>
-                                                        <button type="button" onClick={() => toggleDamagePanel(item.id)}
-                                                            aria-expanded={isOpen}
-                                                            className={`w-full min-h-[44px] flex items-center gap-3 px-3.5 py-2.5 rounded-lg bg-[var(--sunk)] border text-left transition-colors border-[var(--accent-edge)] text-[var(--accent-ink)] `}>
-                                                            <span className="text-[11px] font-black uppercase tracking-widest whitespace-nowrap">{formatNumber(dmgTotal)} Damaged</span>
-                                                            {/* 🔴 THE LINE PRINTS THE REFUSAL, not a tally of its own.
-                                                                It used to say "9 of 5 sorted" — arithmetic that is true and
-                                                                reads as PROGRESS, next to a bar clamped to 100%. Nothing on
-                                                                the row said it was wrong until submit refused it.
-                                                                `damageBlocked` had already worked out the reason and the row
-                                                                was throwing the words away and keeping only the red. Now the
-                                                                sentence it computed is the sentence that shows, so the row
-                                                                refuses the moment the count goes over instead of at the end. */}
-                                                            <span className={`flex-1 min-w-0 truncate text-[11px] font-bold font-mono tabular-nums ${blocked ? 'text-[var(--accent-ink)]' : 'text-[var(--ink-dim)]'} `}>
-                                                                {blocked ? blocked.toUpperCase() : `${kindCount} kind${kindCount === 1 ? '' : 's'} recorded`}
+                                                    <div className="flex flex-col gap-2">
+                                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                                            <span className="text-[13px] font-semibold text-[var(--ink)]">What happened to the {formatNumber(dmgTotal)} new?</span>
+                                                            <span className={`text-xs font-semibold tabular-nums ${blocked ? 'text-[var(--danger-ink)]' : 'text-[var(--accent-ink)]'}`}>
+                                                                {blocked || `${formatNumber(sorted)} of ${formatNumber(dmgTotal)} sorted`}
                                                             </span>
-                                                            <span className="text-[11px] lg:text-[10px] shrink-0" aria-hidden="true">{isOpen ? '▴' : '▾'}</span>
-                                                        </button>
-
-                                                        <div className={`kpm-dmg-panel ${isOpen ? 'is-open' : ''} `}>
-                                                          <div className="kpm-dmg-inner">
-                                                            <div className="pt-2.5 flex flex-col gap-2.5">
-                                                                {/* the ONE amber fill left on this control, and its LENGTH is the data */}
-                                                                <div className="h-[3px] rounded-sm bg-[var(--sunk)] overflow-hidden">
-                                                                    <span className={`block h-full ${blocked ? 'bg-[var(--danger)]' : 'bg-[var(--gold)]'} `}
-                                                                          style={{ width: `${dmgTotal ? Math.min(100, (sorted / dmgTotal) * 100) : 0}%` }}></span>
-                                                                </div>
-
-                                                                <div className="flex gap-2 items-stretch">
-                                                                    <div className={`kpm-dmg-win ${dmgSnap[item.id] ? 'is-snap' : ''} flex-1 min-w-0 rounded-lg bg-[var(--sunk)] border border-[var(--accent-edge)]`}>
-                                                                        {/* built in REVERSE so a press lowers --i and the strip travels DOWN */}
-                                                                        <div className="kpm-dmg-reel" style={{ '--i': DAMAGE_REASONS.length - 1 - pos }}>
-                                                                            {DAMAGE_REASONS.slice().reverse().map(r => (
-                                                                                <div key={r.value} className="kpm-dmg-face">
-                                                                                    <button type="button" onClick={() => stepDamageKind(item.id, 1)}
-                                                                                        className="flex-1 min-w-0 self-stretch text-left truncate text-[11px] font-black uppercase tracking-wider text-[var(--accent-ink)]">
-                                                                                        {r.label}
-                                                                                    </button>
-                                                                                    <input type="number" min="0" inputMode="numeric" placeholder="0"
-                                                                                        value={kinds[r.value] ?? ''}
-                                                                                        aria-label={`How many ${r.label}`}
-                                                                                        onChange={(e) => setDamageKindQty(item.id, r.value, e.target.value)}
-                                                                                        className="w-16 h-11 lg:w-[60px] lg:h-auto shrink-0 text-center px-1 py-1.5 rounded bg-[var(--raised)] text-[var(--accent-ink)] border border-[var(--line)] focus:border-[var(--accent-edge)] outline-none font-mono tabular-nums font-black text-base lg:text-[15px]"/>
-                                                                                </div>
-                                                                            ))}
-                                                                        </div>
+                                                        </div>
+                                                        <div className="h-[3px] rounded-sm bg-[var(--panel)] overflow-hidden">
+                                                            <span className={`block h-full ${blocked ? 'bg-[var(--danger)]' : 'bg-[var(--gold)]'}`}
+                                                                  style={{ width: `${dmgTotal ? Math.min(100, (sorted / dmgTotal) * 100) : 0}%` }}></span>
+                                                        </div>
+                                                        <div className="kpm-oc-seg">
+                                                            {DAMAGE_REASONS.map((dr) => {
+                                                                const qty = Number(kinds[dr.value] || 0);
+                                                                return (
+                                                                    <div key={dr.value} className={`kpm-oc-dmg-chip${qty > 0 ? ' on' : ''}`}>
+                                                                        <button type="button" onClick={() => setDamageKindQty(item.id, dr.value, q => q + 1)} className="text-left">
+                                                                            {dr.label}
+                                                                        </button>
+                                                                        {qty > 0 && (
+                                                                            <>
+                                                                                <input
+                                                                                    type="number"
+                                                                                    min="0"
+                                                                                    inputMode="numeric"
+                                                                                    aria-label={`How many ${dr.label}`}
+                                                                                    value={qty}
+                                                                                    onChange={(e) => setDamageKindQty(item.id, dr.value, e.target.value)}
+                                                                                    className="kpm-oc-dmg-qty"
+                                                                                />
+                                                                                <button
+                                                                                    type="button"
+                                                                                    aria-label={`Clear ${dr.label}`}
+                                                                                    onClick={() => setDamageKindQty(item.id, dr.value, 0)}
+                                                                                    className="w-6 h-6 inline-flex items-center justify-center rounded text-[var(--ink-dim)] hover:text-[var(--danger-ink)]"
+                                                                                >
+                                                                                    <X size={13}/>
+                                                                                </button>
+                                                                            </>
+                                                                        )}
                                                                     </div>
-                                                                    <div className="flex flex-col gap-1 shrink-0">
-                                                                        <button type="button" aria-label="Previous kind of damage" onClick={() => stepDamageKind(item.id, -1)}
-                                                                            className="w-11 lg:w-9 flex-1 rounded-md border border-[var(--line)] text-[var(--ink-dim)] text-sm lg:text-[10px] hover:text-[var(--accent-ink)] hover:border-[var(--accent-edge)] transition-colors">{'▲'}</button>
-                                                                        <button type="button" aria-label="Next kind of damage" onClick={() => stepDamageKind(item.id, 1)}
-                                                                            className="w-11 lg:w-9 flex-1 rounded-md border border-[var(--line)] text-[var(--ink-dim)] text-sm lg:text-[10px] hover:text-[var(--accent-ink)] hover:border-[var(--accent-edge)] transition-colors">{'▼'}</button>
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="flex items-center justify-center gap-2.5">
-                                                                    <div className="flex gap-1.5 items-center">
-                                                                        {DAMAGE_REASONS.map((r, i) => (
-                                                                            <span key={r.value} className={`kpm-dot ${Number(kinds[r.value] || 0) > 0 ? 'has' : ''} ${i === pos ? 'now' : ''} `}></span>
-                                                                        ))}
-                                                                    </div>
-                                                                    <span className="text-[11px] lg:text-[9px] font-black tracking-widest text-[var(--ink-dim)] font-mono tabular-nums">{pos + 1} / {DAMAGE_REASONS.length}</span>
-                                                                </div>
-                                                            </div>
-                                                          </div>
+                                                                );
+                                                            })}
                                                         </div>
                                                     </div>
                                                 );
@@ -2068,22 +2028,52 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                     )}
                                       </div>
                                     </div>
-                                    {next && (
-                                        <div className="flex justify-end pt-1">
-                                            <button type="button" onClick={() => setCountPick(next.item.id)} className="kpm-edge-btn h-9 px-4 rounded-lg text-[13px] font-semibold gap-2 max-w-full">
+                                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-[var(--line)]">
+                                        {entry && (entry.passes?.length || 0) === 0 && !locked ? (
+                                            <button type="button" onClick={() => startRecount(item.id)} className="kpm-quar-btn quiet min-h-11 lg:min-h-0">
+                                                <RefreshCcw size={14}/> <span>Count again</span>
+                                            </button>
+                                        ) : <span />}
+                                        {next && (
+                                            <button type="button" onClick={() => setCountPick(next.item.id)} className="kpm-edge-btn min-h-11 lg:min-h-9 h-9 px-4 rounded-lg text-[13px] font-semibold gap-2 max-w-full ml-auto">
                                                 <span className="truncate">Next · {next.item.name}</span><ArrowRight size={15} className="shrink-0"/>
                                             </button>
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        };
+                        const renderListRow = (r) => {
+                            const on = cur && r.item.id === cur.item.id && (wideScreen || countSheetOpen);
+                            return (
+                                <div key={r.item.id} data-half={counts[r.item.id] !== undefined && countBoxEmpty(counts[r.item.id]) ? '' : undefined}>
+                                    <button type="button" onClick={() => { setCountPick(r.item.id); if (!wideScreen) setCountSheetOpen(true); }} aria-current={on ? 'true' : undefined} className={`kpm-oc-row${on ? ' on' : ''}`}>
+                                        <span className="kpm-oc-ic">{isPromo(r.item) ? <Gift size={15}/> : <Package size={15}/>}</span>
+                                        <span className="flex-1 min-w-0 truncate text-left">{r.item.name}</span>
+                                        <span className={`tabular-nums ${r.goodVal === '' ? 'text-[var(--ink-dim)]' : 'font-semibold text-[var(--ink)]'}`}>{r.goodVal === '' ? '—' : formatNumber(Number(r.goodVal))}</span>
+                                        <span className="w-12 flex justify-end">{mark(r)}</span>
+                                    </button>
                                 </div>
                             );
                         };
                         return (<>
                             {!countClosed && (
                                 <div className="kpm-oc-sum">
+                                    {meterSlots > 0 && (
+                                        <span className="kpm-oc-meter" aria-hidden="true">
+                                            {Array.from({ length: meterSlots }, (_, i) => (
+                                                <i key={i} className={i < meterFill ? 'f' : i < meterFill + meterNeed ? 'n' : ''} />
+                                            ))}
+                                        </span>
+                                    )}
                                     <span><b><RollingNumber text={countedN} /></b> of {rows.length} counted</span>
-                                    {needN > 0 && <span><b>{needN}</b> need you</span>}
-                                    {shortRp > 0 && <span className="text-[var(--danger-ink)]"><RollingNumber text={formatRupiah(shortRp)} /> short</span>}
+                                    {needN > 0 && <><span className="kpm-oc-sep" aria-hidden="true" /><span><b>{needN}</b> need you</span></>}
+                                    {showExpectedWhileCounting && shortBks > 0 && (
+                                        <><span className="kpm-oc-sep" aria-hidden="true" /><span className="text-[var(--danger-ink)]">−{formatNumber(shortBks)} Bks{shortRp > 0 ? <> · <RollingNumber text={formatRupiah(shortRp)} /></> : null} short</span></>
+                                    )}
+                                    {showExpectedWhileCounting && newDmgBks > 0 && (
+                                        <><span className="kpm-oc-sep" aria-hidden="true" /><span>+{formatNumber(newDmgBks)} Bks newly damaged</span></>
+                                    )}
                                 </div>
                             )}
                             <div className={`flex-1 min-h-0 flex flex-col lg:flex-row${countClosed ? ' hidden' : ''}`}>
@@ -2101,29 +2091,29 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                     </div>
                                     <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pb-2">
                                         {shown.length === 0 && <div className="px-4 py-6 text-sm text-[var(--ink-dim)]">{countShow === 'needs' ? 'Nothing needs you.' : countShow === 'left' ? 'Everything is counted.' : 'No product matches.'}</div>}
-                                        {shown.map((r) => {
-                                            const on = cur && r.item.id === cur.item.id;
-                                            return (
-                                                <div key={r.item.id} data-half={counts[r.item.id] !== undefined && countBoxEmpty(counts[r.item.id]) ? '' : undefined}>
-                                                    <button type="button" onClick={() => setCountPick(r.item.id)} aria-current={on ? 'true' : undefined} className={`kpm-oc-row${on ? ' on' : ''}`}>
-                                                        <span className="kpm-oc-ic">{isPromo(r.item) ? <Gift size={15}/> : <Package size={15}/>}</span>
-                                                        <span className="flex-1 min-w-0 truncate text-left">{r.item.name}</span>
-                                                        <span className={`tabular-nums ${r.goodVal === '' ? 'text-[var(--ink-dim)]' : 'font-semibold text-[var(--ink)]'}`}>{r.goodVal === '' ? '—' : formatNumber(Number(r.goodVal))}</span>
-                                                        <span className="w-12 flex justify-end">{mark(r)}</span>
-                                                    </button>
-                                                    {!wideScreen && on && <div className="px-4 pt-2 pb-5 border-b border-[var(--line)] bg-[var(--sunk)]">{hand(r)}</div>}
-                                                </div>
-                                            );
-                                        })}
+                                        {cigRows.length > 0 && <div className="kpm-oc-gh"><span>Cigarettes</span><span>Bks</span></div>}
+                                        {cigRows.map(renderListRow)}
+                                        {promoRows.length > 0 && <div className="kpm-oc-gh"><span>Promo</span><span>pcs</span></div>}
+                                        {promoRows.map(renderListRow)}
                                     </div>
                                 </div>
-                                {wideScreen && cur && <div className="flex-1 min-w-0 overflow-y-auto custom-scrollbar px-7 py-6">{hand(cur)}</div>}
+                                {wideScreen && cur && <div className="flex-1 min-w-0 overflow-y-auto custom-scrollbar px-7 py-6">{hand(cur, false)}</div>}
                             </div>
+                            {!wideScreen && countSheetOpen && !countClosed && cur && (
+                                <div className={`kpm-oc-veil${closingCountSheet ? ' is-closing' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) closeCountSheet(); }}>
+                                    <div className="kpm-oc-sheet" role="dialog" aria-modal="true" aria-label={cur.item.name}>
+                                        <div className="kpm-oc-grab" onClick={closeCountSheet} />
+                                        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-4 pb-5 pt-2">
+                                            {hand(cur, true)}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </>);
                     })()}
 
                     <div className="p-4 bg-[var(--sunk)] border-t border-[var(--line)] flex flex-col md:flex-row justify-between items-center gap-4 z-10 relative">
-                        <div className="text-xs text-[var(--ink-dim)] font-bold uppercase w-full md:w-auto text-center md:text-left tracking-widest">{!countClosed && (stillUncounted.length ? `${Object.keys(counts).length} of ${Object.keys(counts).length + stillUncounted.length} counted` : `${Object.keys(counts).length} Wares Counted`)}</div>
+                        <div className="text-xs text-[var(--ink-dim)] font-semibold w-full md:w-auto text-center md:text-left">{!countClosed && (stillUncounted.length ? `${Object.keys(counts).length} of ${Object.keys(counts).length + stillUncounted.length} counted` : `${Object.keys(counts).length} products counted`)}</div>
                         <div className="flex w-full md:w-auto gap-3">
                             {!countClosed && <button onClick={() => clearCounts()} className="flex-none justify-center px-4 py-3 md:py-2 text-[var(--ink-dim)] hover:text-[var(--ink)] font-bold text-xs flex items-center gap-2 transition-colors bg-[var(--raised)] border border-[var(--line)] rounded-lg"><RefreshCcw size={14}/> Reset</button>}
                             <button data-guide="submit-count" data-half={halfRows ? '' : undefined} onClick={handleCommit}disabled={isSubmitting || countClosed || Object.keys(counts).length === 0} className="kpm-edge-btn flex-1 md:flex-none justify-center disabled:bg-[var(--sunk)] disabled:text-[var(--ink-dim)] disabled:border disabled:border-[var(--line)] disabled:shadow-none disabled:cursor-not-allowed px-4 lg:px-8 py-3 md:py-2 rounded-lg font-black flex items-center gap-2 tracking-widest uppercase text-xs">{isSubmitting ? <RefreshCcw size={16} className="animate-spin"/> : <Send size={16}/>} {weekDone && !recounting ? 'Submitted this week' : notCountDay ? `Opens on ${WEEK_DAYS[countDay]}` : 'Submit to HQ'}</button>

@@ -1,8 +1,8 @@
 # The one job - Categories + Competitors: from approved pictures to the build (step 0 + step 1)
 
-Read `.claude/PROGRESS.md` (newest entries), `.claude/NEXT-SESSION.md`, and `.claude/ANTIGRAVITY-TASK.md`. Check if Aldi confirmed `"push"` for Task 97 (Customers queue wording) + approved `.claude/drafts/quarantine-pro.html` + pasted Change 29 into demo `kpm-demo-f4d74`, then work the next OPEN task (`Task 100` Stock Opname New Count, or `Task 101` Step 1 Categories once demo rules match). Never push without Aldi's `"push"`.
-**Status 2026-11-20 08:57 WIB (Alucard-Lead):** Task 98 (`e1917730`, Stock Opname real vs `stock-opname-pro.html` audit) DONE; Task 99 (`3dc077f4`, `.claude/drafts/quarantine-pro.html` picture, no chests, 5 ways out, PC/Phone `ERRORS: []`) DONE — waiting on Aldi's ok; Task 97 (Customers approved queue wording + honest `noSalesmanWhy` in `src/components/CustomerManager.jsx`, 5 gates green + lab PC/Phone verified) committed locally, NOT pushed — waiting on Aldi `"push"`. Queue refilled: `Task 100` (Stock Opname `New Count` matches `stock-opname-pro.html`, OPEN) + `Task 101` (Step 1 Categories UI, waiting on Change 29 paste to `kpm-demo-f4d74`). Note: `.claude/drafts/customers-c.html` was approved before hand-over; demo project `kpm-demo-f4d74` still needs whole-file `firestore.rules` paste from Aldi before category code goes live.
-**Written 2026-11-19 09:05 WIB (Claude).** Design is DECIDED. Full note with his words: A-Brain `Brainstorm/2026-11-19_categories-subcategories-and-rival-catalog.md` (DECISION section).
+Read `.claude/PROGRESS.md` (newest entries), `.claude/NEXT-SESSION.md`, and `.claude/ANTIGRAVITY-TASK.md`. Check if Aldi said `"push"` to ship local commits (Task 97 Customers, Quarantine `e63c4e30`, Task 100 New Count) and confirmed pasting Change 29 into demo `kpm-demo-f4d74`; if Change 29 is published on demo, work `Task 101` (Step 1 Master Vault Categories + Sales Terminal 2-row tabs). Never push without Aldi's `"push"`.
+**Status 2026-11-20 11:48 WIB (Alucard-Lead):** Task 97 (Customers queue wording), Quarantine Pro (`e63c4e30`, matches approved `quarantine-pro.html` v4), and Task 100 (New Count Pro, matches `stock-opname-pro.html`) are ALL built, gated green, PC/Phone lab verified (`ERRORS: []`), and committed locally — **waiting only on Aldi's `"push"`**. `Task 101` (Step 1 Categories UI) is OPEN and waiting on Aldi pasting `firestore.rules` (Change 29) into demo project `kpm-demo-f4d74`.
+**Written 2026-11-20 11:48 WIB (Alucard-Lead).** Categories + Competitors design is DECIDED (`Brainstorm/2026-11-19_categories-subcategories-and-rival-catalog.md`).
 
 ## What he decided (2026-11-19)
 - Every product gets **Category › Sub-category** (two fixed levels), in Master Vault and inventory, general (not cigarette-only; his milk example: Kid > Kid Silver / Bronze / Gold).
@@ -14,9 +14,7 @@ Read `.claude/PROGRESS.md` (newest entries), `.claude/NEXT-SESSION.md`, and `.cl
 
 ## Pictures & Current Queue
 - Approved 2026-11-19 (round 3): `.claude/drafts/competitors-pro.html`, `.claude/drafts/customers-c.html`, `.claude/drafts/categories-pro.html` (Main warehouse only on Master Vault; 8 s Undo bar; NOO standout + Verify NOO).
-- Created 2026-11-20 (waiting on Aldi's ok): `.claude/drafts/quarantine-pro.html` (`3dc077f4`, Task 99: Warm Stone/Espresso, no 3D chests/glow, 5 ways out + Action history + T2/T3 toggle, PC 1440 + Phone 390 `ERRORS: []`).
-- **Task 97 (Customers queue wording + honest `noSalesmanWhy`):** Built & gates green + lab PC/Phone verified, committed locally — waiting on Aldi's `"push"`.
-- **Task 100 (OPEN):** Build Stock Opname `New Count` in `src/StockOpnameView.jsx` to match `.claude/drafts/stock-opname-pro.html` (Task 98 audit: `System / You counted / Difference`, progress meter, `Cigarettes` / `Promo` headers).
+- **Quarantine & New Count (DONE locally, waiting `"push"`):** `Quarantine` (`e63c4e30`) matches `.claude/drafts/quarantine-pro.html` v4; `New Count` (Task 100) matches `.claude/drafts/stock-opname-pro.html`. Task 97 (`CustomerManager.jsx`) also waits for `"push"`.
 
 ## Next, in order (Categories + Competitors track)
 1. **Demo rules parity (`WAITING ON ALDI`):** Aldi published Change 29 (`01600afc`) on main project `cello-inventory-manager`, but demo project `kpm-demo-f4d74` still needs the whole-file `firestore.rules` paste in Console before category code goes live.

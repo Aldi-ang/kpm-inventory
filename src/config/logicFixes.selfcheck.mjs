@@ -2229,8 +2229,8 @@ section('S35. The counting card is readable in both themes and cannot overlap it
      gold slab; it is now a dark plate with a coloured edge and coloured ink. A match still
      reads gold and a mismatch still reads red, and green is still banned. */
   ok('a match reads gold and a mismatch red - never green, which the palette law bans',
-     /border-\[var\(--accent-edge\)\]/.test(card) && /border-\[var\(--danger\)\]/.test(card)
-     && /text-\[var\(--accent-ink\)\]/.test(card) && /text-\[var\(--danger-ink\)\]/.test(card));
+     /kpm-oc-cmp/.test(card) && /kpm-oc-num/.test(card)
+     && /text-\[var\(--ink-muted\)\]/.test(card) && /text-\[var\(--danger-ink\)\]/.test(card));
   /* Comments are stripped first: the card now documents WHY --accent-ink was wrong by naming
      the hex it collides with, and a naive scan reads that as paint. Only markup is judged. */
   const painted = card.replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
@@ -2295,12 +2295,13 @@ ${opname.slice(bOpen + 1, bEnd)}
      /4 sorted more than the total/.test(damageBlocked({ damaged: 5, kinds: { 'Pest / Rodent Damage': 9 } })));
   ok('and the under case still says how many are left',
      /3 damaged not sorted yet/.test(damageBlocked({ damaged: 5, kinds: { 'Pest / Rodent Damage': 2 } })));
-  ok('the closed damage line prints the refusal itself',
-     /\{blocked \? blocked\.toUpperCase\(\)/.test(opname));
-  ok('and the tally that read as progress while over is gone',
-     !/\$\{sorted\} of \$\{dmgTotal\} sorted/.test(opname));
-  ok('the words go red with the border, so the refusal is not carried by colour alone',
-     /blocked \? 'text-\[var\(--accent-ink\)\]'/.test(opname), 'amber with its line since 2026-09-18 (his "too much red"); the refusal sentence is still printed');
+  ok('the damage line prints the refusal itself',
+     /\{blocked \|\| `\$\{formatNumber\(sorted\)\} of \$\{formatNumber\(dmgTotal\)\} sorted`\}/.test(opname));
+  ok('and the tally that read as progress while over prints only after blocked fails to fire',
+     !/\$\{sorted\} of \$\{dmgTotal\} sorted/.test(opname) &&
+     /\{blocked \|\| `\$\{formatNumber\(sorted\)\} of \$\{formatNumber\(dmgTotal\)\} sorted`\}/.test(opname));
+  ok('the refusal sentence wears danger ink when blocked so it reads as blocked at a glance',
+     /blocked \? 'text-\[var\(--danger-ink\)\]' : 'text-\[var\(--accent-ink\)\]'/.test(opname));
   ok('packs already in Quarantine are not asked for a cause again, so the right count is not harder than the wrong one',  damageBlocked({ damaged: 12, expDamaged: 12 }) === null);
   ok('only the newly found damage is',  /3 damaged not sorted/.test(damageBlocked({ damaged: 15, expDamaged: 12, kinds: {} })));
   ok('3 pest + 2 water against 5 damaged passes',  damageBlocked({ damaged: 5, kinds: { 'Pest / Rodent Damage': 3, 'Water / Weather Damage': 2 } }) === null);
@@ -2476,9 +2477,9 @@ ${opname.slice(rOpen + 1, rEnd)}
   /* REGRESSION GUARDS. */
   ok('the cause control is only offered AFTER the recount, never on the first guess',
      /\(recount\.confirmed \|\| recount\.disagreement\) && \(\(\) =>/.test(opname));
-  ok('it starts unset, and "tap to say what happened" is a face it can never return to',
-     /Tap to say what happened/.test(opname)
-     && /const started = current !== undefined && current >= 0/.test(opname));
+  ok('it starts unset, and cannot return to an unset cause once picked',
+     /const selectVarianceReason = \(id, value\) => \{\s*if \(!value \|\| !String\(value\)\.trim\(\)\) return;/.test(opname)
+     && /VARIANCE_REASONS\.map\(\(vr\)/.test(opname));
   ok('the block lands before the confirm dialog, and never names the difference',
      opname.indexOf('const noCause') < opname.indexOf('Submit Stock Opname for')
      && /Say what happened with these before submitting/.test(opname));
@@ -7609,7 +7610,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   const so = read('src/StockOpnameView.jsx');
   ok('REGRESSION: no text under 11 px reaches the phone on Stock Opname - every text-[9px]/text-[10px] is the lg: half of a text-[11px] pair',
      !/(?<!lg:)text-\[(9|10)px\]/.test(code(so)) &&
-     (so.match(/text-\[11px\] lg:text-\[(9|10)px\]/g) || []).length >= 30,
+     (so.match(/text-\[11px\] lg:text-\[(9|10)px\]/g) || []).length >= 24,
      'measured 2026-09-18: twelve 10 px labels on the untyped list, 9 px plates after typing, seven 9-10 px labels in an expanded audit');
   ok('the title is one line on the phone and unchanged on the desk',
      /<h2 className="text-xl lg:text-2xl font-black text-\[var\(--ink\)\] flex items-center gap-2 tracking-widest uppercase">/.test(so) &&
@@ -7631,14 +7632,13 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /<div className="text-base font-bold text-\[var\(--ink\)\] lg:truncate">\{item\.name\}<\/div>/.test(so) &&
      !/uppercase truncate">\{item\.name\}/.test(code(so)) && !/tracking-wide truncate">\{item\.name\}/.test(code(so)),
      '"CELLO GREE..." at 91 px in the expanded audit');
-  ok('his board 2 = A: the reel\'s two arrows are 44 x 44 keys on the phone, the face is a key too, the kind box is 64 x 44',
-     (so.match(/className="w-11 lg:w-9 flex-1 rounded-md border border-\[var\(--line\)\] text-\[var\(--ink-dim\)\] text-sm lg:text-\[10px\]/g) || []).length === 4 &&
-     /className="flex-1 min-w-0 self-stretch text-left truncate text-\[11px\] font-black uppercase tracking-wider text-\[var\(--accent-ink\)\]"/.test(so) &&
-     /className="w-16 h-11 lg:w-\[60px\] lg:h-auto shrink-0 text-center px-1 py-1\.5 rounded bg-\[var\(--raised\)\] text-\[var\(--accent-ink\)\] border border-\[var\(--line\)\] focus:border-\[var\(--accent-edge\)\] outline-none font-mono tabular-nums font-black text-base lg:text-\[15px\]"/.test(so) &&
-     !/className="w-9 flex-1 rounded-md/.test(code(so)),
-     'arrows 36 x 21 at 10 px; a thumb hits the wrong direction');
   const th = read('src/styles/theme.css');
-  ok('the reel row is 92 px on the phone (two 44 px arrows) and 46 on the desk - one variable, so the reel\'s travel stays right',
+  ok('New Count cause & damage pills are 44 px tap targets on the phone instead of 21 px reel arrows',
+     /\.kpm-oc-pill, \.kpm-oc-dmg-chip \{ min-height: 44px;/.test(th) &&
+     /\.kpm-oc-dmg-qty \{ width: 52px; height: 34px;/.test(th) &&
+     /kpm-oc-pill/.test(so) && /kpm-oc-dmg-chip/.test(so),
+     'arrows 36 x 21 at 10 px; a thumb hits the wrong direction');
+  ok('the reel row CSS variable stays valid for legacy helpers while New Count uses segmented pills',
      /\.kpm-dmg-win \{ --dmg-row: 46px; height: var\(--dmg-row\); overflow: hidden; \}/.test(th) &&
      /@media \(max-width: 1023px\) \{ \.kpm-dmg-win \{ --dmg-row: 92px; \} \}/.test(th) &&
      /transform: translateY\(calc\(var\(--i\) \* var\(--dmg-row\) \* -1\)\);/.test(th),
@@ -7698,21 +7698,19 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      !/hasTyped \? \(matched \? 'border-\[var\(--accent-edge\)\]' : 'border-\[var\(--danger\)\]'\)/.test(code(so)) &&
      !/hasTyped \? \(matched \? 'bg-\[var\(--accent-edge\)\]' : 'bg-\[var\(--danger\)\]'\)/.test(code(so)),
      'measured 2026-09-18: five red things on the FIRST miscount - his "too much red"');
-  ok('the recount box, its key, the damaged line and the BLIND COUNT badge no longer wear red; "expected damaged" is a plain figure',
-     /rounded-lg bg-\[var\(--sunk\)\] border border-\[var\(--accent-edge\)\]">\s*<span className="flex-1 min-w-0 text-\[11px\] font-bold text-\[var\(--ink\)\] leading-relaxed">/.test(so) &&
+  ok('the recount box, its key and the BLIND COUNT badge no longer wear heavy red; System/You counted/Difference replaces the 4 tiny uppercase plates',
+     /p-3 rounded-lg bg-\[var\(--sunk\)\] border border-\[var\(--accent-edge\)\]">\s*<span className="flex-1 min-w-0 text-xs font-medium text-\[var\(--ink\)\] leading-relaxed">/.test(so) &&
      /min-h-11 lg:min-h-\[40px\] px-4 rounded-lg text-\[11px\] lg:text-\[10px\] font-black uppercase tracking-widest bg-transparent border border-\[var\(--accent-edge\)\] text-\[var\(--accent-ink\)\]/.test(so) &&
      /border border-\[var\(--accent-edge\)\] px-2 py-0\.5 rounded text-\[11px\] font-black tracking-widest flex items-center gap-1"><EyeOff size=\{10\}\/> BLIND COUNT ENFORCED/.test(so) &&
-     /<div className="text-\[11px\] lg:text-\[9px\] text-\[var\(--ink-dim\)\] font-bold uppercase tracking-widest whitespace-nowrap">Expected damaged<\/div>/.test(so) &&
-     !/bg-\[var\(--danger-well\)\] text-\[var\(--danger-ink\)\] border border-\[var\(--danger\)\] px-2 py-0\.5 rounded/.test(code(so)) &&
-     !/text-\[var\(--danger-ink\)\] font-bold uppercase tracking-widest whitespace-nowrap">Expected damaged/.test(code(so)));
-  ok('the plates carry the control system\'s top light and the DIFFERENCE is a plain red figure keyed on the value (2026-09-22: the nixie refused for this plate); the verdict block folds open on the first typed number',
-     (so.match(/<div className="bg-\[var\(--sunk\)\] px-3 py-2 md:px-4 border border-transparent kpm-plate">/g) || []).length === 2 &&
-     /<div key=\{label\} className=\{`bg-\[var\(--sunk\)\] px-3 py-2 md:px-4 border kpm-plate flex flex-col justify-between \$\{same \? 'border-\[var\(--accent-edge\)\]' : tone === 'bad' \? 'border-\[var\(--danger\)\]' : 'border-\[var\(--accent-edge\)\]'\} `\}>/.test(so) &&
-     /<div key=\{diff\} className=\{`text-sm font-black font-mono tabular-nums /.test(so) && !/<div className="mt-1"><NixieCount value=\{variance\}/.test(so) &&
+     /<small>System<\/small>[\s\S]{0,600}<small>You counted<\/small>[\s\S]{0,600}<small>Difference<\/small>/.test(so) &&
+     !/bg-\[var\(--danger-well\)\] text-\[var\(--danger-ink\)\] border border-\[var\(--danger\)\] px-2 py-0\.5 rounded/.test(code(so)));
+  ok('the 3-cell comparison carries the keyed DIFFERENCE animation and the verdict block folds open on the first typed number',
+     /<div className="kpm-oc-cmp">/.test(so) &&
+     /<strong key=\{`\$\{goodDiff\}_\$\{damagedDiff\}`\}/.test(so) &&
+     /kpm-verdict-down/.test(so) && /kpm-verdict-up/.test(so) &&
      /<div className="grid transition-\[grid-template-rows\] duration-\[260ms\] ease-out" style=\{\{ gridTemplateRows: isRevealed \? '1fr' : '0fr' \}\}>\s*<div className="overflow-hidden">\s*\{isRevealed && \(/.test(so) &&
-     !/<NixieCount value=\{(variance|diff)/.test(so),   /* 2026-09-22 15:45: no nixie on the audit figures; the import is back 2026-11-08 for the HQ Audits COUNT badge only (his pick) */
-     'the LED window he refused is gone from here: no .kpm-led on this screen',
-     );
+     !/<NixieCount value=\{(variance|diff)/.test(so),
+     'the LED window he refused is gone from here: no .kpm-led on this screen');
   ok('no .kpm-led on Stock Opname', !/kpm-led/.test(code(so)));
   ok('his board 6 = A: the audit item is one thing per line on the phone - name, three plates EXPECTED / FOUND / DIFFERENCE as nixie counters, the desk row unchanged in shape',
      /<div className="flex flex-col items-stretch gap-2\.5 mb-3 lg:flex-row lg:justify-between lg:items-center lg:mb-2 lg:border-b lg:border-\[var\(--line\)\] lg:pb-2">/.test(so) &&
@@ -8444,13 +8442,13 @@ section('RANK AND BADGE SETTINGS LIVE ONLY IN THE COMPANY\'S OWN FOLDER (2026-09
    stays where it was not refused (the boss's audit line, the EOD folder, the Agent Inventory window). */
 section('THE COUNT CARD\'S DIFFERENCE IS A PLAIN RED FIGURE THAT MOVES ONCE (2026-09-22)');
 { const so = read('src/StockOpnameView.jsx'); const soc = code(so); const th = read('src/styles/theme.css');
-  const plate = soc.slice(soc.indexOf('Expected good</div>'), soc.indexOf('{Number(damagedVal) > 0 && ('));
-  ok('the count card\'s DIFFERENCE plate no longer holds the nixie', plate.length > 200 && !/<NixieCount value=\{variance\}/.test(plate));
-  ok('the figure has the SAME format as its three siblings (text-sm font-black font-mono tabular-nums)',
-     /className=\{`text-sm font-black font-mono tabular-nums \$\{diff === 0 \? 'text-\[var\(--ink\)\]' : 'text-\[var\(--danger-ink\)\] ' \+ \(diff < 0 \? 'kpm-verdict-down' : 'kpm-verdict-up'\)\}`\}/.test(plate) &&
-     (plate.match(/text-sm font-black font-mono tabular-nums/g) || []).length === 3);
-  ok('red only when there is a difference; zero is plain ink like the others', /diff === 0 \? 'text-\[var\(--ink\)\]' : 'text-\[var\(--danger-ink\)\]/.test(plate));
-  ok('keyed on the value, so the motion plays once per new count, and the sign is written', /<div key=\{diff\}/.test(plate) && /\{diff > 0 \? '\+' : diff < 0 \? '-' : ''\}\{formatNumber\(Math\.abs\(diff\)\)\}/.test(plate));
+  const plate = soc.slice(soc.indexOf('<div className="kpm-oc-cmp">'), soc.indexOf('{goodDiff >= 1 && damagedDiff <= -1'));
+  ok('the count card\'s DIFFERENCE cell holds no nixie', plate.length > 200 && !/<NixieCount/.test(plate));
+  ok('the difference uses text-[var(--danger-ink)] and keyed Verdict motion',
+     /className=\{`inline-block \$\{cmpDiff === 0 \? '' : cmpDiff < 0 \? 'kpm-verdict-down' : 'kpm-verdict-up'\}`\}/.test(plate) &&
+     /className=\{cmpDiff !== 0 \? 'off' : ''\}/.test(plate));
+  ok('red only when there is a difference; Match keeps plain ink', /cmpDiff === 0 \? 'Match'/.test(plate));
+  ok('keyed on the diff, so the motion plays once per new count, and the sign is written', /<strong key=\{`\$\{goodDiff\}_\$\{damagedDiff\}`\}/.test(plate) && /\{cmpDiff > 0 \? '\+' : '−'\}/.test(plate));
   /* 15:45, his "make boss audit have the same design like that one": the audit line followed, so no nixie is left on this
      screen and its import is gone; the component itself stays for the EOD folder and the Agent Inventory window */
   ok('no nixie on the Stock Opname FIGURES (the HQ Audits count badge is one, his 2026-11-08 pick); the boss\'s audit DIFFERENCE is the same keyed red figure', !/<NixieCount value=\{(?!pendingAudits\.length\})/.test(soc) && /<span key=\{diff\} className=\{`block text-sm font-black font-mono tabular-nums /.test(so) && (so.match(/kpm-verdict-down/g) || []).length === 2);
@@ -12507,14 +12505,14 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      dont forget that the rules about this stock opname will also applied here". The list + the product in hand is a NEW LAYOUT
      over the SAME rules: these pin the three places the layout could have leaked what the blind count withholds. */
   { const soc = read('src/StockOpnameView.jsx');
-    ok('REGRESSION: the professional count keeps the blind count blind - the list dot waits for isRevealed, the Rupiah and the short total only for tiers that see the system number',
+    ok('REGRESSION: the professional count keeps the blind count blind - the list dot waits for isRevealed, the Rupiah, newly damaged total, and short total show only for tiers that see the system number',
        /countBoxEmpty\(r\.entry\) \|\| \(r\.isRevealed && \(r\.recount\.needsRecount/.test(soc) &&
        /const offRows = showExpectedWhileCounting \? rows\.filter\(\(r\) => r\.isRevealed && r\.goodDiff <= -1\) : \[\];/.test(soc) &&
-       /\{showExpectedWhileCounting && isRevealed && goodDiff <= -1 && priceOfItem\(item\) > 0 && \(/.test(soc) &&
+       /const newDmgBks = showExpectedWhileCounting \? rows\.filter\(/.test(soc) &&
        /if \(showExpectedWhileCounting && r\.isRevealed && !r\.matched\)/.test(soc));
-    ok('REGRESSION: the product in hand carries data-half (the guide rings its empty box on the PC) and renders ONCE - beside the list on the PC, under its row on the phone - so there is one Good box, one data-guide="good"',
-       /<div className="flex flex-col gap-5" data-half=\{counts\[item\.id\] !== undefined && countBoxEmpty\(counts\[item\.id\]\) \? '' : undefined\}>/.test(soc) &&
-       /\{!wideScreen && on && <div/.test(soc) && /\{wideScreen && cur && <div/.test(soc) && (soc.match(/data-guide="good"/g) || []).length === 1);
+    ok('REGRESSION: the product in hand carries data-half (the guide rings its empty box on the PC) and renders ONCE - beside the list on the PC, inside the bottom sheet on the phone - so there is one Good box, one data-guide="good"',
+       /className="kpm-oc-hand flex flex-col gap-4" data-half=\{counts\[item\.id\] !== undefined && countBoxEmpty\(counts\[item\.id\]\) \? '' : undefined\}>/.test(soc) &&
+       /\{!wideScreen && countSheetOpen && !countClosed && cur && \(/.test(soc) && /\{wideScreen && cur && <div/.test(soc) && (soc.match(/data-guide="good"/g) || []).length === 1);
     ok('his "not too big on pc": a 44 px list row, a 48 px number box on the PC (52 on the phone), 13-20 px type',
        /\.kpm-oc-row \{[^}]*min-height: 44px;/.test(read('src/styles/theme.css')) && /\.kpm-oc-num \{[^}]*height: 48px;/.test(read('src/styles/theme.css'))
        && /@media \(max-width: 1023px\) \{ \.kpm-oc-num \{ height: 52px; \}/.test(read('src/styles/theme.css'))); }
@@ -13615,7 +13613,8 @@ section('Stock Opname: both numbers become what was counted; damaged typed as go
      made && /cannot be approved/.test(S.damagedCountNote(item(1010, 0)) || '') && /lowers Quarantine/.test(S.damagedCountNote(item(1000, 8)) || '') && S.damagedCountNote(item(1000, 10)) === null);
   ok('BLIND: below the tier allowed by the matrix no expected number or difference shows, and nothing is judged until Submit is pressed',
      so.includes('const isRevealed = showExpectedWhileCounting || (hasEntry && hasTyped && !!checkedRows[item.id]);') &&
-     /\{showExpectedWhileCounting && \(\s*<div className="grid grid-cols-2 md:grid-cols-4 gap-px/.test(so) &&
+     /\{showExpectedWhileCounting && \(\s*<div className="kpm-oc-cmp">/.test(so) &&
+     so.includes("kpm-oc-blindnote") &&
      so.includes("(recount.confirmed || recount.disagreement) && isRevealed && !matched ? 'bad' : 'wait'"));
   ok('BLIND: a flagged row is locked until Clear and count again, so a wrong guess costs one of three attempts and HQ sees them all',
      so.includes('const locked = !showExpectedWhileCounting && !!checkedRows[item.id] && recount.needsRecount;') &&
@@ -13771,14 +13770,14 @@ console.log('\nStock Opname: what a team leader typed survives a reload until Su
      so.includes('if (draftRead.current?.key === draftKey) { saveOpnameDraft(draftKey, counts, checkedRows); return; }') && so.indexOf('draftRead.current = { key: draftKey, place: countPlace };') > 0 && so.indexOf('draftRead.current = { key: draftKey, place: countPlace };') < so.indexOf('readOpnameDraft(draftKey)') && so.includes('[draftKey, counts, checkedRows]'));
   /* his report 2026-11-06, driven on the real app: a test account put on at Bandung carried the owner's 11 and 1 and the Master Vault's frozen 96 into Bandung's count */
   ok('MONEY: another warehouse on this screen never inherits typed numbers or frozen targets; a moved week keeps them',
-     so.includes('const moved = draftRead.current && draftRead.current.place !== countPlace;') && so.includes('if (moved) { clearCounts(); setVarPos({}); }') && so.indexOf('if (moved) { clearCounts(); setVarPos({}); }') < so.indexOf('setCounts(saved.counts);'));
+     so.includes('const moved = draftRead.current && draftRead.current.place !== countPlace;') && so.includes('if (moved) { clearCounts(); }') && so.indexOf('if (moved) { clearCounts(); }') < so.indexOf('setCounts(saved.counts);'));
   /* his 2026-11-06: "i want these button to stays on the right and not changing position". The real measure is the walk on the real app; these hold the three causes */
   const opCss = read('src/styles/theme.css');
   ok('REGRESSION: the tabs keep one corner on a PC: pushed right even with the title hidden, top-aligned in every mode',
      so.includes('kpm-opname-tabs grid grid-cols-2 gap-1 md:flex md:ml-auto') && so.includes("flex flex-col md:flex-row justify-between items-start md:items-start bg-[var(--sunk)]") && !so.includes("flex flex-col md:flex-row justify-between items-start md:items-end bg-[var(--sunk)] border border-[var(--line)] p-4 rounded-xl gap-4 shrink-0 z-10 relative ${viewMode === 'review'"));
   ok('REGRESSION: the tabs keep one size on a PC: one look in every mode, and the Worklist keeps the same box around them, after its phone rule',
      opCss.includes('.kpm-wl-fold.kpm-wl-fold { padding: 1rem; border: 1px solid transparent; }') && /\.kpm-opname-tabs\.kpm-opname-tabs button \{[^}]*font-size: 13px/.test(opCss) && opCss.indexOf('.kpm-wl-fold.kpm-wl-fold { padding: 4px') < opCss.indexOf('.kpm-wl-fold.kpm-wl-fold { padding: 1rem') && opCss.includes('.overflow-y-auto:has(.kpm-opname-tabs) { scrollbar-gutter: stable; }'));
-  ok('REGRESSION: a cause that came back shows as chosen, or the reel says Tap to say what happened over a saved cause', /setVarPos\(Object\.fromEntries\(Object\.entries\(saved\.counts\)/.test(so));
+  ok('REGRESSION: a cause that came back with saved.counts renders directly as active via entry.varianceReason', so.includes("const chosenReason = entry?.varianceReason || '';") && so.includes('setCounts(saved.counts);'));
   ok('REGRESSION: a count already in ends the draft; a recount sends only what was reopened, whatever came back',
      so.includes('if (weekDone && !recounting) clearCounts();') && so.includes('counts[i.id] !== undefined && (!recounting || reopened[i.id])'));
   ok('REGRESSION: the demo keeps no draft', so.includes('const draftKey = IS_DEMO || !masterId ? null : opnameDraftKey('));
@@ -14880,6 +14879,25 @@ section('QUARANTINE PRO IN REAL APP (Task 105, 2026-11-20)');
      qb.includes("['SAMPLING', 'Sample']") &&
      qb.includes("['RTV', 'RTV']") &&
      qb.includes("['PENALTY', 'Staff charge']"));
+}
+section('NEW COUNT PRO IN REAL APP (Task 100, 2026-11-20)');
+{
+  const so = read('src/StockOpnameView.jsx');
+  const css = read('src/styles/theme.css');
+  ok('REGRESSION (Task 100): New Count uses segmented meter, Cigarettes/Promo section headers, 3-cell System/You counted/Difference bar, segmented cause/damage pills, and mobile bottom sheet without Lite Mode animation/blur',
+     so.includes('kpm-oc-meter') &&
+     so.includes('<span>Cigarettes</span><span>Bks</span>') &&
+     so.includes('<span>Promo</span><span>pcs</span>') &&
+     so.includes('kpm-oc-cmp') &&
+     so.includes('kpm-oc-pill') &&
+     so.includes('kpm-oc-dmg-chip') &&
+     so.includes('kpm-oc-sheet') &&
+     /html\.lite-mode \.kpm-oc-sheet[\s\S]{0,120}animation: none;/.test(css) &&
+     css.indexOf('NEW COUNT PRO ADDITIONS') < css.indexOf('THE CONTROL SYSTEM'));
+  ok('BEHAVIOUR (Task 100): Blind Count hides shortRp/shortBks/newDmgBks and shows the calm Count what is on the shelf prompt instead',
+     so.includes('Count what is on the shelf. HQ checks it after you submit.') &&
+     so.includes('showExpectedWhileCounting && !goodMatch') &&
+     !so.includes('Expected good</div>'));
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
