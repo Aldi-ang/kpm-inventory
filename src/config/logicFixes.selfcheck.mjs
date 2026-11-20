@@ -9659,7 +9659,7 @@ section('THE REGIONAL WAREHOUSE\'S CHEST (2026-09-30)');
      qb.includes("onAction(selected, 'SELL')") && qb.includes("onAction(selected, 'RTV')") && qb.includes("onAction(selected, 'REPAIR')") &&
      /quarantine_logs/.test(sv) && /PENDING_HQ_APPROVAL/.test(sv));
   ok('the sunk capital follows the selected warehouse',
-     qb.includes('facItems.reduce((sum, i) => sum + Number(i.damagedStock || 0) * sunkCostOf(i), 0)') &&
+     qb.includes('facItems.reduce((sum, i) => sum + Number(i.damagedStock || 0) * quarantineUnitCost(i), 0)') &&
      qb.includes('const facItems = useMemo('));
   /* his 2026-11-02 "convert into the promotional goods inside the regional warehouse instead" (A: a promo item per
      cigarette, B: a Master Vault crate picks the warehouse) + "when damaged good enter the master vault they should have
@@ -14879,6 +14879,15 @@ section('QUARANTINE PRO IN REAL APP (Task 105, 2026-11-20)');
      qb.includes("['SAMPLING', 'Sample']") &&
      qb.includes("['RTV', 'RTV']") &&
      qb.includes("['PENALTY', 'Staff charge']"));
+  const qcLine = qb.match(/export const quarantineUnitCost = ([^\n;]+);/);
+  const qc = qcLine ? new Function(`return ${qcLine[1]};`)() : null;
+  ok('REGRESSION & BEHAVIOUR (Quarantine cost consistency): total, list row, and detail all read ONE quarantineUnitCost helper matching priceDistributor || hpp || 0',
+     !qb.includes('sunkCostOf') && !qb.includes('unitCostOf') && !qb.includes('costPrice') &&
+     (qb.match(/quarantineUnitCost\(/g) || []).length === 3 &&
+     typeof qc === 'function' &&
+     qc({ priceDistributor: 12000, hpp: 10000, costPrice: 9000 }) === 12000 &&
+     qc({ hpp: 10000, costPrice: 9000 }) === 10000 &&
+     qc({ costPrice: 9000 }) === 0);
 }
 section('NEW COUNT PRO IN REAL APP (Task 100, 2026-11-20)');
 {

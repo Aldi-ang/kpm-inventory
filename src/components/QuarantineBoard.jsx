@@ -52,8 +52,8 @@ const HISTORY_FILTERS = [
   ['PENALTY', 'Staff charge'],
 ];
 
-const unitCostOf = (item) => Number(item?.priceDistributor || item?.hpp || item?.costPrice || 0);
-const sunkCostOf = (item) => Number(item?.priceDistributor || item?.hpp || 0);
+/* Single HPP source across Quarantine total, product list, and detail (matches the old screen's total formula). */
+export const quarantineUnitCost = (item) => Number(item?.priceDistributor || item?.hpp || 0);
 
 const motionOff = () =>
   typeof document !== 'undefined' &&
@@ -144,7 +144,7 @@ export default function QuarantineBoard({
     [facItems],
   );
   const totalSunkHpp = useMemo(
-    () => facItems.reduce((sum, i) => sum + Number(i.damagedStock || 0) * sunkCostOf(i), 0),
+    () => facItems.reduce((sum, i) => sum + Number(i.damagedStock || 0) * quarantineUnitCost(i), 0),
     [facItems],
   );
 
@@ -206,7 +206,7 @@ export default function QuarantineBoard({
         ) : (
           filtered.map((item) => {
             const isSel = selected && selected.id === item.id;
-            const unitHpp = unitCostOf(item);
+            const unitHpp = quarantineUnitCost(item);
             return (
               <button
                 key={`${item.facility}-${item.id}`}
@@ -266,7 +266,7 @@ export default function QuarantineBoard({
               <div>
                 <small className="block text-[11px] text-[var(--ink-dim)] mb-0.5">Value at cost (HPP)</small>
                 <strong className="text-base font-bold text-[var(--ink)] font-mono tabular-nums">
-                  {formatRupiah(Number(selected.damagedStock || 0) * unitCostOf(selected))}
+                  {formatRupiah(Number(selected.damagedStock || 0) * quarantineUnitCost(selected))}
                 </strong>
               </div>
               <div>
