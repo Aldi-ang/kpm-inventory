@@ -20,7 +20,7 @@ import MoreKey from './MoreKey.jsx';
 import FolderCard from './FolderCard.jsx';
 import { confirmAction, promptAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
-import { scheduleDelayedWrite, isPendingUndo, usePendingUndo } from '../utils/delayedWrite.js';
+import { scheduleDelayedWrite } from '../utils/delayedWrite.js';
 
 // --- CUSTOMER DETAIL VIEW (WITH IFRAME SUPPORT) ---
 export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit, triggerCapy, onNavigateToMap }) => {
@@ -188,12 +188,7 @@ export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit
 };          
 
 // --- UPGRADED: CUSTOMER MANAGEMENT ---
-export const CustomerManagement = ({ customers: rawCustomers, db, appId, user, logAudit, triggerCapy, isAdmin, userRole, employeeRegion, customerScope = null, tierSettings, onRequestCrop, croppedImage, onClearCroppedImage, onNavigateToMap, roster = [] }) => {
-    const pendingUndoTick = usePendingUndo();
-    const customers = useMemo(
-        () => (rawCustomers || []).filter(c => !isPendingUndo(`cust:${c.id}`)),
-        [rawCustomers, pendingUndoTick]
-    );
+export const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin, userRole, employeeRegion, customerScope = null, tierSettings, onRequestCrop, croppedImage, onClearCroppedImage, onNavigateToMap, roster = [] }) => {
     const [viewMode, setViewMode] = useState('list');
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     /* PHONE: the registration form is folded behind one button until he wants it. His YES

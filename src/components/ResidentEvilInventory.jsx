@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, Plus, Package, ImageIcon, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatRupiah, convertToBks, getLocalDayKey, isPromo, isDamagedPack, promoSkin, promoGoods, inQuarantine } from '../utils/helpers';
-import { resolveCategoryName, resolveSubName, categoryUsageCount } from '../utils/productCategories';
+import { resolveCategoryName, resolveSubName } from '../utils/productCategories';
 import PromoGoods3D from './PromoGoods3D';
 import HazardMark from './HazardMark';
 import * as threshold from '../utils/stockThreshold';
@@ -253,8 +253,6 @@ export default function ResidentEvilInventory({ inventory, productCategories = [
         });
         return groups;
     }, [inventory, productCategories]);
-    const usedCatCounts = useMemo(() => (productCategories || []).map(c => categoryUsageCount(c.id, inventory)), [productCategories, inventory]);
-    void usedCatCounts;
 
     useEffect(() => {
         if (!selectedId && inventory.length > 0) setSelectedId(inventory[0].id);

@@ -6,6 +6,7 @@ import { notify } from '../components/Toast.jsx';
 import { isPromo, setPromoBrand } from '../utils/helpers';
 import { offersFromDocs } from '../utils/vanBay';
 import { isNonBranch, setMasterVaultPlace } from '../utils/supply.js';
+import { isPendingUndo, usePendingUndo } from '../utils/delayedWrite.js';
 
 const NO_SHOPS = [];   // one stable empty list, so screens keyed on `customers` do not re-run every render
 
@@ -35,6 +36,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
     const inventory = useMemo(() => products.filter((p) => !isPromo(p)), [products]);
     const promoItems = useMemo(() => products.filter(isPromo), [products]);
     const [customers, setCustomers] = useState([]); 
+    const undoVersion = usePendingUndo();
     const [transactions, setTransactions] = useState([]);
     const [titipSales, setTitipSales] = useState([]);
     const [titipCredits, setTitipCredits] = useState([]);
@@ -280,10 +282,15 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
         }
     };
 
+    const visibleCustomers = useMemo(
+        () => (noFolders ? NO_SHOPS : customers).filter(c => !isPendingUndo(`cust:${c.id}`)),
+        [noFolders, customers, undoVersion]
+    );
+
     return {
         fetchHistoricalTransactions, // 🚀 EXPORT THE ENGINE
         inventory, setInventory: setProducts, promoItems,
-        customers: noFolders ? NO_SHOPS : customers, setCustomers, customerAccess,
+        customers: visibleCustomers, setCustomers, customerAccess,
         transactions, setTransactions, consignmentTx,
         samplings, setSamplings,
         auditLogs, setAuditLogs,

@@ -162,12 +162,8 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
     window.addEventListener('offline', () => {
         for (const k of [...pending.keys()]) cancelBecauseOffline(k);
     });
-    window.addEventListener('beforeunload', (e) => {
-        if (pending.size > 0) {
-            flushAllPendingWrites();
-            e.preventDefault();
-            e.returnValue = '';
-        }
+    window.addEventListener('beforeunload', () => {
+        if (pending.size > 0) flushAllPendingWrites();
     });
     window.addEventListener('pagehide', () => {
         if (pending.size > 0) flushAllPendingWrites();

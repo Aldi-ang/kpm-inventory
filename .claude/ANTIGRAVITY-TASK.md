@@ -3725,7 +3725,7 @@ Put `usePendingUndo()` and the `!isPendingUndo(\`cust:\${c.id}\`)` filter in **`
    - `node src/config/integration.audit.mjs`: **`726 passed, 0 failed, 726 checks`**
 
 ## Task 95 - BUILD (local only): Task 93's fixes for the shop Undo
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-20 08:35 WIB (Claude). Claude reviewed 93 (8bf3afc4) + 94 (b89dcfa5) and pushed both LIVE as 1b13865f, with one fix: `DashboardBenchmarks.jsx` went back to `(p.type || p.category || item.type || '')` - `resolveCategoryName({})` returns 'MISC', so the sale line's own type was never reached for a deleted product. Check pinned in `logicFixes.selfcheck.mjs:14839`.
 **Touch only:** `src/hooks/useDatabaseSync.js` (or the exact file Task 93 named), `src/utils/delayedWrite.js`, `src/components/CustomerManager.jsx`, `src/components/ResidentEvilInventory.jsx`, `src/config/logicFixes.selfcheck.mjs`, this file.
 1. Move the `isPendingUndo` filter to the ONE line Task 93 named, so every screen hides the shop for the 8 s; remove the now-double filter in `CustomerManager.jsx`.
@@ -3734,6 +3734,20 @@ Put `usePendingUndo()` and the `!isPendingUndo(\`cust:\${c.id}\`)` filter in **`
 4. One self-check line per point. Gates after the LAST edit (undef clean, selfcheck, build, audit) - counts in the Result. Commit locally. NEVER push.
 **Done when:** 1-4 done, gates green.
 **Result:**
+1. **Global 8-second pending-delete filter (`src/hooks/useDatabaseSync.js:9, 39, 287-294`, `src/components/CustomerManager.jsx:23, 191`):**
+   - Moved `usePendingUndo()` and `!isPendingUndo(\`cust:\${c.id}\`)` into `useDatabaseSync.js` (`visibleCustomers`), so every consumer of `customers`, `displayCustomers`, `permittedCustomers`, and `displayPermitted` hides the pending-delete shop during the 8-second Undo window.
+   - Removed the duplicate `isPendingUndo` / `usePendingUndo` filter from `CustomerManager.jsx`.
+2. **Clean `beforeunload` (`src/utils/delayedWrite.js:165-167`):**
+   - Removed `e.preventDefault(); e.returnValue = '';` from `beforeunload` so reloading inside the 8 s never shows a native `"Leave site?"` browser dialog, while keeping `flushAllPendingWrites()` to enqueue the pending write into Firestore's persistent local cache before unload.
+3. **Dead code cleanup (`src/components/ResidentEvilInventory.jsx:4, 247-255`):**
+   - Removed `usedCatCounts`, `void usedCatCounts;`, and the unused `categoryUsageCount` import.
+4. **Self-checks & 5 BUILD gates after last edit (all green):**
+   - Added 3 checks in `src/config/logicFixes.selfcheck.mjs:14842-14859` (one per point 1–3) and updated Task 91/94 regression guards (`L14741`, `L14830`).
+   - `node src/config/undef.check.mjs`: **`clean`** (`no new undefined identifiers in src (4 pinned)`)
+   - `node src/config/logicFixes.selfcheck.mjs`: **`3041 passed, 0 failed, 3041 checks`**
+   - Every `src/config/*.selfcheck.mjs` (14 suites): **all 14 exited 0 (`0 RED`)**
+   - `npm run build`: **exit 0** (`built in 11.56s`)
+   - `node src/config/integration.audit.mjs`: **`726 passed, 0 failed, 726 checks`**
 
 ## Task 96 - BUILD (local only): Undo for the NEXT delete row from Task 90's table
 **Status:** OPEN

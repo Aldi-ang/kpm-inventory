@@ -14738,7 +14738,7 @@ section('CUSTOMER DIRECTORY SHOP DELETE 8-SECOND UNDO (Task 91, 2026-11-19)');
      tj.includes('export function notifyUndo(') &&
      tj.includes('Undo for 8 seconds') &&
      /const handleDelete = async \(id, name\) => \{[\s\S]{0,260}confirmAction\("Delete profile\?"\)[\s\S]{0,260}scheduleDelayedWrite\(\{[\s\S]{0,260}key:\s*`cust:\$\{id\}`/.test(cm) &&
-     cm.includes('!isPendingUndo(`cust:${c.id}`)'),
+     read('src/hooks/useDatabaseSync.js').includes('!isPendingUndo(`cust:${c.id}`)'),
      'Row #10 delayed-write Undo regression guard failed');
 
   const { scheduleDelayedWrite, undoPendingWrite, isPendingUndo } = await import('../utils/delayedWrite.js');
@@ -14828,7 +14828,7 @@ section('STEP 1 PRE-CONSOLE: PRODUCT CATEGORIES HELPERS, PERMISSIONS & LEGACY RE
      app.includes('categoryId') && app.includes('subCategoryId') && app.includes("kind: 'promo', unit: 'pcs', type: 'PROMO'"));
 
   ok('REGRESSION (Step 1.6): ResidentEvilInventory groups and labels products through resolveCategoryName / resolveSubName with legacy fallback',
-     inv.includes('resolveCategoryName') && inv.includes('resolveSubName') && inv.includes('categoryUsageCount'));
+     inv.includes('resolveCategoryName') && inv.includes('resolveSubName'));
 
   ok('REGRESSION (Step 1.7): ExamineModal resolves TYPE badge via resolveCategoryName / resolveSubName',
      read('src/components/ExamineModal.jsx').includes('resolveCategoryName'));
@@ -14838,6 +14838,24 @@ section('STEP 1 PRE-CONSOLE: PRODUCT CATEGORIES HELPERS, PERMISSIONS & LEGACY RE
 
   ok('REGRESSION (Step 1.10, Claude review): DashboardBenchmarks keeps the sale line type as fallback (a deleted product must still count as filter/SKM), never a MISC default that hides it',
      read('src/components/DashboardBenchmarks.jsx').includes("(p.type || p.category || item.type || '')") && !read('src/components/DashboardBenchmarks.jsx').includes('resolveCategoryName'));
+}
+section('SHOP UNDO GLOBAL FILTER, CLEAN BEFOREUNLOAD & DEAD CODE CLEANUP (Task 95, 2026-11-20)');
+{
+  const sync = read('src/hooks/useDatabaseSync.js');
+  const cm = read('src/components/CustomerManager.jsx');
+  const dw = read('src/utils/delayedWrite.js');
+  const inv = read('src/components/ResidentEvilInventory.jsx');
+
+  ok('REGRESSION (Task 95.1): useDatabaseSync filters pending-delete customers globally across all screens; CustomerManager has no duplicate filter',
+     sync.includes('usePendingUndo()') && sync.includes('!isPendingUndo(`cust:${c.id}`)') &&
+     !cm.includes('isPendingUndo') && !cm.includes('usePendingUndo'));
+
+  ok('REGRESSION (Task 95.2): delayedWrite beforeunload flushes pending writes without calling preventDefault() or returnValue (no native Leave site? dialog)',
+     dw.includes("window.addEventListener('beforeunload'") && dw.includes('flushAllPendingWrites()') &&
+     !dw.includes('e.preventDefault()') && !dw.includes('e.returnValue'));
+
+  ok('REGRESSION (Task 95.3): ResidentEvilInventory removes dead usedCatCounts',
+     !inv.includes('usedCatCounts'));
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
