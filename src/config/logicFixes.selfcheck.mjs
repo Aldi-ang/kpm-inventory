@@ -14836,8 +14836,8 @@ section('STEP 1 PRE-CONSOLE: PRODUCT CATEGORIES HELPERS, PERMISSIONS & LEGACY RE
   ok('REGRESSION (Step 1.8): MerchantSalesView builds category tabs and filters wares via resolveCategoryName and activeSubCategory',
      sales.includes('resolveCategoryName') && sales.includes('activeSubCategory'));
 
-  ok('REGRESSION (Step 1.10): DashboardBenchmarks resolves product type via resolveCategoryName with legacy fallback',
-     read('src/components/DashboardBenchmarks.jsx').includes('resolveCategoryName'));
+  ok('REGRESSION (Step 1.10, Claude review): DashboardBenchmarks keeps the sale line type as fallback (a deleted product must still count as filter/SKM), never a MISC default that hides it',
+     read('src/components/DashboardBenchmarks.jsx').includes("(p.type || p.category || item.type || '')") && !read('src/components/DashboardBenchmarks.jsx').includes('resolveCategoryName'));
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

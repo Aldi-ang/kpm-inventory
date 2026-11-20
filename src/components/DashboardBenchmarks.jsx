@@ -6,7 +6,6 @@ import { MIN_STOCK_UNITS, DEFAULT_MIN_QTY, DEFAULT_MIN_UNIT } from '../utils/sto
 import { PERIODS, periodWindow, txDate } from '../utils/period';
 import { revenueOf } from '../utils/salesRollup';
 import { outstandingTitip } from '../utils/revenueRule';
-import { resolveCategoryName } from '../utils/productCategories';
 import SafetyStatus from './SafetyStatus';
 import PaceChart from './PaceChart';
 
@@ -162,7 +161,7 @@ export default function DashboardBenchmarks({
                     const q = toBal(item, p);
                     bal += q;
                     const name = (item.name || '').toLowerCase();
-                    const type = (p.type || resolveCategoryName(p) || item.type || '').toLowerCase();
+                    const type = (p.type || p.category || item.type || '').toLowerCase();
                     if (name.includes('filter') || type.includes('skm') || name.includes('mild')) filterBal += q;
                     else kretekBal += q;
                 });
