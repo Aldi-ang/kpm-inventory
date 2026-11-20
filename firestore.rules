@@ -154,6 +154,19 @@ service cloud.firestore {
         (known ? key in saved.get(role, []) : role == 'AREA_ADMIN');
     }
 
+    // [CHANGE 29 — DRAFT] WHO MANAGES SHARED PRODUCT CATEGORIES (Master Vault + Competitors).
+    function categoryManager(bossUid) {
+      let profile = getEmployeeProfile();
+      let role = profile != null ? profile.get('userRole', 'NONE') : 'NONE';
+      let m = getPermissionMatrixDoc(bossUid);
+      let saved = m != null && ('matrix' in m) ? m.matrix : {};
+      let key = 'manage_product_categories';
+      let known = key in saved.get('DEVELOPER', []) || key in saved.get('COMPANY_OWNER', []) || key in saved.get('AREA_ADMIN', []) ||
+        key in saved.get('FLEET_CAPTAIN', []) || key in saved.get('FIELD_OPERATIVE', []) || key in saved.get('ROOKIE', []);
+      return isAuthenticated() && profile != null && profile.bossUid == bossUid &&
+        (known ? key in saved.get(role, []) : (role == 'AREA_ADMIN' || role == 'FLEET_CAPTAIN'));
+    }
+
     function isSalesman(bossUid) {
       let profile = getEmployeeProfile();
       return isAuthenticated() && profile != null && profile.bossUid == bossUid;
@@ -666,15 +679,24 @@ service cloud.firestore {
         // the id must be 'rsk-' + the pack it came from, and only the lot's own fields are written (StockOpnameView.jsx, method
         // 'SELL'). The id is the whole fence: a normal pack's price stays out of reach (CHANGE 14 #8 above still allows only stock).
         allow create: if sellDamagedHolder(bossUid) && productId == 'rsk-' + request.resource.data.damagedFrom &&
-          request.resource.data.keys().hasOnly(['name', 'damagedFrom', 'type', 'category', 'images', 'dimensions', 'useFrontForBack',
+          request.resource.data.keys().hasOnly(['name', 'damagedFrom', 'type', 'category', 'categoryId', 'subCategoryId', 'images', 'dimensions', 'useFrontForBack',
             'sticksPerPack', 'packsPerSlop', 'slopsPerBal', 'balsPerCarton', 'hpp', 'costPrice',
             'priceRetail', 'priceGrosir', 'priceEcer', 'priceDistributor', 'stock']);
         allow update: if sellDamagedHolder(bossUid) && productId == 'rsk-' + resource.data.damagedFrom &&
           request.resource.data.damagedFrom == resource.data.damagedFrom &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'damagedFrom', 'type', 'category', 'images', 'dimensions',
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'damagedFrom', 'type', 'category', 'categoryId', 'subCategoryId', 'images', 'dimensions',
             'useFrontForBack', 'sticksPerPack', 'packsPerSlop', 'slopsPerBal', 'balsPerCarton', 'hpp', 'costPrice',
             'priceRetail', 'priceGrosir', 'priceEcer', 'priceDistributor', 'stock']);
         allow delete: if false;
+      }
+      // [CHANGE 29 — DRAFT] Shared 2-level category list (Master Vault + Competitors).
+      match /product_categories/{catId} {
+        allow read: if isSalesman(bossUid);
+        allow create, update: if (isCompanyTopTier(bossUid) || categoryManager(bossUid)) &&
+          request.resource.data.keys().hasOnly(['name', 'normName', 'subs', 'createdAt', 'updatedAt', 'updatedBy']) &&
+          request.resource.data.name is string && request.resource.data.name.size() > 0 &&
+          request.resource.data.subs is list;
+        allow delete: if isCompanyTopTier(bossUid) || categoryManager(bossUid);
       }
       // [CHANGE 24 — DRAFT] the Sell Again holder writes its own line in the quarantine history, method SELL only. Reading the history
       // stays the owner's (the users/{bossUid} catch-all above).
