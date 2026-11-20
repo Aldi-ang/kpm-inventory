@@ -1721,6 +1721,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         { id: 'sell_bundle_any_shop', label: "Factory offers: may sell a package to a shop assigned to another salesman" },
         { id: 'decide_opname_product', label: 'Stock Opname: accept or reject a counted product (Tier 4 and above only)' },
         { id: 'sell_damaged', label: 'Quarantine: sell damaged packs again and set their price (Tier 4 and above only)' },
+        { id: 'manage_product_categories', label: 'Master Vault & Competitors: add, rename or delete shared categories (default Tier 4 and above)' },
         { id: 'edit_agent_roles', label: '[GOD] Promote Agents' },
         { id: 'edit_rank_config', label: '[GOD] Edit Ranks' }
     ];

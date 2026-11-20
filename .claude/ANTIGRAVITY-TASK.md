@@ -3698,7 +3698,7 @@ Put `usePendingUndo()` and the `!isPendingUndo(\`cust:\${c.id}\`)` filter in **`
   - Removing `e.preventDefault(); e.returnValue = '';` at `src/utils/delayedWrite.js:168-169` (keeping only `if (pending.size > 0) flushAllPendingWrites();` on `beforeunload` and `pagehide`) flushes the delete cleanly with zero native browser dialog.
 
 ## Task 94 - BUILD (local only): the Step 1 steps marked [CAN BUILD BEFORE CONSOLE PUBLISH] in Task 92
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-19 18:55 WIB (Claude).
 **Touch only:** the files those steps name in Task 92's checklist, `src/config/logicFixes.selfcheck.mjs`, this file. NOT `firestore.rules`. No step marked [NEEDS CONSOLE CHANGE 29 FIRST].
 1. Build only those steps, in order. Each leaves its self-check line.
@@ -3706,3 +3706,20 @@ Put `usePendingUndo()` and the `!isPendingUndo(\`cust:\${c.id}\`)` filter in **`
 3. Gates after the LAST edit (undef clean, selfcheck, build, audit) - counts in the Result. Commit locally. NEVER push.
 **Done when:** those steps built, gates green, the 12 old-field readers still pass.
 **Result:**
+1. **Built the 7 `[CAN BUILD BEFORE CONSOLE PUBLISH]` steps in order (zero `[NEEDS CONSOLE CHANGE 29 FIRST]` steps touched, `firestore.rules` untouched):**
+   - **Step 1.1 (`src/utils/productCategories.js:1-60`):** Created pure helpers `normCatName`, `findDuplicateCategory`, `findDuplicateSub`, `resolveCategoryName` (falls back through `cat?.name || prod.type || prod.category || 'MISC'`), `resolveSubName`, `categoryUsageCount`, and `subUsageCount`.
+   - **Step 1.2 (`src/config/permissions.js:433-447`, `src/components/SettingsView.jsx:1724`):** Added `MANAGE_CATEGORIES_KEY = 'manage_product_categories'` and `canManageCategories(userRole)` using the **ABSENCE-MEANS-TIER-DEFAULT** pattern (T1–T4 `true`, T5–T6 `false`, absent from default `ROLE_PERMISSIONS` arrays), plus the toggle row in `SettingsView.jsx` `ALL_FEATURES`.
+   - **Step 1.5 (`src/App.jsx:34, 3746-3751`):** In `handleSaveProduct`, non-promo saves now persist `categoryId` + `subCategoryId` and **dual-write** `data.type` (`resolveCategoryName({ ...editingProduct, ...data }, [])`), keeping `if (promo) Object.assign(data, { kind: 'promo', unit: 'pcs', type: 'PROMO' })` at `L3717` and the existing `<input name="type" .../>` form field at `L5292` working before Change 29 is published in the Console.
+   - **Step 1.6 (`src/components/ResidentEvilInventory.jsx:4, 66, 156, 231, 250-258, 340-356, 386`):** Updated `sections`, `ItemInspector`, and product row subtitles/columns to resolve `Category › Sub` through `resolveCategoryName` / `resolveSubName` (with full fallback to legacy `item.type` / `item.category`) and wired `categoryUsageCount`.
+   - **Step 1.7 (`src/components/ExamineModal.jsx:4, 11, 136`):** Updated `TYPE:` badge to `[resolveCategoryName(product, productCategories), resolveSubName(product, productCategories)].filter(Boolean).join(' › ')`.
+   - **Step 1.8 (`src/MerchantSalesView.jsx:28, 58, 105, 1691-1699, 2700-2717, 2920`):** Added `activeSubCategory` state (`'ALL'`), built Row-1 category tabs and `filteredItems` via `resolveCategoryName(i, productCategories)`, added Row-2 single-line horizontally scrollable sub-category tabs when the picked category has sub-categories, and formatted the desktop `TYPE` cell via `resolveCategoryName` / `resolveSubName`.
+   - **Step 1.10 (`src/components/DashboardBenchmarks.jsx:9, 165`):** Updated the 30-day Filter/SKM vs Kretek volume mix benchmark to read `(p.type || resolveCategoryName(p) || item.type || '').toLowerCase()`.
+2. **All 12 legacy `product.category` / `product.type` readers from Task 92 verified working without Change 29 live:**
+   - Old products with only `product.type` (e.g. `'SKT'`, `'SKM'`) or only `product.category` (e.g. `'Mild'`), promo items (`kind: 'promo', type: 'PROMO'`), and `StockOpnameView.jsx:950` (`rsk-*` lots) all resolve and sell with zero Firestore queries to `product_categories`.
+3. **Self-checks & 5 BUILD gates after last edit (all green):**
+   - Added 7 checks in `src/config/logicFixes.selfcheck.mjs:14784-14841` (`STEP 1 PRE-CONSOLE: PRODUCT CATEGORIES HELPERS, PERMISSIONS & LEGACY READERS (Task 94, 2026-11-20)` — one per step 1.1, 1.2, 1.5, 1.6, 1.7, 1.8, 1.10).
+   - `node src/config/undef.check.mjs`: **`clean`** (`no new undefined identifiers in src (4 pinned)`)
+   - `node src/config/logicFixes.selfcheck.mjs`: **`3038 passed, 0 failed, 3038 checks`**
+   - Every `src/config/*.selfcheck.mjs` (14 suites): **all 14 exited 0 (`0 RED`)**
+   - `npm run build`: **exit 0** (`built in 16.39s`)
+   - `node src/config/integration.audit.mjs`: **`726 passed, 0 failed, 726 checks`**

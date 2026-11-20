@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, Plus, Package, ImageIcon, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatRupiah, convertToBks, getLocalDayKey, isPromo, isDamagedPack, promoSkin, promoGoods, inQuarantine } from '../utils/helpers';
+import { resolveCategoryName, resolveSubName, categoryUsageCount } from '../utils/productCategories';
 import PromoGoods3D from './PromoGoods3D';
 import HazardMark from './HazardMark';
 import * as threshold from '../utils/stockThreshold';
@@ -62,7 +63,7 @@ export const DimensionControl = ({ label, val, axis, onChange, onInteract }) => 
 );
 
 // --- TRUE 3D ITEM INSPECTOR ---
-export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProduct, onExpand, isLow = false, backgroundSrc, onUploadBg }) => {
+export const ItemInspector = ({ product, productCategories = [], isAdmin, onEdit, onDelete, onUpdateProduct, onExpand, isLow = false, backgroundSrc, onUploadBg }) => {
     const rotation = { x: -15, y: 35 };   /* the resting tilt; turning by hand happens in the fullscreen viewer now (see the stage) */
     const [isInteracting, setIsInteracting] = useState(false);
 
@@ -152,7 +153,7 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
             <div className="p-4 lg:p-6 flex flex-col gap-5">
                 <div>
                     <h2 className="text-lg lg:text-xl font-bold text-ink [text-wrap:balance]">{product.name}</h2>
-                    <p className="text-xs text-ink-dim mt-0.5">{[product.type, !isPromo(product) && `${product.sticksPerPack || 16} sticks per Bks`].filter(Boolean).join(' · ')}</p>
+                    <p className="text-xs text-ink-dim mt-0.5">{[[resolveCategoryName(product, productCategories), resolveSubName(product, productCategories)].filter(Boolean).join(' › '), !isPromo(product) && `${product.sticksPerPack || 16} sticks per Bks`].filter(Boolean).join(' · ')}</p>
                     <div className="mt-3 flex items-baseline gap-2">
                         <span className="text-3xl font-extrabold text-ink tabular-nums leading-none">
                             {isAdmin ? (isPromo(product) ? `${product.stock || 0} pcs` : groupBks(info.bks)) : '**'}
@@ -227,7 +228,7 @@ const QUARANTINE = '__quarantine';   /* never a product type, so no type tab can
 /* the wide desk reads the list as a table; below xl the Field / Sold numbers fold under the name, so nothing slides sideways */
 const COLS = 'xl:grid-cols-[minmax(0,1fr)_7rem_4.5rem_5rem_5.5rem]';
 
-export default function ResidentEvilInventory({ inventory, motorists = [], transactions = [], isAdmin, onEdit, onDelete, onAddNew, backgroundSrc, onUploadBg, onUpdateProduct, onInspect, appSettings, searchTerm = '', onSearch }) {
+export default function ResidentEvilInventory({ inventory, productCategories = [], motorists = [], transactions = [], isAdmin, onEdit, onDelete, onAddNew, backgroundSrc, onUploadBg, onUpdateProduct, onInspect, appSettings, searchTerm = '', onSearch }) {
     const [selectedId, setSelectedId] = useState(null);
     const [activeSection, setActiveSection] = useState("ALL");
     const [phoneOpen, setPhoneOpen] = useState(false);
@@ -246,12 +247,14 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
     const sections = useMemo(() => {
         const groups = { "ALL": inventory };
         inventory.forEach(item => {
-            const type = item.type || "MISC";
+            const type = resolveCategoryName(item, productCategories);
             if (!groups[type]) groups[type] = [];
             groups[type].push(item);
         });
         return groups;
-    }, [inventory]);
+    }, [inventory, productCategories]);
+    const usedCatCounts = useMemo(() => (productCategories || []).map(c => categoryUsageCount(c.id, inventory)), [productCategories, inventory]);
+    void usedCatCounts;
 
     useEffect(() => {
         if (!selectedId && inventory.length > 0) setSelectedId(inventory[0].id);
@@ -334,8 +337,9 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                         const r = isAdmin ? rowNums(item) : null;
                         const big = !isAdmin ? '**' : inQ ? num(item.damagedStock) : (r.unit === 'pcs' ? num(r.vault) : r.vault);
                         const unit = inQ ? (isPromo(item) ? 'pcs' : 'Bks') : r?.unit;
-                        const sub = !isAdmin ? item.type : inQ ? `${item.type || ''}${item.type ? ' · ' : ''}${num(item.damagedStock)} ${unit} damaged`
-                            : [item.type, r.field > 0 && `Field ${num(r.field)}`, r.sold > 0 && `Sold ${num(r.sold)}`].filter(Boolean).join(' · ');
+                        const catLabel = [resolveCategoryName(item, productCategories), resolveSubName(item, productCategories)].filter(Boolean).join(' › ');
+                        const sub = !isAdmin ? catLabel : inQ ? `${catLabel || ''}${catLabel ? ' · ' : ''}${num(item.damagedStock)} ${unit} damaged`
+                            : [catLabel, r.field > 0 && `Field ${num(r.field)}`, r.sold > 0 && `Sold ${num(r.sold)}`].filter(Boolean).join(' · ');
                         return (
                             <div key={item.id} id={`mv-row-${item.id}`} onClick={() => openProduct(item.id)}
                                 className={`grid grid-cols-[minmax(0,1fr)_auto_auto] ${isAdmin && !inQ ? COLS : ''} gap-3 items-center px-4 lg:px-5 py-3 min-h-16 cursor-pointer border-b border-line transition-colors ${sel ? 'bg-[color-mix(in_srgb,var(--gold)_9%,transparent)] shadow-[inset_2px_0_0_var(--gold)]' : 'hover:bg-panel'}`}>
@@ -349,7 +353,7 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                                             {item.name}{isLowStock && isAdmin && <span className="ml-2 text-[11px] font-bold text-danger-ink">Low</span>}
                                         </h4>
                                         <p className={`text-xs text-ink-dim tabular-nums ${isAdmin && !inQ ? 'xl:hidden' : ''}`}>{sub}</p>
-                                        {isAdmin && !inQ && item.type && <p className="hidden xl:block text-xs text-ink-dim">{item.type}</p>}
+                                        {isAdmin && !inQ && catLabel && <p className="hidden xl:block text-xs text-ink-dim">{catLabel}</p>}
                                     </div>
                                 </div>
                                 <div className={`text-right tabular-nums whitespace-nowrap ${inQ ? 'text-danger-ink' : 'text-ink'}`}>
@@ -379,6 +383,7 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                 {selectedItem && (
                     <ItemInspector
                         product={selectedItem}
+                        productCategories={productCategories}
                         isAdmin={isAdmin}
                         onEdit={onEdit}
                         onDelete={onDelete}

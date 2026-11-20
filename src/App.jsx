@@ -31,6 +31,7 @@ import { rebuildMonths } from './utils/salesRollup';
 import { hashSecret, verifySecret, needsRehash } from './utils/secretHash';
 import { settleProgression } from './utils/progressionHome';
 import { bordersFromDocs, borderDocId, restorableBorders } from './utils/mapBorders';
+import { resolveCategoryName } from './utils/productCategories';
 import TierPovSwitch, { PovBanner } from './components/TierPovSwitch';
 import ProductPerformancePanel from './components/ProductPerformancePanel';
 
@@ -3742,6 +3743,12 @@ const handleGitHubMirror = async () => {
               const n = Number(data[field]);
               data[field] = (Number.isFinite(n) && n > 0) ? n : fallback;
           });
+          if (!promo) {
+              data.categoryId = String(data.categoryId ?? editingProduct?.categoryId ?? '').trim();
+              data.subCategoryId = String(data.subCategoryId ?? editingProduct?.subCategoryId ?? '').trim();
+              const resolvedCatName = resolveCategoryName({ ...editingProduct, ...data }, []);
+              data.type = String(data.type || (resolvedCatName !== 'MISC' ? resolvedCatName : editingProduct?.type || '')).trim();
+          }
           
           data.images = { ...(editingProduct?.images || {}), ...tempImages }; 
           data.dimensions = { ...boxDimensions }; 

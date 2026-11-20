@@ -25,6 +25,7 @@ import { unlockSounds, speakMumble, playSound, capyMaySpeak, capyHoldForSale } f
 import { notify } from './components/Toast.jsx';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { shareReceipt } from './components/shareReceipt.js';
+import { resolveCategoryName, resolveSubName } from './utils/productCategories';
 
 /* `onAdminSalesMode` is undefined for everyone but the boss, and that IS the permission check —
    App only hands it over on `userRole === 'ADMIN'`, the same test that used to gate the bar it
@@ -54,7 +55,7 @@ const readDraft = (uid) => {
     } catch { return null; }
 };
 
-const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], levels = [], transactions = [], consignmentTx = null, allowRetur = true, allowCashRefund = false, db, appId, agentProfileId, motorists = [], storage, masterUserId, adminSalesMode, onAdminSalesMode, isOnline = navigator.onLine, pendingTxs = [], promoVan = [], sellerRegion = '', regionOffers = [] }) => {
+const MerchantSalesView = ({ inventory, productCategories = [], user, userRole, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], levels = [], transactions = [], consignmentTx = null, allowRetur = true, allowCashRefund = false, db, appId, agentProfileId, motorists = [], storage, masterUserId, adminSalesMode, onAdminSalesMode, isOnline = navigator.onLine, pendingTxs = [], promoVan = [], sellerRegion = '', regionOffers = [] }) => {
     /* WHOSE VAULT THE CUSTOMER RECORDS LIVE IN — and the answer must be the same one App used to
        fetch them, or a write lands in a document nobody reads.
 
@@ -102,6 +103,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     const [searchTerm, setSearchTerm] = useState("");
     const [cart, setCart] = useState(draft?.cart || []);
     const [activeCategory, setActiveCategory] = useState("ALL");
+    const [activeSubCategory, setActiveSubCategory] = useState("ALL");
     // which ware the examine shelf is showing — one write per hover, never per frame
     const [examineItem, setExamineItem] = useState(null);
     
@@ -1686,8 +1688,15 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
         if (notes.length) notify(`${tr('Loaded their last order, with changes:')}\n\n${notes.join('\n\n')}`);
     };
 
-    const filteredItems = lotsAfterPacks(inventory.filter(i => (activeCategory === "ALL" || i.type === activeCategory) && i.name.toLowerCase().includes(searchTerm.toLowerCase())));
-    const categories = ["ALL", ...new Set(inventory.map(i => i.type || "MISC")), ...(bundles.length ? ["BUNDLES"] : [])];
+    const filteredItems = lotsAfterPacks(inventory.filter(i => {
+        const catName = resolveCategoryName(i, productCategories);
+        if (activeCategory !== "ALL" && catName !== activeCategory) return false;
+        if (activeSubCategory !== "ALL" && i.subCategoryId !== activeSubCategory) return false;
+        return i.name.toLowerCase().includes(searchTerm.toLowerCase());
+    }));
+    const categories = ["ALL", ...new Set(inventory.map(i => resolveCategoryName(i, productCategories))), ...(bundles.length ? ["BUNDLES"] : [])];
+    const activeCatDoc = (productCategories || []).find(c => c && c.name === activeCategory);
+    const activeSubs = Array.isArray(activeCatDoc?.subs) ? activeCatDoc.subs : [];
 
     const isGpsRestricted = gpsStatus === 'manual_override' && !canOverrideGps;
     
@@ -2690,7 +2699,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     shares the row. The lit one takes the gold edge (amber is a mark, never a plate). A 44 px press, a 32 px look. */}
                 <div className="flex flex-col lg:flex-row lg:items-stretch lg:gap-2 px-3 lg:px-4 lg:mt-2 border-b border-[var(--duke-edge-1)] shrink-0 relative z-10">
                     <div className="flex items-center gap-1.5 min-w-0 -mx-3 px-3 lg:mx-0 lg:px-0 overflow-x-auto scrollbar-hide">
-                        {categories.map(cat => ( <button key={cat} type="button" onClick={() => setActiveCategory(cat)} aria-pressed={activeCategory === cat} className="kpm-hover group shrink-0 min-h-[44px] flex items-center"><span className={`px-3 py-1.5 rounded-lg border text-[12px] font-black uppercase tracking-wide whitespace-nowrap transition-colors ${activeCategory === cat ? 'border-[var(--duke-amber-edge)] bg-[var(--duke-fill-well)] text-[var(--duke-ink-1)]' : 'border-[var(--duke-edge-ctl)] text-[var(--duke-ink-5)] group-hover:text-[var(--duke-ink-1)]'}`}>{tr(cat)}</span></button> ))}
+                        {categories.map(cat => ( <button key={cat} type="button" onClick={() => { setActiveCategory(cat); setActiveSubCategory('ALL'); }} aria-pressed={activeCategory === cat} className="kpm-hover group shrink-0 min-h-[44px] flex items-center"><span className={`px-3 py-1.5 rounded-lg border text-[12px] font-black uppercase tracking-wide whitespace-nowrap transition-colors ${activeCategory === cat ? 'border-[var(--duke-amber-edge)] bg-[var(--duke-fill-well)] text-[var(--duke-ink-1)]' : 'border-[var(--duke-edge-ctl)] text-[var(--duke-ink-5)] group-hover:text-[var(--duke-ink-1)]'}`}>{tr(cat)}</span></button> ))}
                     </div>
                     <div className="relative w-full lg:w-auto lg:flex-1 min-w-[120px] lg:self-center pb-2 lg:py-1.5">
                         <input ref={searchRef} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder={tr('SEARCH WARES...')} className="w-full bg-transparent border border-[var(--duke-edge-ctl)] p-2 pl-9 md:pl-10 pr-2 lg:pr-10 min-h-[44px] lg:min-h-0 text-[var(--duke-amber-ink)] font-mono text-[13px] md:text-sm font-bold outline-none focus:border-[var(--duke-amber-edge)] rounded-lg transition-colors"/>
@@ -2698,6 +2707,14 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                         <span className="kpm-kbd hidden lg:inline-grid absolute right-3 top-1/2 -translate-y-1/2">/</span>
                     </div>
                 </div>
+                {activeSubs.length > 0 && (
+                    <div className="flex items-center gap-1.5 px-3 lg:px-4 py-1 border-b border-[var(--duke-edge-1)] overflow-x-auto flex-nowrap scrollbar-hide shrink-0">
+                        <button type="button" onClick={() => setActiveSubCategory('ALL')} aria-pressed={activeSubCategory === 'ALL'} className={`shrink-0 min-h-[36px] px-2.5 py-1 rounded-md border text-[11px] font-bold whitespace-nowrap transition-colors ${activeSubCategory === 'ALL' ? 'border-[var(--duke-amber-edge)] bg-[var(--duke-fill-well)] text-[var(--duke-ink-1)]' : 'border-[var(--duke-edge-ctl)] text-[var(--duke-ink-5)]'}`}>All {activeCategory}</button>
+                        {activeSubs.map(sub => (
+                            <button key={sub.id} type="button" onClick={() => setActiveSubCategory(sub.id)} aria-pressed={activeSubCategory === sub.id} className={`shrink-0 min-h-[36px] px-2.5 py-1 rounded-md border text-[11px] font-bold whitespace-nowrap transition-colors ${activeSubCategory === sub.id ? 'border-[var(--duke-amber-edge)] bg-[var(--duke-fill-well)] text-[var(--duke-ink-1)]' : 'border-[var(--duke-edge-ctl)] text-[var(--duke-ink-5)]'}`}>{sub.name}</button>
+                        ))}
+                    </div>
+                )}
 
                 {/* DESKTOP: the wares stop being a sideways carousel and become a wrapping
                     grid at lg (1024px+). Below that nothing changes - the carousel is right on
@@ -2902,7 +2919,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                             </div>
                             <div className="min-w-0 lg:contents">
                                 <h4 className={`text-[13px] lg:text-sm font-black uppercase leading-tight line-clamp-2 ${out ? 'text-[var(--duke-ink-5)]' : 'text-[var(--duke-ink-1)]'}`}>{item.name}</h4>
-                                <span className="hidden lg:block truncate text-[13px] font-bold text-[var(--duke-ink-5)]">{item.type || tr('MISC')}</span>
+                                <span className="hidden lg:block truncate text-[13px] font-bold text-[var(--duke-ink-5)]">{[resolveCategoryName(item, productCategories), resolveSubName(item, productCategories)].filter(Boolean).join(' › ') || tr('MISC')}</span>
                                 <div className="mt-1 flex flex-row items-center gap-2 lg:contents">
                                     {/* the price THIS shop pays (his 2026-10-20: "the price shown on the card should be
                                         depending on the stores type that we are selling on"); Ecer until a shop is picked */}

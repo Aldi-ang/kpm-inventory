@@ -14781,5 +14781,63 @@ section('CUSTOMER DIRECTORY SHOP DELETE 8-SECOND UNDO (Task 91, 2026-11-19)');
      writes === 1,
      `pending=${pendingWhileOpen} undone=${undone} afterUndo=${writesAfterUndo} afterExpire=${writesAfterExpire} offline=${refusedWhenOffline}`);
 }
+section('STEP 1 PRE-CONSOLE: PRODUCT CATEGORIES HELPERS, PERMISSIONS & LEGACY READERS (Task 94, 2026-11-20)');
+{
+  const app = read('src/App.jsx');
+  const inv = read('src/components/ResidentEvilInventory.jsx');
+  const sales = read('src/MerchantSalesView.jsx');
+  const sv = read('src/components/SettingsView.jsx');
+  const { normCatName, findDuplicateCategory, findDuplicateSub, resolveCategoryName, resolveSubName, categoryUsageCount, subUsageCount } = await import('../utils/productCategories.js');
+  const { ROLE_PERMISSIONS, canManageCategories } = await import('./permissions.js');
+
+  const cats = [
+    { id: 'kid', name: 'Kid', normName: 'kid', subs: [{ id: 'kid-gold', name: 'Kid Gold', normName: 'kidgold' }] },
+    { id: 'putih', name: 'Rokok Putih', normName: 'rokokputih', subs: [] },
+  ];
+  const prods = [
+    { id: 'p1', name: 'NutriKid Gold', categoryId: 'kid', subCategoryId: 'kid-gold', type: 'Kid' },
+    { id: 'p2', name: 'NutriKid Silver', categoryId: 'kid', subCategoryId: 'kid-silver', type: 'Kid' },
+    { id: 'p3', name: 'Legacy Pack', type: 'SKT' },
+    { id: 'p4', name: 'Old Category Field', category: 'Mild' },
+  ];
+
+  ok('BEHAVIOUR (Step 1.1): productCategories helpers normalize duplicates, count usage, and fall back to legacy product.type and product.category',
+     normCatName('Kid - Gold.') === 'kidgold' &&
+     findDuplicateCategory(cats, 'K.I.D')?.id === 'kid' &&
+     findDuplicateSub(cats[0], 'kid gold')?.id === 'kid-gold' &&
+     categoryUsageCount('kid', prods) === 2 &&
+     subUsageCount('kid-gold', prods) === 1 &&
+     categoryUsageCount('putih', prods) === 0 &&
+     resolveCategoryName(prods[0], cats) === 'Kid' &&
+     resolveSubName(prods[0], cats) === 'Kid Gold' &&
+     resolveCategoryName(prods[2], cats) === 'SKT' &&
+     resolveCategoryName(prods[3], cats) === 'Mild' &&
+     resolveCategoryName({}, cats) === 'MISC');
+
+  ok('BEHAVIOUR (Step 1.2): canManageCategories uses ABSENCE-MEANS-TIER-DEFAULT (T1-T4 true, T5-T6 false, absent from default ROLE_PERMISSIONS, listed in SettingsView)',
+     !Object.values(ROLE_PERMISSIONS).some(l => l.includes('manage_product_categories')) &&
+     sv.includes("id: 'manage_product_categories'") &&
+     canManageCategories('DEVELOPER') === true &&
+     canManageCategories('COMPANY_OWNER') === true &&
+     canManageCategories('AREA_ADMIN') === true &&
+     canManageCategories('FLEET_CAPTAIN') === true &&
+     canManageCategories('FIELD_OPERATIVE') === false &&
+     canManageCategories('ROOKIE') === false);
+
+  ok('REGRESSION (Step 1.5): App.jsx handleSaveProduct dual-writes categoryId, subCategoryId, and type while keeping promo items as type PROMO',
+     app.includes('categoryId') && app.includes('subCategoryId') && app.includes("kind: 'promo', unit: 'pcs', type: 'PROMO'"));
+
+  ok('REGRESSION (Step 1.6): ResidentEvilInventory groups and labels products through resolveCategoryName / resolveSubName with legacy fallback',
+     inv.includes('resolveCategoryName') && inv.includes('resolveSubName') && inv.includes('categoryUsageCount'));
+
+  ok('REGRESSION (Step 1.7): ExamineModal resolves TYPE badge via resolveCategoryName / resolveSubName',
+     read('src/components/ExamineModal.jsx').includes('resolveCategoryName'));
+
+  ok('REGRESSION (Step 1.8): MerchantSalesView builds category tabs and filters wares via resolveCategoryName and activeSubCategory',
+     sales.includes('resolveCategoryName') && sales.includes('activeSubCategory'));
+
+  ok('REGRESSION (Step 1.10): DashboardBenchmarks resolves product type via resolveCategoryName with legacy fallback',
+     read('src/components/DashboardBenchmarks.jsx').includes('resolveCategoryName'));
+}
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

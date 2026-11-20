@@ -430,6 +430,22 @@ export const canHandOffAcrossRegions = (userRole) => {
         || role === CORPORATE_TIERS.TIER_3;   // stops ABOVE T4 REGIONAL ADMIN, which is his line
 };
 
+/* MAY THIS TIER ADD, RENAME OR DELETE SHARED PRODUCT CATEGORIES (Master Vault + Competitors)?
+   ABSENCE-MEANS-TIER-DEFAULT (Task 82 / Task 94): never add MANAGE_CATEGORIES_KEY to default
+   ROLE_PERMISSIONS arrays so injectDynamicPermissions cannot trigger a partial-matrix lockout.
+   Default when absent: T1-T4; once toggled and saved in settings/permission_matrix, the matrix wins. */
+const MANAGE_CATEGORIES_KEY = 'manage_product_categories';
+export const canManageCategories = (userRole) => {
+    const role = translateLegacyRole(userRole);
+    if (role === CORPORATE_TIERS.TIER_1) return true;
+    const matrixKnowsKey = Object.values(ROLE_PERMISSIONS)
+        .some(list => Array.isArray(list) && list.includes(MANAGE_CATEGORIES_KEY));
+    if (matrixKnowsKey) return hasClearance(userRole, MANAGE_CATEGORIES_KEY);
+    return role === CORPORATE_TIERS.TIER_2
+        || role === CORPORATE_TIERS.TIER_3
+        || role === CORPORATE_TIERS.TIER_4;
+};
+
 /* THE PREDICATE. Returns a reason, never a bare false — "every action must report" is a design
    law here, and a name that silently vanishes from a list is the thing that made the picker read
    as broken in the first place.

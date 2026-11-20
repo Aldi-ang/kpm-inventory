@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, ZoomOut, Lock, Unlock, ZoomIn, RefreshCcw } from 'lucide-react';
 import { isPromo, isDamagedPack, promoSkin, promoGoods } from '../utils/helpers';
+import { resolveCategoryName, resolveSubName } from '../utils/productCategories';
 import PromoGoods3D from './PromoGoods3D';
 import HazardMark from './HazardMark';
 
 const START_ROTATION = { x: -15, y: 25 };
 const START_SCALE = 2.8;
 
-export default function ExamineModal({ product, onClose, isAdmin }) {
+export default function ExamineModal({ product, productCategories = [], onClose, isAdmin }) {
   const [isDragging, setIsDragging] = useState(false);
   const [viewScale, setViewScale] = useState(START_SCALE);
   const [isScaleLocked, setIsScaleLocked] = useState(false);
@@ -132,7 +133,7 @@ export default function ExamineModal({ product, onClose, isAdmin }) {
       <div className="mt-8 w-full max-w-2xl bg-black/60 border-t border-b border-orange-500/50 p-6 backdrop-blur-md pointer-events-none select-none">
         <div className="flex justify-between items-start mb-2 font-mono text-xs text-[#ff9d00]">
            <span>{isAdmin ? `STOCK: ${product.stock} ${isPromo(product) ? 'pcs' : 'Bks'}` : "3D VISUALIZATION"}</span>
-           <span>TYPE: {product.type}</span>
+           <span>TYPE: {[resolveCategoryName(product, productCategories), resolveSubName(product, productCategories)].filter(Boolean).join(' › ')}</span>
            {!isPromo(product) && <span>CUKAI: {product.taxStamp || 'Standard'}</span>}
         </div>
         <p className="text-white font-serif text-lg leading-relaxed text-center shadow-black drop-shadow-md">"{product.description || (isPromo(product) ? 'A promo item - given free together with a sale.' : 'A standard pack of cigarettes. No unusual properties detected.')}"</p>
