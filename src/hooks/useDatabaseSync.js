@@ -56,6 +56,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
     const [adminCanvas, setAdminCanvas] = useState([]);
     const [adminPromo, setAdminPromo] = useState([]);   // the boss vehicle's promo goods, pcs - the terminal's give row (stage 4)
     const [branchStock, setBranchStock] = useState({});
+    const [productCategories, setProductCategories] = useState([]);
     const [appSettings, setAppSettings] = useState({ mascotImage: '', companyName: 'Distribution and Sales Management', mascotMessages: [] });
     setMasterVaultPlace(appSettings?.masterVaultPlace);
     setPromoBrand(appSettings?.companyName);   // a promo item with no word of its own prints the company name
@@ -88,6 +89,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
 
         // 2. Core Collections (Static data like Inventory and Customers load fully)
         const unsubInv = onSnapshot(collection(db, basePath, 'products'), (snap) => setProducts(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Inventory listener:", err.code));
+        const unsubCategories = onSnapshot(collection(db, basePath, 'product_categories'), (snap) => setProductCategories(snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')))), (err) => console.warn("Categories listener:", err.code));
         /* CUSTOMERS IS THE ONE COLLECTION THAT CANNOT AFFORD A FULL RE-MAP, and that is not a
            style preference — see docChanges.js. Every outlet carries its store photo as base64
            INSIDE the document, so re-running `d.data()` over ~100 outlets rebuilds several
@@ -164,7 +166,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
         }, (err) => console.warn("Admin vehicle canvas listener:", err.code));
 
         return () => { 
-            unsubSettings(); unsubInv(); unsubTrans(); unsubTitip(); unsubCredits(); unsubSamp(); 
+            unsubSettings(); unsubInv(); unsubCategories(); unsubTrans(); unsubTitip(); unsubCredits(); unsubSamp(); 
             unsubLogs(); unsubProc(); unsubMotorists(); unsubCareer(); unsubOffers();
             unsubAdminVeh(); unsubEod(); unsubTransfers();
         };
@@ -286,10 +288,14 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
         () => (noFolders ? NO_SHOPS : customers).filter(c => !isPendingUndo(`cust:${c.id}`)),
         [noFolders, customers, undoVersion]
     );
+    const visibleCategories = useMemo(
+        () => productCategories.filter(c => !isPendingUndo(`cat:${c.id}`)),
+        [productCategories, undoVersion]
+    );
 
     return {
         fetchHistoricalTransactions, // 🚀 EXPORT THE ENGINE
-        inventory, setInventory: setProducts, promoItems,
+        inventory, setInventory: setProducts, promoItems, productCategories: visibleCategories,
         customers: visibleCustomers, setCustomers, customerAccess,
         transactions, setTransactions, consignmentTx,
         samplings, setSamplings,

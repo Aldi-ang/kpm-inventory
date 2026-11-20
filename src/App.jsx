@@ -19,7 +19,7 @@ import useTransactionEngine from './hooks/useTransactionEngine';
 import useDatabaseSync from './hooks/useDatabaseSync'; 
 import useOfflineEngine, { canReachInternet } from './hooks/useOfflineEngine';
 import MusicPlayer from './MusicPlayer';
-import { injectDynamicPermissions, hasClearance, canOpenTab, handoffEligibility, canApproveHandoffFrom, handoffApprovers, normalizeRegion, canSetBundlePrice, canSwitchBundle, canSetBundleRules, canReadSalesTotals } from './config/permissions';
+import { injectDynamicPermissions, hasClearance, canOpenTab, handoffEligibility, canApproveHandoffFrom, handoffApprovers, normalizeRegion, canSetBundlePrice, canSwitchBundle, canSetBundleRules, canReadSalesTotals, canManageCategories } from './config/permissions';
 import { POV_OWNER_EMAIL, previewIdentity, testAccountDoc, testAccountName, canUsePovSwitch, testAccountFor } from './config/povPreview';
 import { tr } from './config/lang';
 import { warehouseList, vanUsesBranch, moveWithGoodsMessage } from './utils/supply';
@@ -31,7 +31,8 @@ import { rebuildMonths } from './utils/salesRollup';
 import { hashSecret, verifySecret, needsRehash } from './utils/secretHash';
 import { settleProgression } from './utils/progressionHome';
 import { bordersFromDocs, borderDocId, restorableBorders } from './utils/mapBorders';
-import { resolveCategoryName } from './utils/productCategories';
+import { resolveCategoryName, normCatName, findDuplicateCategory, findDuplicateSub, categoryUsageCount, subUsageCount } from './utils/productCategories';
+import { scheduleDelayedWrite } from './utils/delayedWrite.js';
 import TierPovSwitch, { PovBanner } from './components/TierPovSwitch';
 import ProductPerformancePanel from './components/ProductPerformancePanel';
 
@@ -602,7 +603,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   // --- DATABASE SYNC ENGINE (MOVED HERE!) ---
   const {
       fetchHistoricalTransactions, // 🚀 THE TIME MACHINE ENGINE PLUGGED IN
-      inventory, setInventory, promoItems, customers, customerAccess, transactions, setTransactions, consignmentTx,
+      inventory, setInventory, promoItems, productCategories, customers, customerAccess, transactions, setTransactions, consignmentTx,
       samplings, setSamplings, auditLogs, setAuditLogs, procurements, setProcurements,
       motorists, setMotorists, regionOffers, agentInventories, setAgentInventories, eodReports, setEodReports,
       transferRequests, setTransferRequests,
@@ -772,8 +773,83 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
 
       return {
           meta: { type, ts: getCurrentTimestamp(), user: user.email },
-          inventory, transactions, customers: deepCustomers, samplings, auditLogs, procurements, appSettings, tierSettings, mapBorders
+          inventory, transactions, customers: deepCustomers, samplings, auditLogs, procurements, appSettings, tierSettings, mapBorders, productCategories
       };
+  };
+
+  /* 2-LEVEL PRODUCT CATEGORIES (Step 1, Change 29). Whitelist strictly matches firestore.rules:696
+     so T3/T4 with permission can manage shared categories & subs alongside the owner. */
+  const handleSaveCategory = async ({ id = null, name = '', subs = [], removedSubId = null } = {}) => {
+      if (!user || !userId || !canManageCategories(userRole)) {
+          notify('Only authorized staff can manage product categories.');
+          return null;
+      }
+      const cleanName = String(name || '').trim();
+      if (!cleanName) { notify('Category name is required.'); return null; }
+      const dup = findDuplicateCategory(productCategories, cleanName, id);
+      if (dup) { notify(`Category "${dup.name}" already exists.`); return null; }
+      if (removedSubId) {
+          const usedSub = subUsageCount(removedSubId, inventory);
+          if (usedSub > 0) {
+              notify(`Cannot remove sub-category: ${usedSub} product${usedSub === 1 ? '' : 's'} still use it.`);
+              return null;
+          }
+      }
+      const existing = id ? (productCategories || []).find((c) => c && c.id === id) : null;
+      const cleanSubs = [];
+      const seenSubNorm = new Set();
+      for (const s of (Array.isArray(subs) ? subs : [])) {
+          const sName = String(s?.name || '').trim();
+          const sNorm = normCatName(sName);
+          if (!sName || !sNorm) continue;
+          if (seenSubNorm.has(sNorm)) {
+              notify(`Sub-category "${sName}" already exists in "${cleanName}".`);
+              return null;
+          }
+          seenSubNorm.add(sNorm);
+          cleanSubs.push({ id: String(s?.id || `sub_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`), name: sName, normName: sNorm });
+      }
+      const targetId = id || `cat_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+      const payload = {
+          name: cleanName,
+          normName: normCatName(cleanName),
+          subs: cleanSubs,
+          createdAt: existing?.createdAt || serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          updatedBy: user?.email || user?.uid || 'system'
+      };
+      try {
+          await setDoc(doc(db, `artifacts/${appId}/users/${userId}/product_categories`, targetId), payload);
+          await logAudit('CATEGORY_SAVE', `${existing ? 'Updated' : 'Created'} category "${cleanName}" (${cleanSubs.length} sub-categories).`);
+          notify(`Saved category "${cleanName}".`);
+          return targetId;
+      } catch (err) {
+          notify('Failed to save category: ' + (err.code === 'permission-denied' ? 'Missing permission (check Settings > Permissions).' : err.message));
+          return null;
+      }
+  };
+
+  const handleDeleteCategory = async (catDoc) => {
+      if (!user || !userId || !catDoc?.id) return false;
+      if (!canManageCategories(userRole)) {
+          notify('Only authorized staff can delete product categories.');
+          return false;
+      }
+      const used = categoryUsageCount(catDoc.id, inventory);
+      const subUsed = (catDoc.subs || []).reduce((n, s) => n + subUsageCount(s.id, inventory), 0);
+      if (used > 0 || subUsed > 0) {
+          notify(`Cannot delete "${catDoc.name}": ${Math.max(used, subUsed)} product${Math.max(used, subUsed) === 1 ? '' : 's'} still use it. Move them first.`);
+          return false;
+      }
+      scheduleDelayedWrite({
+          key: `cat:${catDoc.id}`,
+          label: `Category "${catDoc.name}" deleted`,
+          commit: async () => {
+              await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/product_categories`, catDoc.id));
+              await logAudit('CATEGORY_DELETE', `Deleted unused category "${catDoc.name}".`);
+          }
+      });
+      return true;
   };
 
   /* FACTORY OFFERS (promo bundles). All-area offers live on settings/general; a region's on promoOffers/{REGION} (his
@@ -919,6 +995,10 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                 operations.push({ type: 'delete', ref: doc(db, `artifacts/${appId}/users/${user.uid}/products`, item.id) });
                 deleteCount++;
             });
+            productCategories.forEach(cat => {
+                operations.push({ type: 'delete', ref: doc(db, `artifacts/${appId}/users/${user.uid}/product_categories`, cat.id) });
+                deleteCount++;
+            });
         }
 
         if (type === 'customers' || type === 'both') {
@@ -958,6 +1038,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
     if (type === 'products' || type === 'both') {
         exportData.inventory = [...inventory, ...promoItems];   // the promo items are products too - a backup without them loses them
         exportData.appSettings = appSettings; 
+        exportData.productCategories = productCategories;
     }
     
     if (type === 'customers' || type === 'both') {
@@ -1016,6 +1097,11 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                 data.inventory.forEach(item => {
                     // 🚀 THE FIX: Use userId
                     operations.push({ type: 'set', ref: doc(db, `artifacts/${appId}/users/${userId}/products`, item.id), data: item });
+                });
+            }
+            if ((targetType === 'products' || targetType === 'both') && Array.isArray(data.productCategories)) {
+                data.productCategories.forEach(cat => {
+                    operations.push({ type: 'set', ref: doc(db, `artifacts/${appId}/users/${userId}/product_categories`, cat.id), data: cat });
                 });
             }
             if ((targetType === 'customers' || targetType === 'both') && data.customers) {
@@ -1751,6 +1837,10 @@ const handleGitHubMirror = async () => {
 
   // UI States
   const [editingProduct, setEditingProduct] = useState(null);
+  const [editingCatId, setEditingCatId] = useState('');
+  const [editingSubId, setEditingSubId] = useState('');
+  const [newSubDraft, setNewSubDraft] = useState('');
+  const [addingSubOpen, setAddingSubOpen] = useState(false);
   const goodsPreviewRef = useRef(null);   // the promo look's 3D preview: the save takes the list picture from it
   const [savingProduct, setSavingProduct] = useState(false);
   const [examiningProduct, setExaminingProduct] = useState(null);
@@ -3746,8 +3836,8 @@ const handleGitHubMirror = async () => {
           if (!promo) {
               data.categoryId = String(data.categoryId ?? editingProduct?.categoryId ?? '').trim();
               data.subCategoryId = String(data.subCategoryId ?? editingProduct?.subCategoryId ?? '').trim();
-              const resolvedCatName = resolveCategoryName({ ...editingProduct, ...data }, []);
-              data.type = String(data.type || (resolvedCatName !== 'MISC' ? resolvedCatName : editingProduct?.type || '')).trim();
+              const resolvedCatName = resolveCategoryName({ ...editingProduct, ...data }, productCategories);
+              data.type = String((resolvedCatName !== 'MISC' ? resolvedCatName : '') || data.type || editingProduct?.type || '').trim();
           }
           
           data.images = { ...(editingProduct?.images || {}), ...tempImages }; 
@@ -4326,6 +4416,7 @@ const handleGitHubMirror = async () => {
 
               // 1. Restore Standard Collections
               queueToBatch('products', data.inventory);
+              queueToBatch('product_categories', data.productCategories);
               queueToBatch('transactions', data.transactions);
               queueToBatch('samplings', data.samplings);
               queueToBatch('procurement', data.procurements);
@@ -4705,7 +4796,7 @@ const handleGitHubMirror = async () => {
       {/* 1. GLOBAL MODALS */}
       {/* onUpdateProduct is gone: this screen no longer edits dimensions, it only shows them.
           Measuring lives in ImageCropper below, which is Master Vault only — his instruction. */}
-      {examiningProduct && <ExamineModal product={examiningProduct} onClose={() => setExaminingProduct(null)} isAdmin={isAdmin} />}
+      {examiningProduct && <ExamineModal product={examiningProduct} productCategories={productCategories} onClose={() => setExaminingProduct(null)} isAdmin={isAdmin} />}
       {cropImageSrc && <ImageCropper imageSrc={cropImageSrc} onCancel={() => { setCropImageSrc(null); setActiveCropContext(null); }} onCrop={handleCropConfirm} dimensions={boxDimensions} onDimensionsChange={setBoxDimensions} face={activeCropContext?.face || 'front'} />}
      
 
@@ -5202,6 +5293,10 @@ const handleGitHubMirror = async () => {
                   searchTerm={searchTerm}
                   onSearch={setSearchTerm}
                   inventory={vaultList}
+                  productCategories={productCategories}
+                  canManageCats={canManageCategories(userRole)}
+                  onSaveCategory={handleSaveCategory}
+                  onDeleteCategory={handleDeleteCategory}
                   onInspect={(item) => setExaminingProduct(item)}
                   motorists={motorists}
                   transactions={transactions}
@@ -5225,12 +5320,21 @@ const handleGitHubMirror = async () => {
                   onDelete={(id) => deleteProduct(id)}
                   onEdit={(item) => { 
                       setEditingProduct(item); 
+                      const matchedCat = item.categoryId ? (productCategories || []).find(c => c && c.id === item.categoryId) : (item.type ? findDuplicateCategory(productCategories, item.type) : null);
+                      setEditingCatId(matchedCat?.id || '');
+                      setEditingSubId(item.subCategoryId || '');
+                      setNewSubDraft('');
+                      setAddingSubOpen(false);
                       setTempImages(item.images || {}); 
                       setBoxDimensions(item.dimensions || {w:55, h:90, d:22}); 
                       setUseFrontForBack(item.useFrontForBack || false); 
                   }}
                   onAddNew={() => { 
                       setEditingProduct({}); 
+                      setEditingCatId('');
+                      setEditingSubId('');
+                      setNewSubDraft('');
+                      setAddingSubOpen(false);
                       setTempImages({}); 
                       setBoxDimensions({w:55, h:90, d:22}); 
                       setUseFrontForBack(false); 
@@ -5289,7 +5393,80 @@ const handleGitHubMirror = async () => {
                                         {!isPromo(editingProduct) && (<>
                                         {/* 🚀 NEW: STICKS PER PACK INPUT */}
                                         <div><label className={PF_LABEL}>Sticks per Bks</label><input name="sticksPerPack" type="number" step="any" defaultValue={editingProduct.sticksPerPack || 16} className={`${PF_INPUT} tabular-nums`}/></div>
-                                        <div><label className={PF_LABEL}>Type</label><input name="type" defaultValue={editingProduct.type} placeholder="SKT, Natural…" className={PF_INPUT}/></div>
+                                        {(() => {
+                                            const ourCats = (productCategories || []).filter(c => categoryUsageCount(c.id, inventory) > 0);
+                                            const rivalCats = (productCategories || []).filter(c => categoryUsageCount(c.id, inventory) === 0);
+                                            const pickedCat = (productCategories || []).find(c => c && c.id === editingCatId) || null;
+                                            const subList = Array.isArray(pickedCat?.subs) ? pickedCat.subs : [];
+                                            const quickAddSub = async () => {
+                                                const name = newSubDraft.trim();
+                                                if (!pickedCat || !name) return;
+                                                if (findDuplicateSub(pickedCat, name)) { notify(`Sub-category "${name}" already exists.`); return; }
+                                                const newId = `sub_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+                                                const saved = await handleSaveCategory({ id: pickedCat.id, name: pickedCat.name, subs: [...subList, { id: newId, name }] });
+                                                if (saved) { setEditingSubId(newId); setNewSubDraft(''); setAddingSubOpen(false); }
+                                            };
+                                            return (<>
+                                                <div>
+                                                    <label className={PF_LABEL}>Category</label>
+                                                    <select
+                                                        name="categoryId"
+                                                        value={editingCatId}
+                                                        onChange={(e) => { setEditingCatId(e.target.value); setEditingSubId(''); setAddingSubOpen(false); }}
+                                                        className={`${PF_INPUT} min-h-11 lg:min-h-0`}
+                                                    >
+                                                        <option value="">{editingProduct.type && !editingCatId ? `${editingProduct.type} (legacy)` : 'Select category...'}</option>
+                                                        {ourCats.length > 0 && (
+                                                            <optgroup label="Our categories">
+                                                                {ourCats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                                            </optgroup>
+                                                        )}
+                                                        {rivalCats.length > 0 && (
+                                                            <optgroup label="Competitor-only & unused">
+                                                                {rivalCats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                                            </optgroup>
+                                                        )}
+                                                    </select>
+                                                    {!pickedCat && (
+                                                        <input name="type" defaultValue={editingProduct.type || ''} placeholder="Or type legacy name (e.g. SKT)" className={`${PF_INPUT} mt-1.5`} />
+                                                    )}
+                                                    {pickedCat && <input type="hidden" name="type" value={pickedCat.name} />}
+                                                </div>
+                                                {pickedCat && (
+                                                    <div className="col-span-2">
+                                                        <div className="flex items-center justify-between gap-2 mb-1">
+                                                            <label className={`${PF_LABEL} m-0`}>Sub-category <span className="font-normal text-[var(--ink-dim)]">(optional)</span></label>
+                                                            {canManageCategories(userRole) && (
+                                                                <button type="button" onClick={() => setAddingSubOpen(v => !v)} className="text-xs font-semibold text-[var(--accent-ink)] hover:underline">
+                                                                    {addingSubOpen ? 'Cancel' : '+ New sub-category'}
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                        <select
+                                                            name="subCategoryId"
+                                                            value={editingSubId}
+                                                            onChange={(e) => setEditingSubId(e.target.value)}
+                                                            className={`${PF_INPUT} min-h-11 lg:min-h-0`}
+                                                        >
+                                                            <option value="">None (top-level only)</option>
+                                                            {subList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                                        </select>
+                                                        {addingSubOpen && (
+                                                            <div className="flex gap-2 mt-2">
+                                                                <input
+                                                                    value={newSubDraft}
+                                                                    onChange={(e) => setNewSubDraft(e.target.value)}
+                                                                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); quickAddSub(); } }}
+                                                                    placeholder={`New sub-category inside ${pickedCat.name}`}
+                                                                    className={`${PF_INPUT} flex-1`}
+                                                                />
+                                                                <button type="button" onClick={quickAddSub} className="kpm-edge-btn px-3 min-h-11 lg:min-h-0 text-xs font-semibold shrink-0">Add</button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </>);
+                                        })()}
                                         </>)}
                                     </div>
 
@@ -5507,6 +5684,7 @@ const handleGitHubMirror = async () => {
                           adminSalesMode={adminSalesMode}
                           onAdminSalesMode={userRole === 'ADMIN' ? setAdminSalesMode : undefined}
                           inventory={salesTerminalInventory} 
+                          productCategories={productCategories}
                           user={user} 
                           appSettings={appSettings}
                           customers={displayCustomers}

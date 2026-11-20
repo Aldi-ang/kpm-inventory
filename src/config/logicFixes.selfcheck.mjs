@@ -14889,6 +14889,31 @@ section('QUARANTINE PRO IN REAL APP (Task 105, 2026-11-20)');
      qc({ hpp: 10000, costPrice: 9000 }) === 10000 &&
      qc({ costPrice: 9000 }) === 0);
 }
+section('STEP 1 POST-CONSOLE: SHARED PRODUCT CATEGORIES LIVE WIRING (Task 101, 2026-11-20)');
+{
+  const sync = read('src/hooks/useDatabaseSync.js');
+  const app = read('src/App.jsx');
+  const op = read('src/StockOpnameView.jsx');
+  const inv = read('src/components/ResidentEvilInventory.jsx');
+  const rules = read('firestore.rules');
+  ok('REGRESSION (Step 1.3): useDatabaseSync subscribes to product_categories, cleans up unsubCategories, and filters pending cat: Undo deletes',
+     sync.includes("'product_categories'") && sync.includes('unsubCategories()') && sync.includes("isPendingUndo(`cat:${c.id}`)") && sync.includes('productCategories: visibleCategories'));
+  ok('REGRESSION (Step 1.4 & 1.5): App.jsx wires handleSaveCategory, handleDeleteCategory (refusing in-use delete, 8s Undo on empty), 2-level Category/Sub-category picker, and passes productCategories to Master Vault, ExamineModal & MerchantSalesView',
+     app.includes('handleSaveCategory') && app.includes('handleDeleteCategory') &&
+     app.includes('categoryUsageCount(catDoc.id') && app.includes("key: `cat:${catDoc.id}`") &&
+     app.includes('resolveCategoryName({ ...editingProduct, ...data }, productCategories)') &&
+     app.includes('productCategories={productCategories}') && app.includes('canManageCats={canManageCategories(userRole)}'));
+  ok('REGRESSION (Step 1.9): StockOpnameView QUARANTINE_SELL copies categoryId and subCategoryId onto rsk-* lots matching firestore.rules Change 29 whitelist',
+     op.includes("'categoryId', 'subCategoryId'") &&
+     (rules.match(/'categoryId',\s*'subCategoryId'/g) || []).length >= 2);
+  ok('REGRESSION (Step 1.11): App.jsx includes product_categories in full backup, granular products/both export & import, full restore (queueToBatch), and atomic wipe',
+     app.includes("queueToBatch('product_categories', data.productCategories)") &&
+     app.includes('exportData.productCategories = productCategories;') &&
+     app.includes('data.productCategories.forEach(cat =>'));
+  ok('REGRESSION (Step 1 Master Vault UI): ResidentEvilInventory renders the Categories manager modal with Our categories vs Competitor-only & unused sections and 44px phone controls',
+     inv.includes('Product categories') && inv.includes('Our categories (') && inv.includes('Competitor-only &amp; unused categories') &&
+     inv.includes('onDeleteCategory?.(cat)'));
+}
 section('NEW COUNT PRO IN REAL APP (Task 100, 2026-11-20)');
 {
   const so = read('src/StockOpnameView.jsx');

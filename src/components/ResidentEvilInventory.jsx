@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, Plus, Package, ImageIcon, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, Package, ImageIcon, Maximize2, ChevronLeft, ChevronRight, Tag, X, Pencil, Trash2, Check } from 'lucide-react';
 import { formatRupiah, convertToBks, getLocalDayKey, isPromo, isDamagedPack, promoSkin, promoGoods, inQuarantine } from '../utils/helpers';
-import { resolveCategoryName, resolveSubName } from '../utils/productCategories';
+import { resolveCategoryName, resolveSubName, categoryUsageCount, subUsageCount } from '../utils/productCategories';
 import PromoGoods3D from './PromoGoods3D';
 import HazardMark from './HazardMark';
 import * as threshold from '../utils/stockThreshold';
@@ -228,10 +228,15 @@ const QUARANTINE = '__quarantine';   /* never a product type, so no type tab can
 /* the wide desk reads the list as a table; below xl the Field / Sold numbers fold under the name, so nothing slides sideways */
 const COLS = 'xl:grid-cols-[minmax(0,1fr)_7rem_4.5rem_5rem_5.5rem]';
 
-export default function ResidentEvilInventory({ inventory, productCategories = [], motorists = [], transactions = [], isAdmin, onEdit, onDelete, onAddNew, backgroundSrc, onUploadBg, onUpdateProduct, onInspect, appSettings, searchTerm = '', onSearch }) {
+export default function ResidentEvilInventory({ inventory, productCategories = [], motorists = [], transactions = [], isAdmin, canManageCats = false, onSaveCategory, onDeleteCategory, onEdit, onDelete, onAddNew, backgroundSrc, onUploadBg, onUpdateProduct, onInspect, appSettings, searchTerm = '', onSearch }) {
     const [selectedId, setSelectedId] = useState(null);
     const [activeSection, setActiveSection] = useState("ALL");
     const [phoneOpen, setPhoneOpen] = useState(false);
+    const [catModalOpen, setCatModalOpen] = useState(false);
+    const [newCatName, setNewCatName] = useState('');
+    const [renamingCat, setRenamingCat] = useState(null);
+    const [subDrafts, setSubDrafts] = useState({});
+    const [savingCatId, setSavingCatId] = useState(null);
     const rootRef = useRef(null);
     const openProduct = (id) => {
         setSelectedId(id);
@@ -303,7 +308,14 @@ export default function ResidentEvilInventory({ inventory, productCategories = [
                             </p>
                         )}
                     </div>
-                    {isAdmin && <button onClick={onAddNew} className="kpm-edge-btn ml-auto shrink-0 min-h-11 lg:min-h-9 px-4 text-sm font-semibold"><Plus size={15} aria-hidden="true" className="text-accent-ink"/> Add product</button>}
+                    <div className="ml-auto flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                        {canManageCats && (
+                            <button type="button" onClick={() => setCatModalOpen(true)} className="min-h-11 lg:min-h-9 px-3.5 border border-line-2 text-sm font-semibold text-ink hover:border-accent-edge transition-colors inline-flex items-center gap-2">
+                                <Tag size={14} aria-hidden="true" className="text-ink-dim"/> Categories
+                            </button>
+                        )}
+                        {isAdmin && <button onClick={onAddNew} className="kpm-edge-btn shrink-0 min-h-11 lg:min-h-9 px-4 text-sm font-semibold"><Plus size={15} aria-hidden="true" className="text-accent-ink"/> Add product</button>}
+                    </div>
                     <div className="relative basis-full">
                         <input value={searchTerm} onChange={e => onSearch?.(e.target.value)} placeholder="Search products" aria-label="Search products" className="w-full h-11 lg:h-9 bg-inset border border-line-2 pl-9 pr-3 text-ink text-sm outline-none focus:border-accent-edge placeholder:text-ink-dim"/>
                         <Search size={15} aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-dim pointer-events-none"/>
@@ -393,6 +405,155 @@ export default function ResidentEvilInventory({ inventory, productCategories = [
                     />
                 )}
             </div>
+
+            {catModalOpen && canManageCats && (() => {
+                const ourCats = (productCategories || []).filter((c) => categoryUsageCount(c.id, inventory) > 0);
+                const otherCats = (productCategories || []).filter((c) => categoryUsageCount(c.id, inventory) === 0);
+                const submitNewCat = async (e) => {
+                    e.preventDefault();
+                    if (!onSaveCategory || !newCatName.trim()) return;
+                    setSavingCatId('new');
+                    const id = await onSaveCategory({ name: newCatName.trim(), subs: [] });
+                    setSavingCatId(null);
+                    if (id) setNewCatName('');
+                };
+                const submitRename = async (cat) => {
+                    if (!onSaveCategory || !renamingCat || !renamingCat.name.trim()) return;
+                    setSavingCatId(cat.id);
+                    const ok = await onSaveCategory({ id: cat.id, name: renamingCat.name.trim(), subs: cat.subs || [] });
+                    setSavingCatId(null);
+                    if (ok) setRenamingCat(null);
+                };
+                const addSub = async (cat) => {
+                    const name = String(subDrafts[cat.id] || '').trim();
+                    if (!name || !onSaveCategory) return;
+                    setSavingCatId(cat.id);
+                    const ok = await onSaveCategory({ id: cat.id, name: cat.name, subs: [...(cat.subs || []), { id: `sub_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`, name }] });
+                    setSavingCatId(null);
+                    if (ok) setSubDrafts((p) => ({ ...p, [cat.id]: '' }));
+                };
+                const removeSub = async (cat, sub) => {
+                    if (!onSaveCategory) return;
+                    setSavingCatId(cat.id);
+                    await onSaveCategory({ id: cat.id, name: cat.name, subs: (cat.subs || []).filter((s) => s.id !== sub.id), removedSubId: sub.id });
+                    setSavingCatId(null);
+                };
+                const renderCatCard = (cat) => {
+                    const used = categoryUsageCount(cat.id, inventory);
+                    const isRenaming = renamingCat && renamingCat.id === cat.id;
+                    const busy = savingCatId === cat.id;
+                    return (
+                        <div key={cat.id} className="border border-line-2 bg-panel p-3.5 flex flex-col gap-2.5">
+                            <div className="flex items-center gap-2">
+                                {isRenaming ? (
+                                    <>
+                                        <input
+                                            value={renamingCat.name}
+                                            onChange={(e) => setRenamingCat({ id: cat.id, name: e.target.value })}
+                                            className="flex-1 min-w-0 h-10 px-3 bg-inset border border-accent-edge text-ink text-sm outline-none"
+                                            autoFocus
+                                        />
+                                        <button type="button" disabled={busy} onClick={() => submitRename(cat)} aria-label="Save category name" className="min-w-10 min-h-10 px-3 border border-accent-edge text-ink text-xs font-semibold inline-flex items-center justify-center gap-1">
+                                            <Check size={14} aria-hidden="true" className="text-accent-ink"/> Save
+                                        </button>
+                                        <button type="button" onClick={() => setRenamingCat(null)} aria-label="Cancel rename" className="min-w-10 min-h-10 px-2.5 border border-line-2 text-ink-dim text-xs font-semibold">
+                                            Cancel
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="font-semibold text-sm text-ink truncate">{cat.name}</span>
+                                        <span className="text-xs text-ink-dim tabular-nums shrink-0">{used} {used === 1 ? 'product' : 'products'}</span>
+                                        <div className="ml-auto flex items-center gap-1.5 shrink-0">
+                                            <button type="button" onClick={() => setRenamingCat({ id: cat.id, name: cat.name })} aria-label={`Rename ${cat.name}`} className="min-w-11 min-h-11 lg:min-w-9 lg:min-h-9 inline-flex items-center justify-center border border-line-2 text-ink-dim hover:text-ink hover:border-accent-edge transition-colors">
+                                                <Pencil size={14} aria-hidden="true"/>
+                                            </button>
+                                            <button type="button" onClick={() => onDeleteCategory?.(cat)} aria-label={`Delete ${cat.name}`} className="min-w-11 min-h-11 lg:min-w-9 lg:min-h-9 inline-flex items-center justify-center border border-line-2 text-ink-dim hover:text-danger-ink hover:border-danger transition-colors">
+                                                <Trash2 size={14} aria-hidden="true"/>
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                                {(cat.subs || []).map((sub) => {
+                                    const subUsed = subUsageCount(sub.id, inventory);
+                                    return (
+                                        <span key={sub.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 border border-line-2 bg-ground text-xs text-ink-muted">
+                                            <span>{sub.name}{subUsed > 0 ? ` (${subUsed})` : ''}</span>
+                                            <button type="button" disabled={busy} onClick={() => removeSub(cat, sub)} aria-label={`Remove ${sub.name}`} className="w-5 h-5 inline-flex items-center justify-center text-ink-dim hover:text-danger-ink">
+                                                <X size={12} aria-hidden="true"/>
+                                            </button>
+                                        </span>
+                                    );
+                                })}
+                                <div className="inline-flex items-center gap-1">
+                                    <input
+                                        value={subDrafts[cat.id] || ''}
+                                        onChange={(e) => setSubDrafts((p) => ({ ...p, [cat.id]: e.target.value }))}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSub(cat); } }}
+                                        placeholder="+ Sub-category"
+                                        aria-label={`Add sub-category to ${cat.name}`}
+                                        className="h-9 lg:h-8 w-36 px-2.5 bg-inset border border-line-2 text-xs text-ink placeholder:text-ink-dim outline-none focus:border-accent-edge"
+                                    />
+                                    {String(subDrafts[cat.id] || '').trim() && (
+                                        <button type="button" disabled={busy} onClick={() => addSub(cat)} className="min-h-9 lg:min-h-8 px-2.5 border border-accent-edge text-xs font-semibold text-ink">
+                                            Add
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                };
+                return (
+                    <div className="fixed inset-0 z-[110] bg-[var(--duke-scrim-hi)] flex items-center justify-center p-3 sm:p-4" onClick={(e) => { if (e.target === e.currentTarget) setCatModalOpen(false); }}>
+                        <div className="bg-ground border border-line-2 w-full max-w-2xl max-h-[88vh] flex flex-col overflow-hidden" role="dialog" aria-modal="true" aria-label="Product categories">
+                            <div className="px-5 py-4 border-b border-line-2 flex items-center justify-between gap-3 bg-panel">
+                                <div>
+                                    <h2 className="text-base font-bold text-ink m-0">Product categories</h2>
+                                    <p className="text-xs text-ink-dim m-0 mt-0.5">Two levels (Category &rsaquo; Sub-category) shared across products and Sales Terminal.</p>
+                                </div>
+                                <button type="button" onClick={() => setCatModalOpen(false)} aria-label="Close categories" className="min-w-11 min-h-11 inline-flex items-center justify-center text-ink-dim hover:text-ink border border-line-2">
+                                    <X size={18}/>
+                                </button>
+                            </div>
+                            <form onSubmit={submitNewCat} className="px-5 py-3.5 border-b border-line-2 flex gap-2 bg-ground">
+                                <input
+                                    value={newCatName}
+                                    onChange={(e) => setNewCatName(e.target.value)}
+                                    placeholder="New category name (e.g., SKM, Milk)"
+                                    aria-label="New category name"
+                                    className="flex-1 min-w-0 h-11 lg:h-9 px-3 bg-inset border border-line-2 text-sm text-ink placeholder:text-ink-dim outline-none focus:border-accent-edge"
+                                />
+                                <button type="submit" disabled={savingCatId === 'new' || !newCatName.trim()} className="kpm-edge-btn min-h-11 lg:min-h-9 px-4 text-sm font-semibold shrink-0 disabled:opacity-45">
+                                    <Plus size={15} aria-hidden="true" className="text-accent-ink"/> Add category
+                                </button>
+                            </form>
+                            <div className="flex-1 min-h-0 overflow-y-auto p-5 flex flex-col gap-5 custom-scrollbar">
+                                <div className="flex flex-col gap-2.5">
+                                    <div className="text-[11px] font-bold uppercase tracking-wider text-ink-dim">
+                                        Our categories ({ourCats.length})
+                                    </div>
+                                    {ourCats.length === 0 ? (
+                                        <p className="text-xs text-ink-dim m-0">No category assigned to your products yet. Edit a product to link its category.</p>
+                                    ) : ourCats.map(renderCatCard)}
+                                </div>
+                                {otherCats.length > 0 && (
+                                    <details open={ourCats.length === 0} className="border-t border-line-2 pt-3">
+                                        <summary className="cursor-pointer text-[11px] font-bold uppercase tracking-wider text-ink-dim py-1 select-none">
+                                            Competitor-only &amp; unused categories ({otherCats.length})
+                                        </summary>
+                                        <div className="mt-2.5 flex flex-col gap-2.5">
+                                            {otherCats.map(renderCatCard)}
+                                        </div>
+                                    </details>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
         </div>
     );
 }

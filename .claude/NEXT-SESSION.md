@@ -1,8 +1,8 @@
-# The one job - Categories + Competitors: from approved pictures to the build (step 0 + step 1)
+# The one job - Step 2 Competitors global screen (from approved competitors-pro.html)
 
-Read `.claude/PROGRESS.md` (newest entries), `.claude/NEXT-SESSION.md`, and `.claude/ANTIGRAVITY-TASK.md`. Check if Aldi said `"push"` to ship local commits (`f751a42f`, `e63c4e30`, `00219e4d`, and `quarantineUnitCost`) and confirmed pasting Change 29 into demo `kpm-demo-f4d74`; if Change 29 is published on demo, work `Task 101` (Step 1 Master Vault Categories + Sales Terminal 2-row tabs). Never push without Aldi's `"push"`.
-**Status 2026-11-20 11:48 WIB (Alucard-Lead):** Task 97 (Customers queue wording), Quarantine Pro (`e63c4e30`, matches approved `quarantine-pro.html` v4), and Task 100 (New Count Pro, matches `stock-opname-pro.html`) are ALL built, gated green, PC/Phone lab verified (`ERRORS: []`), and committed locally — **waiting only on Aldi's `"push"`**. `Task 101` (Step 1 Categories UI) is OPEN and waiting on Aldi pasting `firestore.rules` (Change 29) into demo project `kpm-demo-f4d74`.
-**Written 2026-11-20 11:48 WIB (Alucard-Lead).** Categories + Competitors design is DECIDED (`Brainstorm/2026-11-19_categories-subcategories-and-rival-catalog.md`).
+Read `.claude/PROGRESS.md` (newest entries), `.claude/NEXT-SESSION.md`, and `.claude/ANTIGRAVITY-TASK.md`. Check if Aldi said `"push"` to deploy **Task 101** (Step 1 Master Vault Categories + Sales Terminal 2-row tabs), then work `Task 105` (Step 2 Competitors build plan + draft Console rules) and `Task 106` (remaining non-money Undo checklist). Never push without Aldi's `"push"`.
+**Status 2026-11-20 12:22 WIB (Alucard-Lead):** `9a501364` is **LIVE** (Task 97 Customers + Quarantine Pro + New Count Pro + `quarantineUnitCost`). Change 29 rules are published on both main (`cello-inventory-manager`) and demo (`kpm-demo-f4d74`). **Task 101** (Step 1 Categories) is DONE locally (5 gates green + lab `ERRORS: []`) — waiting on Aldi's `"push"`. Next track: **Step 2 Competitors global screen** (`Task 105` + `Task 106` OPEN).
+**Written 2026-11-20 12:22 WIB (Alucard-Lead).** Categories + Competitors design is DECIDED (`Brainstorm/2026-11-19_categories-subcategories-and-rival-catalog.md`).
 
 ## What he decided (2026-11-19)
 - Every product gets **Category › Sub-category** (two fixed levels), in Master Vault and inventory, general (not cigarette-only; his milk example: Kid > Kid Silver / Bronze / Gold).
@@ -14,12 +14,11 @@ Read `.claude/PROGRESS.md` (newest entries), `.claude/NEXT-SESSION.md`, and `.cl
 
 ## Pictures & Current Queue
 - Approved 2026-11-19 (round 3): `.claude/drafts/competitors-pro.html`, `.claude/drafts/customers-c.html`, `.claude/drafts/categories-pro.html` (Main warehouse only on Master Vault; 8 s Undo bar; NOO standout + Verify NOO).
-- **Quarantine & New Count (DONE locally, waiting `"push"`):** `Quarantine` (`e63c4e30`) matches `.claude/drafts/quarantine-pro.html` v4; `New Count` (Task 100) matches `.claude/drafts/stock-opname-pro.html`. Task 97 (`CustomerManager.jsx`) also waits for `"push"`.
+- **Step 1 Categories (Task 101 — DONE locally, waiting `"push"`):** `useDatabaseSync.js` (`product_categories` listener), `App.jsx` (`handleSaveCategory`/`handleDeleteCategory`, 2-level product picker, backup/restore/wipe), `ResidentEvilInventory.jsx` (`Categories` modal), `StockOpnameView.jsx` (`rsk-*` inherits `categoryId`/`subCategoryId`), and `MerchantSalesView.jsx` 2-row tabs.
 
 ## Next, in order (Categories + Competitors track)
-1. **Demo rules parity (`WAITING ON ALDI`):** Aldi published Change 29 (`01600afc`) on main project `cello-inventory-manager`, but demo project `kpm-demo-f4d74` still needs the whole-file `firestore.rules` paste in Console before category code goes live.
-2. **Step 1 remaining build (`Task 101`, OPEN after demo rules match):** Master Vault `Our / Competitor-only` categories, 2-level `Category > Sub-category` picker on the product form (writing both `categoryId`/`subCategoryId` AND `type`), and Sales Terminal 2-row tabs (`src/MerchantSalesView.jsx`).
-3. **Step 2 Competitors screen, Step 3 Customers tab** — each its own job. (Undo for remaining non-money/stock deletes stays queued after Task 86 plan.)
+1. **Step 2 Competitors global screen (`Task 105` OPEN -> draft rules + emulator proof -> build):** Build standalone Competitors screen matching `.claude/drafts/competitors-pro.html`, region-scoped reads, and salesman price-report approvals.
+2. **Step 3 Customers competitor tab + remaining non-money Undo targets (`Task 106` OPEN).**
 
 ## Traps (from Antigravity Task 75, checked)
 - `type` must keep being written with the category NAME during the change-over - Master Vault grouping, ExamineModal, Sales Terminal tabs (`src/MerchantSalesView.jsx:1690`) and `DashboardBenchmarks.jsx:164` read it.

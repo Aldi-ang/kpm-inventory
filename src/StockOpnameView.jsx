@@ -966,7 +966,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                    Vault (`stock` of the product itself), until a van loads it like any pack. One lot per pack, so its price is
                    the last one set. */
                 const lotId = `rsk-${sellSrc.id}`, lotName = `${sellSrc.name} · RUSAK`;
-                const keep = Object.fromEntries(['type', 'category', 'images', 'dimensions', 'useFrontForBack', 'sticksPerPack', 'packsPerSlop', 'slopsPerBal', 'balsPerCarton', 'hpp', 'costPrice']
+                const keep = Object.fromEntries(['type', 'category', 'categoryId', 'subCategoryId', 'images', 'dimensions', 'useFrontForBack', 'sticksPerPack', 'packsPerSlop', 'slopsPerBal', 'balsPerCarton', 'hpp', 'costPrice']
                     .map(k => [k, sellSrc[k]]).filter(([, v]) => v !== undefined));
                 const prices = Object.fromEntries(['priceRetail', 'priceGrosir', 'priceEcer', 'priceDistributor']
                     .map(k => [k, resolutionModal.cheap ? cheapPrice : sellSrc[k]]).filter(([, v]) => v !== undefined));

@@ -1275,7 +1275,16 @@ function ShellLab() {
         <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-[var(--duke-frame)] shadow-[0_0_0_1px_var(--duke-lift)] relative flex flex-col">
           <ResidentEvilInventory
             inventory={[...LAB_PRODUCTS.map((p) => (p.id === 'p-djar' ? { ...p, damagedStock: 24 } : p.id === 'p-cg16' ? { ...p, ...LAB_PACK_CG16 } : p)), ...[['p-tee', 'T-shirt', 40], ['p-poster', 'Poster', 120], ['p-hat', 'Hat', 2], ['p-lighter', 'Lighter', 300]]
-              .map(([id, name, stock]) => ({ id, name, stock, kind: 'promo', unit: 'pcs', type: 'PROMO', ...(id === 'p-tee' ? labShirt : {}) })), LAB_DMG_CG16]}
+              .map(([id, name, stock]) => ({ id, name, stock, kind: 'promo', unit: 'pcs', type: 'PROMO', ...(id === 'p-tee' ? labShirt : {}) })), LAB_DMG_CG16]
+              .map((p) => (q.has('cats') && p.id === 'p-cg16' ? { ...p, categoryId: 'cat-skm', subCategoryId: 'sub-mild' } : q.has('cats') && p.id === 'p-djar' ? { ...p, categoryId: 'cat-skt', subCategoryId: 'sub-reg' } : p))}
+            productCategories={q.has('cats') ? [
+              { id: 'cat-skm', name: 'SKM', normName: 'skm', subs: [{ id: 'sub-mild', name: 'Mild', normName: 'mild' }, { id: 'sub-bold', name: 'Bold', normName: 'bold' }] },
+              { id: 'cat-skt', name: 'SKT', normName: 'skt', subs: [{ id: 'sub-reg', name: 'Regular', normName: 'regular' }] },
+              { id: 'cat-rival', name: 'Pod Vape', normName: 'podvape', subs: [{ id: 'sub-salt', name: 'Salt Nic', normName: 'saltnic' }] }
+            ] : []}
+            canManageCats={q.has('cats')}
+            onSaveCategory={async ({ name }) => `cat_${Date.now()}`}
+            onDeleteCategory={async () => true}
             searchTerm="" onSearch={() => {}} motorists={LAB_MOTORISTS} transactions={[]} isAdmin appSettings={{}}
             onInspect={() => {}} onEdit={() => {}} onDelete={() => {}} onAddNew={() => {}} onUpdateProduct={() => {}} onUploadBg={() => {}}
           />
@@ -1329,7 +1338,11 @@ function ShellLab() {
            mount — the same handler the thumb hits, opened to the 55 % snap. */
         <div className="h-full w-full relative bg-[var(--duke-well-solid)]">
           <MerchantSalesView
-            inventory={LAB_PRODUCTS.map((p) => ({ ...p, priceRetail: Math.round(p.priceDistributor * 1.15), priceEcer: Math.round(p.priceDistributor * 1.25), priceGrosir: Math.round(p.priceDistributor * 1.08) }))}
+            inventory={LAB_PRODUCTS.map((p) => ({ ...p, priceRetail: Math.round(p.priceDistributor * 1.15), priceEcer: Math.round(p.priceDistributor * 1.25), priceGrosir: Math.round(p.priceDistributor * 1.08), ...(q.has('cats') && p.id === 'p-cg16' ? { categoryId: 'cat-skm', subCategoryId: 'sub-mild' } : q.has('cats') && p.id === 'p-djar' ? { categoryId: 'cat-skt', subCategoryId: 'sub-reg' } : {}) }))}
+            productCategories={q.has('cats') ? [
+              { id: 'cat-skm', name: 'SKM', normName: 'skm', subs: [{ id: 'sub-mild', name: 'Mild', normName: 'mild' }, { id: 'sub-bold', name: 'Bold', normName: 'bold' }] },
+              { id: 'cat-skt', name: 'SKT', normName: 'skt', subs: [{ id: 'sub-reg', name: 'Regular', normName: 'regular' }] }
+            ] : []}
             user={{ uid: 'lab-t5', displayName: 'Lab Salesman', email: 'lab@example.com' }}
             /* &vault: the boss selling from the Master Vault (no van) - the give box is one line, "switch to Boss Car" */
             userRole={q.has('vault') ? 'ADMIN' : q.has('t4') ? 'FLEET_CAPTAIN' : 'FIELD_OPERATIVE'} isAdmin={q.has('vault')} adminSalesMode={q.has('vault') ? 'VAULT' : undefined}

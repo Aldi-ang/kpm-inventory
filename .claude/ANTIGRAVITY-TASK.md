@@ -3882,14 +3882,21 @@ Rebuilt `New Count` in `src/StockOpnameView.jsx` + `src/styles/theme.css` (above
 - **Lab verification (`verify-task100-lab.mjs` on `ponder-lab`):** PC 1440 (`dark` & `light`), Phone 390 Owner List + Sheet (`minRowH: 44`, `minPillH: 44`, `closeH: 44`, `overflow: false`), Lite Mode (`sheetAnim: "none"`), Blind Phone 390 (`hasBlindNote: true`, `hasCmpLeak: false`), rapid double-tap (`dmgQty: "2"`), and `ERRORS: []`; screenshots inspected visually.
 
 ## Task 101 - BUILD (local only): Complete Step 1 Master Vault Categories + Sales Terminal 2-row tabs [WAIT FOR DEMO CONSOLE CHANGE 29]
-**Status:** OPEN
-**Written:** 2026-11-20 08:57 WIB (Alucard-Lead). Continues `NEXT-SESSION.md` Step 1 after Aldi pastes Change 29 into demo project `kpm-demo-f4d74` Console.
-**Touch only:** `src/components/MasterVault.jsx`, `src/MerchantSalesView.jsx`, `src/App.jsx`, `src/config/logicFixes.selfcheck.mjs`, `src/config/patchNotes.js`, this file.
+**Status:** DONE
+**Written:** 2026-11-20 08:57 WIB (Alucard-Lead). Continues `NEXT-SESSION.md` Step 1 after Aldi pasted Change 29 into demo project `kpm-demo-f4d74` Console.
+**Touch only:** `src/components/ResidentEvilInventory.jsx`, `src/hooks/useDatabaseSync.js`, `src/StockOpnameView.jsx`, `src/App.jsx`, `tools/ponder-lab.jsx`, `src/config/logicFixes.selfcheck.mjs`, `src/config/patchNotes.js`, this file.
 1. Wait until Aldi confirms Change 29 is published on `kpm-demo-f4d74` (do not push live rules-dependent UI ahead of Console publish).
 2. Wire the `[NEEDS CONSOLE CHANGE 29 FIRST]` pieces from Task 80/92: Master Vault category manager + `"Our categories"` vs `"Competitor-only"` sections, two-level `Category › Sub-category` picker on the product form (writing both `categoryId`/`subCategoryId` AND legacy `type` per Trap #1), and 2-row category tabs in `src/MerchantSalesView.jsx`.
 3. Run all 5 gates + `ponder-lab` PC/Phone visual checks, add `patchNotes.js` + `logicFixes.selfcheck.mjs` coverage, commit locally, NEVER push.
 **Done when:** Step 1 category flows work in lab + gates green + Result written.
 **Result:**
+Aldi confirmed Change 29 is published on `kpm-demo-f4d74` (`2026-11-20 12:05 WIB`), so completed all remaining `[NEEDS CONSOLE CHANGE 29 FIRST]` Step 1 pieces:
+- **Step 1.3 (`src/hooks/useDatabaseSync.js`):** Subscribed `onSnapshot` to `product_categories`, cleaned up `unsubCategories()` on unmount, filtered pending `cat:` 8s Undo deletes via `isPendingUndo`, and exported `productCategories`.
+- **Step 1.4 & 1.5 (`src/App.jsx`, `src/components/ResidentEvilInventory.jsx`):** Added `handleSaveCategory` & `handleDeleteCategory` (enforcing `canManageCategories(userRole)`, exact Change 29 whitelist `['name', 'normName', 'subs', 'createdAt', 'updatedAt', 'updatedBy']`, usage-count refusal via `categoryUsageCount` / `subUsageCount`, and 8s Undo via `scheduleDelayedWrite`); added `"Categories"` manager modal in Master Vault (`Our categories` vs collapsible `Competitor-only & unused categories`, add/rename/delete + sub-category chips); replaced legacy `<input name="type">` with the 2-level `Category › Sub-category` picker (inline `"+ New sub-category"`, dual-writing `categoryId`/`subCategoryId` AND `type`); wired `productCategories` into `<ResidentEvilInventory>`, `<ExamineModal>`, and `<MerchantSalesView>` (activating its 2-row category + sub-category tabs).
+- **Step 1.9 (`src/StockOpnameView.jsx`):** Added `'categoryId', 'subCategoryId'` to `QUARANTINE_SELL` (`rsk-*` lot `keep` array).
+- **Step 1.11 (`src/App.jsx`):** Added `productCategories` / `'product_categories'` to full backup, granular `products`/`both` export & import, full restore (`queueToBatch`), and atomic wipe.
+- **Gates (after final edit):** `undef.check.mjs` -> `clean`; all 14 `src/config/*.selfcheck.mjs` -> exit `0` (`logicFixes.selfcheck.mjs`: `3039 passed, 0 failed`); `npm run build` -> exit `0` (`11.70s`); `integration.audit.mjs` -> `726 passed, 0 failed`; `graphify update .` -> `3576 nodes, 6965 edges`.
+- **Lab verification (`verify-task101-lab.mjs` on `ponder-lab`):** Master Vault Categories modal (`?shell&vaultlist&cats`) and Sales Terminal 2-row tabs (`?shell&terminal&cats`) verified on PC `1440` + Phone `390` (`minBtnH: 44`, `overflow: false`, `ERRORS: []`); all 4 PNGs inspected visually.
 
 ## Task 102 - PICTURE (drafts only): Polish animations in `.claude/drafts/quarantine-pro.html`
 **Status:** DONE
@@ -3944,3 +3951,21 @@ Updated `.bio-ic` in `.claude/drafts/quarantine-pro.html` (and left everything e
 - Added `--bio` and `--bio-glow` theme tokens (`#147A2E` + `rgba(22,163,74,.72)` on Light Warm Stone; `#4ADE80` + `rgba(74,222,128,.88)` on System-Dark and Dark Espresso), raised `.tab .bio-ic` to `20px` (`stroke-width: 2`), and updated `bio-glow` (`2.4 s` `ease-in-out`) with layered `drop-shadow` pulses so the green glow stands out cleanly on both themes with zero green anywhere else (`strayGreen: false`).
 - Glow & animation stay completely OFF (`animation: none; filter: none; opacity: 1`) in `Lite` mode and `prefers-reduced-motion: reduce` while the biohazard icon remains static green.
 - Verified in headless Chrome (`verify-task104.mjs`, `ERRORS: []`) across PC + Phone and Light + Dark themes (`size: [20, 20]`, `phSize: [20, 20]`, `phOverflow: false`, `liteCheck` & `reducedCheck` both `animName: "none"` & `filter: "none"`), and inspected `task104-dark-pc-top.png`, `task104-dark-ph-top.png`, `task104-light-pc-top.png`, `task104-light-ph-top.png`.
+
+## Task 105 - READ-ONLY: Build plan for Step 2 Competitors global screen & firestore.rules draft
+**Status:** OPEN
+**Written:** 2026-11-20 12:20 WIB (Alucard-Lead). Prepares Step 2 (`NEXT-SESSION.md`) from approved `.claude/drafts/competitors-pro.html` and `Brainstorm/2026-11-19_categories-subcategories-and-rival-catalog.md`.
+**Touch only:** this file. Never edit `firestore.rules` or `src/`.
+1. Propose exact Firestore paths & schema for rival brands/SKUs, per-region price docs (`competitors/{rivalId}/region_prices/{REGION}` so T4 cannot read other regions' raw docs per Trap #4), and salesman price-report approval queue (`pending -> approve update | keep as note`).
+2. List the permission matrix rows needed (`manage_competitors`, `see_all_competitor_regions`, `report_competitor_price`) using ABSENCE-MEANS-TIER-DEFAULT (`permissions.js`), plus draft Console rule text (to verify in emulator next) and backup/wipe paths (`App.jsx`).
+3. List files to create/edit in execution order + self-check assertions.
+**Done when:** complete file:line Step 2 plan + draft rules checklist written under Result.
+**Result:**
+
+## Task 106 - READ-ONLY: Checklist of remaining non-money Delete targets for 8s Undo (Task 86 follow-up)
+**Status:** OPEN
+**Written:** 2026-11-20 12:20 WIB (Alucard-Lead). Continues Task 86 plan after Task 96 shipped Map shop delete Undo.
+**Touch only:** this file.
+1. Inspect remaining delete buttons across `src/` (folders, promo offers, roster entries if non-money, map borders/routes, etc.) with `file:line`, confirm which are purely non-money/non-stock and safe for `scheduleDelayedWrite`, and list the smallest checklist + self-checks.
+**Done when:** classified table + checklist written under Result.
+**Result:**
