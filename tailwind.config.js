@@ -69,7 +69,7 @@ export default {
         burn:        'var(--burn)',
       },
       animation: {
-        'fade-in': 'fadeIn 0.5s ease-out',
+        'fade-in': 'fadeIn 0.2s ease-out',
         /* The Ponder tutorial. Every one of these is transform+opacity only, and every one is
            allowed to arrive already finished: Lite Mode sets animation-duration to .001s, so the
            END state has to be the readable one. His call for Lite Mode, 2026-08-27: *"then snap

@@ -1360,7 +1360,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
             {/* VIEW MODE 0: THE LIVE BRANCH MONITOR                     */}
             {/* ======================================================== */}
             {viewMode === 'monitor' && isHighCommand && (
-                <div className="flex-1 flex flex-col min-h-0 bg-[var(--sunk)] rounded-xl border border-[var(--line)] shadow-inner p-4 relative overflow-hidden animate-fade-in">
+                <div className="flex-1 flex flex-col min-h-0 bg-[var(--sunk)] rounded-xl border border-[var(--line)] shadow-inner p-4 relative overflow-hidden">
                     
                     <div className="flex items-center gap-2 bg-[var(--sunk)] border border-[var(--line)] rounded-lg p-2 px-3 mb-6 w-full md:w-64 z-10 relative">
                         <MapPin size={16} className="text-[var(--ink-dim)]"/>
@@ -1503,7 +1503,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                     emptyNote={`The team leader submits this week's count.${countDay !== null ? ` Stock Opname day is ${WEEK_DAYS[countDay]}.` : ''}`} />
             )}
             {viewMode === 'review' && canSeeBoard && auditSubTab === 'history' && (
-                <div className="flex-1 flex flex-col min-h-0 animate-fade-in">
+                <div className="flex-1 flex flex-col min-h-0">
 
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
                         <button onClick={() => setAuditSubTab('pending')} className="px-4 py-2 min-h-11 lg:min-h-0 rounded-lg bg-[var(--sunk)] border border-[var(--line)] text-[11px] lg:text-[10px] uppercase tracking-widest font-bold text-[var(--ink)] flex items-center justify-center gap-2 w-full md:w-auto">
@@ -1714,7 +1714,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
             {/* VIEW MODE 2: THE COUNT WORKSHEET (BLIND THEN REVEAL)     */}
             {/* ======================================================== */}
             {viewMode === 'count' && (
-                <div data-guide="count" className="flex-1 bg-[var(--sunk)] rounded-xl border border-[var(--line)] shadow-inner overflow-hidden flex flex-col relative animate-fade-in z-10">
+                <div data-guide="count" className="flex-1 bg-[var(--sunk)] rounded-xl border border-[var(--line)] shadow-inner overflow-hidden flex flex-col relative z-10">
                     {!isHighCommand && !IS_DEMO && (
                         <div data-guide="week-count" className="px-4 py-3 border-b border-[var(--line)] text-xs leading-relaxed text-[var(--ink)]">
                             {recounting ? <><b className="text-[var(--danger-ink)]">HQ sent {Object.keys(reopened).length} back:</b> {Object.values(reopened).map(r => `${r.name} (${r.reason})`).join(', ')}. Count only these again and submit.</>

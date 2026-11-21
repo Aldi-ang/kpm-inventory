@@ -4146,3 +4146,131 @@ Scanned every `deleteDoc` and `confirmAction(...Delete/Remove/Hapus...)` site in
 2. Run all 5 gates (`undef.check.mjs`, all `*.selfcheck.mjs`, `npm run build`, `integration.audit.mjs`, `graphify update .`) + render PC 1440 & Phone 390 in `ponder-lab` (`ERRORS: []`), commit locally, NEVER push without Aldi's `"push"`.
 **Done when:** all gates green, lab screenshots verified, Result written.
 **Result:**
+
+## Task 109 - FIX (from Aldi, local only): Make `fade-in` 0.2s ease-out, un-nest StockOpnameView fades, off in Lite/reduced-motion
+**Status:** DONE
+**Written:** 2026-11-21 19:52 WIB (from Aldi / Claude lab review).
+**Touch only:** `tailwind.config.js`, `src/StockOpnameView.jsx`, `src/styles/theme.css`, `src/config/logicFixes.selfcheck.mjs`, this file.
+1. Make `'fade-in'` `0.2s ease-out` in `tailwind.config.js:72` (checked all 25 files using `animate-fade-in`: none rely on `0.5s`).
+2. Remove the nested inner fades in `src/StockOpnameView.jsx` (`L1363`, `L1506`, `L1717`, and `.kpm-oc-hand` in `src/styles/theme.css:3500`) so only one fade (`L1150`) runs.
+3. Turn `.animate-fade-in` off (`animation: none`) in `html.lite-mode` and `@media (prefers-reduced-motion: reduce)`.
+4. Add self-check line in `src/config/logicFixes.selfcheck.mjs`, run all 5 gates green, render New Count in the lab (`?shell&opname&admin` -> New Count) with the pane VISIBLE and sample opacity at `0 / 100 / 200 / 300 ms`, commit locally, wait for `"push"`.
+**Done when:** all 5 gates green, lab opacity samples + screenshots verified (`ERRORS: []`), Result written.
+**Result:**
+- Updated `tailwind.config.js:72` `'fade-in'` from `'fadeIn 0.5s ease-out'` to `'fadeIn 0.2s ease-out'` (verified all 25 files using `animate-fade-in` are pure CSS entrance classes with zero `500ms` JS timer dependency).
+- Removed the 3 nested inner `animate-fade-in` classes inside `src/StockOpnameView.jsx` (`L1363` Monitor, `L1506` Audit History, `L1717` New Count `[data-guide="count"]`) and removed the redundant `.kpm-oc-hand` fade animation in `src/styles/theme.css:3500`, so only the single outer `StockOpnameView.jsx:1150` `animate-fade-in` runs.
+- Added `html.lite-mode .animate-fade-in` and `@media (prefers-reduced-motion: reduce) { .animate-fade-in { animation: none; transition: none; } }` in `src/styles/theme.css:3510-3519`.
+- Added regression check in `src/config/logicFixes.selfcheck.mjs:14935-14941`.
+- **All 5 gates green (after last edit):** `undef.check.mjs` -> `clean`; all 14 `src/config/*.selfcheck.mjs` -> exit `0` (`logicFixes.selfcheck.mjs`: `3040 passed, 0 failed`); `npm run build` -> exit `0` (`12.87s`); `integration.audit.mjs` -> `726 passed, 0 failed`; `graphify update .` -> `3594 nodes, 6983 edges`.
+- **Lab verification (`verify-task109-lab.mjs` on `?shell&opname&admin` -> New Count, PC 1440 + Phone 390):**
+  - Outer `.animate-fade-in` (`animationDuration: "0.2s"`): `ms0: 0`, `ms100: 0.591`, `ms200: 0.988`, `ms300: 1`.
+  - Inner New Count pane `[data-guide="count"]` & `.kpm-oc-hand`: `ms0..ms300` all `opacity: 1`, `animationName: "none"` (no nested fade).
+  - Lite mode & `prefers-reduced-motion: reduce`: `animName: "none"`, `opacity: 1` at `0 ms`.
+  - Visually inspected `task109-newcount-pc.png` and `task109-newcount-phone.png` (`phCheck.visible: true`, `overflow: false`, `ERRORS: []`).
+
+## Task 110 - READ-ONLY (from Aldi): Ranked list of remaining screens with the game look & which approved picture style fixes each
+**Status:** DONE
+**Written:** 2026-11-21 19:52 WIB (from Aldi).
+**Touch only:** this file.
+1. List every screen in `src/` that still has the game look (chests, game words, neon glow, game fonts like `Rajdhani` / `Share Tech Mono` headings), with `file:line`, ranked worst first, and which approved picture style fixes each.
+**Done when:** ranked table written under Result.
+**Result:**
+Ranked worst-first across `src/` at `e19369ad`:
+
+| Rank | Screen / Component (`file:line`) | Remaining Game Look (Chests, Game Words, Neon Glow, Fonts) | Approved Picture Style That Fixes It |
+| :--- | :--- | :--- | :--- |
+| **1 (Worst)** | **Agent Inventory & Van Chest** (`src/AgentInventoryView.jsx:5, 256, 338-343`; `src/components/LoadingBay.jsx:76, 124, 1025-1044`; `src/styles/theme.css:5509-6021` `.kpm-bay`, `.kpm-sbox`) | Renders the 3D wooden/iron game crate (`<LoadingBay vanOnly />`) with floating motes/specks (`.motes`, `.specks`), 3D pack cubes, and `"Bounty"` tab (`LoadingBay.jsx:1038`) above the stock table. | **`quarantine-pro.html` v4 + `categories-pro.html`** (clean KPI strip + searchable 2-column stock table + quiet tabs for Van Stock / Consignment / Damaged / Bypasses, no 3D crate). |
+| **2** | **Regional Warehouse Stock Tab (Restock Vault)** (`src/components/BranchWarehouseManager.jsx:25, 1058, 1288, 1612`; `src/components/WarehouseChest.jsx:13, 20, 41, 119, 141`; `src/styles/theme.css:6282` `.kpm-ench`) | Regional branch `Stock` tab still renders `<WarehouseChest />` (3D enchanted chest `.kpm-chest` / `.kpm-ench` importing `Cube` from `LoadingBay.jsx` with pulsing green sign `WarehouseChest.jsx:20` and `shadow-[0_0_10px...]`). | **`categories-pro.html` + `stock-opname-pro.html`** (flat warm-stone warehouse stock table with age badge and bal/slop/bks columns, matching Master Vault's professional list). |
+| **3** | **Map System ("Map War Room" / "Tactical Dashboard")** (`src/MapMissionControl.jsx:310-345, 399, 1642, 1660, 1759, 2114, 2180, 2333, 2474`; `src/App.jsx:5237`) | Uses banned `bg-slate-900` + `border-emerald-500` + neon glow `shadow-[0_0_15px_rgba(16,185,129,0.3)]` (`L335, 1642`), whole-panel `font-mono` (`L345`), and military game words (`"Sector Command"`, `TacticalDashboard`, `ZoneHUD`, `map_war_room`). | **`customers-c.html` + `reports-live.html`** (warm-stone floating drawer `.kpm-rep-*` / `--panel` tokens, zero `slate`/`emerald`/neon shadow, plain labels `"Area Revenue"` / `"Area Summary"`). |
+| **4** | **EOD Setoran & Player Card** (`src/EODReconciliationView.jsx:381, 385-420, 862, 934`; `src/components/PlayerCard.jsx:36-70`; `src/components/DayReplay.jsx`; `src/styles/theme.css:5366-5419`) | Whole screen wrapped in `font-mono` (`EODReconciliationView.jsx:381`); game words `"Operating Identity"`, `"Bounty Cleared!"` (`App.jsx:2826`), `"+XP"` replay button (`L404`), and RPG rank-up burst/chips (`PlayerCard.jsx:49-68` `.pc-chips`, `.pc-burst`, `.pc-ban`). | **`quarantine-pro.html` v4 + `receivables-pro.html`** (sans-serif `--font-body`, tabular numbers only on figures, calm master-detail verification checklist without RPG bursts or `font-mono` prose). |
+| **5** | **Agent Profile & Hall of Fame** (`src/AgentProfileView.jsx:119, 139, 215-219, 305-367, 654, 665`; `src/HallOfFameView.jsx:66-115`; `src/config/rankBorders.jsx`) | `HallOfFameView.jsx:67-82, 108-114` uses `bg-slate-900`, `border-slate-700`, `text-slate-400`, neon `drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]`, `shadow-[0_0_20px...]`, `"Active Field Operator Rankings"`, `"MAXED"`; `AgentProfileView.jsx` uses hardcoded `bg-[#050505]`, `#64748b`, `"FIELD OPERATIVE"`, RPG frame turbulence filters (`<FrameFilters />`), and `XP` ladder bars. | **`reports-live.html` + `competitors-pro.html`** (warm-stone `--panel`/`--raised` cards, clean performance KPIs & sales history table, plain tier titles without neon drop-shadows or slate backgrounds). |
+| **6** | **Customers Directory (Legacy Shell Around List)** (`src/components/CustomerManager.jsx:128, 281, 1408, 1664-1705`) | Still has the old folder grid (`/* TACTICAL FOLDER DASHBOARD */` `L1664`), inline per-shop `benchmarks` form (`L40-50, 176`), and old modal layout instead of the approved 3-tab area-tree screen. | **`customers-c.html` v5** (approved 2026-11-19: left area tree `Provinsi › Kabupaten › Kecamatan` + shop list with standout `NOO` badge & `Verify NOO`, right 3-tab detail `Shop info / Location / Competitor intelligence`). |
+| **7** | **Sales Terminal ("The Duke" Merchant Alcove & Legacy Chrome)** (`src/MerchantSalesView.jsx:1365-1397, 1825-1866, 2024-2035, 3045, 3139`) | While the price list (`L2228`) and shopping list (`L2053`) were upgraded to professional lines, the top still mounts the animated cave merchant alcove (`torches`, `flame`, `coin`, `mumble`), `--duke-*` parchment/brass tokens, and `bg-red-900/20` / `bg-orange-900/20` alerts. | **`categories-pro.html` + `stock-opname-pro.html`** (keep the 2-row category tabs + ruled shopping list, replace the cave alcove/torches with a clean compact customer + vehicle header when Aldi chooses). |
+| **8** | **Journey Plan** (`src/JourneyView.jsx:1075, 1154, 1438, 1646, 1769`) | Whole view root wears `font-mono` (`L1154`); internal `getBountyStatus` / `"TACTICAL BREADCRUMB"` / `bg-black/80` modal (`L1930`). (Header `.kx-feed` at `L1157` was already cleaned to plain words on 2026-11-13.) | **`customers-c.html` + `stock-opname-pro.html`** (switch root from `font-mono` to `--font-body` with `tabular-nums` on numbers, and use warm-stone `--panel` on the route modals). |
+| **9** | **Stock Opname Monitor & God Mode Prompt + Sidebar Labels** (`src/StockOpnameView.jsx:1116, 1128, 1363-1425`; `src/components/BiohazardTheme.jsx:519, 948`; `src/components/SettingsView.jsx:1699, 1725-1726, 1748`; `src/components/CrownTransferProtocol.jsx:136`) | `StockOpnameView.jsx` `Monitor` tab (`L1363`, `"UPGRADED AGGRESSIVE UI PANEL"`) & `[GOD MODE] Override Vault Stock` prompt (`L1116`); `SettingsView.jsx` labels `"Command Center"` (`L1699`), `"[GOD] Promote Agents"` (`L1725`), `"God Mode"` (`L1748`); `CrownTransferProtocol.jsx:136` uses `bg-slate-900`; global `--font-display: 'Rajdhani'` in `src/styles/theme.css:101` & `src/main.jsx:6-8`. | **`stock-opname-pro.html` + `quarantine-pro.html` v4** (plain English labels in Settings & Monitor tab, replace `bg-slate-900` in `CrownTransferProtocol.jsx` with `bg-[var(--panel)]`). |
+
+## Task 111 - READ-ONLY (from Aldi): Build plan & draft Console rules for COMPANY FEATURE SWITCHES (Sampling, Hutang, Consignment)
+**Status:** DONE
+**Written:** 2026-11-21 19:52 WIB (from Aldi).
+**Touch only:** this file. Never edit `firestore.rules` or `src/`.
+1. Build plan for COMPANY FEATURE SWITCHES (`Sampling`, `Hutang`, `Consignment` on/off per company; `off` = menu hidden + new saves refused by rules + reports skip; old `hutang`/`titip` stay editable and collectable).
+2. Reuse the permission-matrix settings pattern (ABSENCE-MEANS-DEFAULT-ON so KPM keeps everything ON), include draft Console rules text (`[CHANGE 31 — DRAFT]`), backup/restore paths, and execution + self-check order.
+**Done when:** complete plan + draft Console rules written under Result.
+**Result:**
+Verified read-only plan against `e19369ad`:
+
+### 1. Data Model & ABSENCE-MEANS-DEFAULT-ON Pattern (Reusing `settings/permission_matrix`)
+- **Storage path:** `artifacts/{appId}/users/{bossUid}/settings/permission_matrix` (and mirrored to `appSettings/permission_matrix` on Deploy in `SettingsView.jsx:1904-1908`).
+- **Schema addition on `permission_matrix` doc:**
+  ```json
+  "companyFeatures": {
+    "sampling": true,
+    "hutang": true,
+    "consignment": true
+  }
+  ```
+- **Why inside `settings/permission_matrix`:**
+  1. `App.jsx:655` (`bootPermissions`) and `SettingsView.jsx:1675` ALREADY fetch `settings/permission_matrix` on startup, and `firestore.rules:208` ALREADY has `getPermissionMatrixDoc(bossUid)` (cached per rule evaluation, costing 0 extra Firestore `get()` reads when a rule also checks matrix permissions).
+  2. **ABSENCE-MEANS-DEFAULT-ON:** If `settings/permission_matrix` does not exist, or has no `companyFeatures` map, or a key is omitted, `isCompanyFeatureOn(key)` returns **`true`**. KPM (and every existing tenant) keeps `Sampling = ON`, `Hutang = ON`, and `Consignment = ON` with zero migration needed.
+
+### 2. Two Readings of "Hutang" vs "Consignment" Covered Together
+In the codebase today, shop credit and goods owed appear in two places:
+1. **Goods owed on Exchange Return (`Hutang Barang (IOU)`):** `MerchantSalesView.jsx:2159` (`item.fulfillment === 'IOU'`) writes to `customers/{customerId}.pendingIOUs` (`L1401-1417`) and fulfills via `handleFulfillIOU` (`L993`, `isIouFulfillment: true`).
+2. **Money / invoice credit (`Hutang` / `A/R Financials`) vs Goods on Consignment (`Titip` / `Physical Stock`):** `MerchantSalesView.jsx:1815` (`payOptions` from `allowedPayments`: `'Cash'`, `'QRIS'`, `'Transfer'`, `'Titip'`, plus optional `'Hutang'`) and `ConsignmentFinanceView.jsx:1113-1115` (`A/R Financials` tab vs `Physical Stock` audit tab & `Hand-offs`).
+- **Both are covered cleanly by the two switches:**
+  - **`hutang` switch (`Hutang / Credit & IOU`):** gates new `Hutang Barang (IOU)` creations (`item.fulfillment === 'IOU'` on Exchange returns + growing `customers/{id}.pendingIOUs`) AND any `paymentType === 'Hutang'` credit sale.
+  - **`consignment` switch (`Consignment / Titip`):** gates new `paymentType === 'Titip'` placements (`type === 'SALE' && paymentType === 'Titip'`).
+  - **Old Hutang & Titip stay editable and collectable when OFF:**
+    - Existing `customers/{id}.pendingIOUs` still show the pending-IOU banner in `MerchantSalesView.jsx` and can be fulfilled (`handleFulfillIOU`, which shrinks `pendingIOUs`).
+    - Existing unpaid `Titip` / `Hutang` transactions in `ConsignmentFinanceView.jsx` remain visible and actionable for `onPayment` (`type: 'CONSIGNMENT_PAYMENT'`), `onReturn` (`type: 'RETURN'`), and `account_transfers` hand-offs until their balance reaches `Rp 0`.
+
+### 3. Exact Behaviour When a Switch is OFF
+
+| Feature Switch | 1. Sidebar Menu (`BiohazardTheme.jsx:527-531`, `permissions.js:243`) | 2. UI New Saves Refused | 3. Firestore Rules Refusal (`[CHANGE 31]`) | 4. Reports & Dashboards Skip |
+| :--- | :--- | :--- | :--- | :--- |
+| **`sampling: false`** | Hide `id: 'sampling'` (`Sampling`) in `visibleMenu` and return `false` in `canOpenTab(role, 'sampling')`. | Hide/refuse `Deploy Sample` in `MerchantSalesView.jsx:1175, 3201`; hide `Sample goods` (`SAMPLING`) button in `QuarantineBoard.jsx` & refuse `method === 'SAMPLING'` in `StockOpnameView.jsx:951`; hide `Deployed Samples` section in `EODReconciliationView.jsx:171, 912`. | `match /samplings/{sampleId}` `allow create`: requires `companyFeatureOn(bossUid, 'sampling')`. | `HistoryReportView.jsx`, `TodayBook.jsx`, and `AgentProfileView.jsx` hide Sampling KPIs/tabs. |
+| **`hutang: false`** | If `consignment: false` too AND company has `0` open receivables (`outstandingTitip === 0` and no `pendingIOUs`), hide `id: 'receivables'`. If legacy debt/IOU exists, keep tab visible in **Collection-Only mode**. | Hide `Hutang Barang (IOU)` button in `MerchantSalesView.jsx:2159` & refuse `generatedIOUs.length > 0` at `L1401` (keep `handleFulfillIOU` at `L993` active for old IOUs!); strip `'Hutang'` from `payOptions` (`L1815`). | `customers/{id}` `allow update`: blocks growing `pendingIOUs.size()` (`request <= resource`, so fulfilling/removing old IOUs succeeds!). `transactions/{id}` `allow create`: blocks `paymentType == 'Hutang'` or `hasNewIou == true`. | `HistoryReportView.jsx` skips `IOU Fulfillment` / `Hutang` filter pills when count is `0`. |
+| **`consignment: false`** | Same as above: `id: 'receivables'` hides when no open `Titip` balance remains (or shows **Collection-Only** banner while old `Titip` is still unpaid). | Strip `'Titip'` from `payOptions` in `MerchantSalesView.jsx:1815` (`L549` fallback to `'Cash'`) and refuse `type === 'SALE' && paymentType === 'Titip'` in `useTransactionEngine.js:110`; in `ConsignmentFinanceView.jsx`, disable `+ Add Goods` while keeping `Audit / Collect Payment` & `Return` active on existing rows. | `transactions/{id}` `allow create`: blocks `type == 'SALE' && paymentType == 'Titip'`, **ALLOWS** `type in ['CONSIGNMENT_PAYMENT', 'RETURN', 'RETUR']` so old titip is still payable & returnable! | `DashboardBenchmarks.jsx:327` (`Piutang titip`), `HistoryReportView.jsx:958` (`Titip given`), and `FleetCanvasManager.jsx:1570` (`Consignment` van tab) hide when switch is off and open balance is `0`. |
+
+### 4. Draft Console Rules Text `[CHANGE 31 — DRAFT]` (Never edit `firestore.rules` directly)
+1. **Helper functions** (insert after `getPermissionMatrixDoc(bossUid)` at `firestore.rules:211`):
+```
+    // [CHANGE 31 — DRAFT] COMPANY FEATURE SWITCHES (Sampling, Hutang, Consignment).
+    // ABSENCE-MEANS-DEFAULT-ON: KPM and any company without companyFeatures keep all 3 ON.
+    function companyFeatureOn(bossUid, key) {
+      let m = getPermissionMatrixDoc(bossUid);
+      let feats = m != null && ('companyFeatures' in m) && (m.companyFeatures is map) ? m.companyFeatures : {};
+      return feats.get(key, true) != false;
+    }
+    function hutangIouUpdateOk(bossUid) {
+      return companyFeatureOn(bossUid, 'hutang') ||
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['pendingIOUs']) ||
+        request.resource.data.get('pendingIOUs', []).size() <= resource.data.get('pendingIOUs', []).size();
+    }
+    function txFeatureCreateOk(bossUid) {
+      let t = request.resource.data.get('type', 'SALE');
+      let p = request.resource.data.get('paymentType', 'Cash');
+      let newTitip = t == 'SALE' && p == 'Titip';
+      let newHutang = (t == 'SALE' && p == 'Hutang') || request.resource.data.get('hasNewIou', false) == true;
+      return (!newTitip || companyFeatureOn(bossUid, 'consignment')) &&
+             (!newHutang || companyFeatureOn(bossUid, 'hutang'));
+    }
+```
+2. **Apply to `customers/{customerId}` (`firestore.rules:793-800`):**
+   - Append `&& hutangIouUpdateOk(bossUid)` to both `allow update:` lines (`L797` and `L800`).
+3. **Apply to `transactions/{transactionId}` (`firestore.rules:818`):**
+   - Change `allow create: if isSalesman(bossUid);` to:
+     `allow create: if isSalesman(bossUid) && txFeatureCreateOk(bossUid);`
+   - *(Note: `CONSIGNMENT_PAYMENT`, `RETURN`, and `RETUR` have `t != 'SALE'`, so `newTitip` and `newHutang` are `false` and old Hutang/Titip collections and returns remain 100% allowed!)*
+4. **Apply to `samplings/{sampleId}` (`firestore.rules:958`):**
+   - Change `allow create: if isSalesman(bossUid);` to:
+     `allow create: if isSalesman(bossUid) && companyFeatureOn(bossUid, 'sampling');`
+
+### 5. Ordered Files to Edit & Self-Checks (When Building)
+1. **`rules-test/test-company-features.mjs`:** Emulator proof verifying default-ON when absent, new `samplings`/`Titip`/`Hutang`/growing-`pendingIOUs` denied when OFF, and old `CONSIGNMENT_PAYMENT`/`RETURN`/shrinking-`pendingIOUs` allowed when OFF.
+2. **`src/config/permissions.js`:** Add `COMPANY_FEATURES = { sampling: true, hutang: true, consignment: true }`, extend `injectDynamicPermissions(matrix, tiers, companyFeatures)`, export `isCompanyFeatureOn(key)` and `getCompanyFeatures()`, and gate `canOpenTab(role, 'sampling')` on `isCompanyFeatureOn('sampling')`.
+3. **`src/components/SettingsView.jsx` (`L1668, 1680, 1903`):** Add a `"Company Features"` strip at the top of `PermissionMatrixEditor` with 3 switches (`Sampling`, `Hutang (Credit & IOU)`, `Consignment (Titip)`), defaulting to ON, saved in `payload.companyFeatures` to both `settings/permission_matrix` and `appSettings/permission_matrix`.
+4. **`src/App.jsx` (`L656-658`):** Pass `permSnap.data().companyFeatures` into `injectDynamicPermissions(permSnap.data().matrix, permSnap.data().tiers, permSnap.data().companyFeatures)` and guard `handleBatchSamplingSubmit` (`L4103`).
+5. **`src/components/BiohazardTheme.jsx` (`L543-551`):** Hide `sampling` when `!isCompanyFeatureOn('sampling')`; hide `receivables` when `!isCompanyFeatureOn('hutang') && !isCompanyFeatureOn('consignment') && !hasOpenReceivables`.
+6. **`src/MerchantSalesView.jsx`, `src/hooks/useTransactionEngine.js`, `src/ConsignmentFinanceView.jsx`, `src/StockOpnameView.jsx`, `src/EODReconciliationView.jsx`, `src/components/HistoryReportView.jsx`, `src/components/DashboardBenchmarks.jsx`:** Wire UI guards and report-skip conditions above.
+7. **`src/config/logicFixes.selfcheck.mjs`:** Assert KPM default keeps all 3 features ON when `companyFeatures` is absent, and assert old `CONSIGNMENT_PAYMENT` / `handleFulfillIOU` stay enabled when `consignment` / `hutang` are switched OFF.

@@ -14932,6 +14932,13 @@ section('NEW COUNT PRO IN REAL APP (Task 100, 2026-11-20)');
      so.includes('Count what is on the shelf. HQ checks it after you submit.') &&
      so.includes('showExpectedWhileCounting && !goodMatch') &&
      !so.includes('Expected good</div>'));
+  const tw = read('tailwind.config.js');
+  ok('REGRESSION (Task 109): fade-in is 0.2s ease-out, StockOpnameView has only one outer animate-fade-in (no nested inner fade), and animate-fade-in is off in Lite Mode and prefers-reduced-motion',
+     tw.includes("'fade-in': 'fadeIn 0.2s ease-out'") &&
+     (so.match(/\banimate-fade-in\b/g) || []).length === 1 &&
+     !/\.kpm-oc-hand\s*\{\s*animation:/.test(css) &&
+     /html\.lite-mode[\s\S]{0,160}\.animate-fade-in[\s\S]{0,160}animation: none;/.test(css) &&
+     /@media \(prefers-reduced-motion: reduce\)[\s\S]{0,200}\.animate-fade-in[\s\S]{0,200}animation: none;/.test(css));
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
