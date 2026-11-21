@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { Search, Box, Zap, X, DollarSign, List, ChevronDown, Printer, MessageSquare, MapPin, AlertCircle, Camera, Store, Map, Lock, Package, AlertTriangle, Check, Eye } from 'lucide-react';
 import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction, query, where } from 'firebase/firestore';
 import { earnedLevel, nextLevel, nameVariants } from './utils/storeLevel';   // the shop's level after a sale (Settings > Tier Automation Rules) 
-import { hasClearance, canPickFromGallery, canSellBundleAnyShop } from './config/permissions';
+import { hasClearance, canPickFromGallery, canSellBundleAnyShop, isCompanyFeatureOn } from './config/permissions';
 import { IS_DEMO } from './config/firebase';
 import { demoPhoto } from './config/demoPhoto.js';
 import ProofCamera from './components/ProofCamera.jsx';
@@ -949,6 +949,7 @@ const MerchantSalesView = ({ inventory, productCategories = [], user, userRole, 
     };
 
     const updateCartItem = (id, field, val) => {
+        if (field === 'fulfillment' && val === 'IOU' && !isCompanyFeatureOn('hutang')) return notify(tr('Goods owed (IOU) is switched off for this company.'));
         const priced = cart.find(i => i.productId === id && i.bundlePriced);
         if (priced && ['qty', 'unit', 'priceTier'].includes(field)) {
             return notify(tr('{name} is at a bundle price - tap the bundle again for another, or remove the line.', { name: priced.name }));
@@ -1173,6 +1174,7 @@ const MerchantSalesView = ({ inventory, productCategories = [], user, userRole, 
     };
 
     const handleDeploySample = async () => {
+        if (!isCompanyFeatureOn('sampling')) return notify(tr('Sampling is switched off for this company.'));
         const qtyBks = parseInt(sampleForm.qtyBks) || 0;
         const qtyBatang = parseInt(sampleForm.qtyBatang) || 0;
         if (qtyBks === 0 && qtyBatang === 0) return notify(tr('Enter a valid quantity to sample.'));
@@ -1968,7 +1970,7 @@ const MerchantSalesView = ({ inventory, productCategories = [], user, userRole, 
                                         {gpsStatus === 'error' && <span className="text-red-500 flex items-center gap-1"><AlertCircle size={12}/> GPS Signal Lost</span>}
                                     </div>
                                     
-                                    {(!canOverrideGps && !hasClearance(myRole, 'can_unrestricted_sample') && !['verified', 'bypass', 'walk_in'].includes(gpsStatus)) ? (
+                                    {!isCompanyFeatureOn('sampling') ? null : (!canOverrideGps && !hasClearance(myRole, 'can_unrestricted_sample') && !['verified', 'bypass', 'walk_in'].includes(gpsStatus)) ? (
                                         <button disabled className="w-full mt-1 bg-[var(--duke-fill-ground)] border border-[var(--duke-edge-ctl)] text-[var(--duke-ink-3)] text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-inner flex items-center justify-center gap-2 cursor-not-allowed">
                                             <Lock size={12}/> Sample Locked (Requires GPS)
                                         </button>
@@ -2156,7 +2158,7 @@ const MerchantSalesView = ({ inventory, productCategories = [], user, userRole, 
                                     {returType === 'EXCHANGE' && (
                                         <div className="flex gap-2 mt-1">
                                             <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'NOW')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment !== 'IOU' ? 'bg-[var(--duke-brass)] border-[var(--duke-brass-edge-2)] text-[var(--duke-on-plate)] shadow-md' : 'bg-[var(--duke-bar-3)] border-[color-mix(in_srgb,var(--duke-edge-3)_50%,transparent)] text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>{tr('Give Replacement Now')}</button>
-                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'IOU')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment === 'IOU' ? 'bg-[var(--duke-brass-3)] border-[var(--duke-brass-edge-4)] text-[var(--duke-on-fill)] shadow-md' : 'bg-[var(--duke-bar-3)] border-[color-mix(in_srgb,var(--duke-edge-3)_50%,transparent)] text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>{tr('Hutang Barang (IOU)')}</button>
+                                            {isCompanyFeatureOn('hutang') && <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'IOU')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment === 'IOU' ? 'bg-[var(--duke-brass-3)] border-[var(--duke-brass-edge-4)] text-[var(--duke-on-fill)] shadow-md' : 'bg-[var(--duke-bar-3)] border-[color-mix(in_srgb,var(--duke-edge-3)_50%,transparent)] text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>{tr('Hutang Barang (IOU)')}</button>}
                                         </div>
                                     )}
                                 </div>

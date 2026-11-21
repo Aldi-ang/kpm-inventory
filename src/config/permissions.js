@@ -204,6 +204,16 @@ export let ROLE_PERMISSIONS = {
 };
 
 // 🚀 UPDATED INJECTOR: Now saves Custom Tier Names too!
+/* COMPANY FEATURE SWITCHES (rules CHANGE 31, published 2026-11-21). Stored on settings/permission_matrix as
+   companyFeatures { sampling, hutang, consignment }. ABSENCE MEANS ON, exactly like the rules' companyFeatureOn():
+   only a saved `false` switches a feature off, so KPM (never saved) keeps all three. OFF stops only NEW records -
+   old Titip stays payable and returnable, old goods-owed (IOU) lines can still be settled. */
+export const COMPANY_FEATURE_KEYS = ['sampling', 'hutang', 'consignment'];
+let COMPANY_FEATURES = {};
+export const setCompanyFeatures = (f) => { COMPANY_FEATURES = f && typeof f === 'object' ? { ...f } : {}; };
+export const isCompanyFeatureOn = (key) => COMPANY_FEATURES[key] !== false;
+export const getCompanyFeatures = () => Object.fromEntries(COMPANY_FEATURE_KEYS.map((k) => [k, isCompanyFeatureOn(k)]));
+
 export const injectDynamicPermissions = (firebaseMatrix, firebaseTiers) => {
     if (firebaseMatrix) {
         ROLE_PERMISSIONS = { ...ROLE_PERMISSIONS, ...firebaseMatrix, [CORPORATE_TIERS.TIER_1]: ['ALL_ACCESS'] };
@@ -243,6 +253,7 @@ export const TAB_FEATURE = {
 export const canOpenTab = (role, tab) => {
     if (tab === 'settings') return true;   // every tier (his 2026-11-02)
     if (tab === 'competitors') return canViewCompetitors(role);   // absence-means-tier-default, not a plain hasClearance
+    if (tab === 'sampling' && !isCompanyFeatureOn('sampling')) return false;   // company switch off (CHANGE 31)
     if (tab === 'stock_opname' && canDecideOpname(role)) return true;   // the worklist: view_stock_opname is who COUNTS (his 2026-11-04)
     const f = TAB_FEATURE[tab];
     if (f === 'view_reports') return ['view_reports_global', 'view_reports_regional', 'view_reports_personal'].some((p) => hasClearance(role, p));

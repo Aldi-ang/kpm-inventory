@@ -253,6 +253,8 @@ export const ID = {
     'Stock Opname': 'Stok Opname',
     'Customers': 'Pelanggan',
     'Competitors': 'Pesaing',
+    'Goods owed (IOU) is switched off for this company.': 'Utang Barang (IOU) dimatikan untuk perusahaan ini.',
+    'Sampling is switched off for this company.': 'Sampling dimatikan untuk perusahaan ini.',
     'Sampling': 'Sampel',
     'Reports': 'Laporan',
     'Audit Logs': 'Catatan Audit',

@@ -19,7 +19,7 @@ import useTransactionEngine from './hooks/useTransactionEngine';
 import useDatabaseSync from './hooks/useDatabaseSync'; 
 import useOfflineEngine, { canReachInternet } from './hooks/useOfflineEngine';
 import MusicPlayer from './MusicPlayer';
-import { injectDynamicPermissions, hasClearance, canOpenTab, handoffEligibility, canApproveHandoffFrom, handoffApprovers, normalizeRegion, canSetBundlePrice, canSwitchBundle, canSetBundleRules, canReadSalesTotals, canManageCategories } from './config/permissions';
+import { injectDynamicPermissions, hasClearance, canOpenTab, handoffEligibility, canApproveHandoffFrom, handoffApprovers, normalizeRegion, canSetBundlePrice, canSwitchBundle, canSetBundleRules, canReadSalesTotals, canManageCategories, isCompanyFeatureOn, setCompanyFeatures } from './config/permissions';
 import { POV_OWNER_EMAIL, previewIdentity, testAccountDoc, testAccountName, canUsePovSwitch, testAccountFor } from './config/povPreview';
 import { tr } from './config/lang';
 import { warehouseList, vanUsesBranch, moveWithGoodsMessage, isNonBranch } from './utils/supply';
@@ -666,6 +666,17 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
       };
       bootPermissions();
   }, [db, appId, userId]); // 🚀 FIX: Added userId to dependency array
+
+  /* COMPANY FEATURE SWITCHES (rules CHANGE 31). LIVE, not read once at boot like the matrix above: the rules refuse a
+     new Titip sale / IOU / sample the moment the owner switches it off, so a phone that kept showing the button until
+     its next restart would hand the salesman a save that fails. A missing doc or map = everything ON. */
+  useEffect(() => {
+      if (!db || !appId || !userId || userId === 'default') return undefined;
+      return onSnapshot(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'permission_matrix'), (snap) => {
+          setCompanyFeatures(snap.exists() ? snap.data().companyFeatures : null);
+          setMatrixTick(prev => prev + 1);
+      }, (err) => console.warn("Company features listener:", err.code));
+  }, [db, appId, userId]);
 
   // 🚀 1. NEW ENGINE: VIRTUAL LOGISTICS NOTIFICATIONS (WITH HISTORY)
   useEffect(() => {
@@ -4120,6 +4131,7 @@ const handleGitHubMirror = async () => {
  // --- UPGRADED: SAMPLING ENGINE (VEHICLE DEDUCTION & BATANG SUPPORT) ---
   const handleBatchSamplingSubmit = async (cartItems, location, date, note) => {
       if (!user) return;
+      if (!isCompanyFeatureOn('sampling')) { notify('Sampling is switched off for this company. Nothing was saved.'); return; }
       
       let currentAgentProfileId = agentProfileId;
       if (userRole === 'ADMIN' && adminSalesMode === 'VEHICLE') currentAgentProfileId = 'ADMIN_VEHICLE';
@@ -5718,7 +5730,8 @@ const handleGitHubMirror = async () => {
                           masterUserId={userId}
                           agentProfileId={userRole === 'ADMIN' ? (adminSalesMode === 'VEHICLE' ? 'ADMIN_VEHICLE' : 'VAULT') : agentProfileId}
                           motorists={motorists}
-                          allowedPayments={agentSettings.allowedPayments}
+                          allowedPayments={isCompanyFeatureOn('consignment') ? agentSettings.allowedPayments
+                              : ((agentSettings.allowedPayments || []).filter(p => p !== 'Titip').length ? agentSettings.allowedPayments.filter(p => p !== 'Titip') : ['Cash'])}
                           allowedTiers={agentSettings.allowedTiers}
                           levels={tierSettings}   /* the shop levels, highest first (settings/tiers) - the ladder a sale climbs */
                           allowRetur={userRole === 'ADMIN' ? true : (agentSettings.allowRetur || false)}
@@ -5857,7 +5870,7 @@ const handleGitHubMirror = async () => {
 />
           )}
           
-          {activeTab === 'sampling' && (
+          {activeTab === 'sampling' && isCompanyFeatureOn('sampling') && (
               <>
                   {/* EDIT FOLDER MODAL */}
                   {editingFolder && (

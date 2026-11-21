@@ -4,6 +4,7 @@
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
   { date: '2026-11-21', items: [
+    { kind: 'new', en: 'Settings: the company owner can switch Sampling, Consignment (Titip) and Goods owed (IOU) on or off for the whole company. Off hides it from the menu and the Sales Terminal; unpaid Titip and goods already owed can still be settled.', id: 'Pengaturan: pemilik perusahaan dapat menyalakan atau mematikan Sampling, Titip, dan Utang Barang (IOU) untuk seluruh perusahaan. Jika dimatikan, menu dan tombolnya di Terminal Penjualan disembunyikan; Titip yang belum lunas dan barang yang masih terhutang tetap bisa diselesaikan.' },
     { kind: 'new', en: 'Competitors: a new screen in the menu. See rival products by category, their Retail, Grosir and Ecer price in each region next to our paired product, compare side by side, and send a price you saw in a shop for your admin to approve. Owners and HQ see every region; others see their own region.', id: 'Pesaing: layar baru di menu. Lihat produk pesaing per kategori, harga Retail, Grosir dan Ecer di tiap wilayah di samping produk pasangan kita, bandingkan berdampingan, dan kirim harga yang Anda lihat di toko untuk disetujui admin. Pemilik dan HQ melihat semua wilayah; yang lain melihat wilayahnya sendiri.' },
   ] },
   { date: '2026-11-20', items: [

@@ -15022,5 +15022,36 @@ section('RULES CHANGE 31: COMPANY FEATURE SWITCHES');
   ok('a new sample hand-out needs the Sampling switch',
      /match \/samplings\/\{sampleId\} \{\s*allow read: if isSalesman\(bossUid\);\s*allow create: if isSalesman\(bossUid\) && companyFeatureOn\(bossUid, 'sampling'\);/.test(rules));
 }
+/* ── COMPANY FEATURE SWITCHES, APP SIDE (2026-11-21, rules CHANGE 31 published by Aldi) ─────────────────────────────
+   The traps: the matrix Deploy REPLACES the permission_matrix doc, so it must carry companyFeatures or one Deploy turns
+   every feature back on; the switches must be live (onSnapshot), because the rules refuse the moment the owner flips one;
+   old Titip / IOU must stay settleable. */
+section('COMPANY FEATURE SWITCHES, APP SIDE');
+{ const P = await import('./permissions.js');
+  const T = P.CORPORATE_TIERS;
+  const app = read('src/App.jsx'), sv = read('src/components/SettingsView.jsx'), ms = read('src/MerchantSalesView.jsx'), shell = read('src/components/BiohazardTheme.jsx');
+  P.setCompanyFeatures(null);
+  const allOn = P.COMPANY_FEATURE_KEYS.every((k) => P.isCompanyFeatureOn(k)) && P.canOpenTab(T.TIER_1, 'sampling');
+  P.setCompanyFeatures({ sampling: false, consignment: 'off' });
+  const offOk = !P.isCompanyFeatureOn('sampling') && P.isCompanyFeatureOn('consignment') && P.isCompanyFeatureOn('hutang') && !P.canOpenTab(T.TIER_1, 'sampling');
+  P.setCompanyFeatures(null);
+  ok('BEHAVIOUR: nothing saved = all three ON; only a saved false switches one off (same as the rules); Sampling off closes its tab', allOn && offOk);
+  ok('the matrix Deploy carries companyFeatures (it replaces the doc), and a switch saves at once with merge into both copies',
+     sv.includes('const payload = { matrix, tiers: fullTiers, companyFeatures: features,') &&
+     (sv.match(/permission_matrix'\), body, \{ merge: true \}\)/g) || []).length === 2);
+  ok('the app listens to the switches live, so an open phone hides the button the moment the server starts refusing',
+     /onSnapshot\(doc\(db, `artifacts\/\$\{appId\}\/users\/\$\{userId\}\/settings`, 'permission_matrix'\), \(snap\) => \{\s*setCompanyFeatures/.test(app));
+  ok('Consignment off strips only Titip from the pay options (Cash left if nothing else); payments of old Titip are untouched',
+     app.includes("allowedPayments={isCompanyFeatureOn('consignment') ? agentSettings.allowedPayments") && app.includes(".filter(p => p !== 'Titip')") &&
+     !/isCompanyFeatureOn\('consignment'\)[\s\S]{0,80}CONSIGNMENT_PAYMENT/.test(app));
+  ok('Hutang off hides the IOU button and refuses a new IOU line; handing over an old IOU is untouched',
+     ms.includes("{isCompanyFeatureOn('hutang') && <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'IOU')}") &&
+     ms.includes("if (field === 'fulfillment' && val === 'IOU' && !isCompanyFeatureOn('hutang'))") && !/isIouFulfillment[\s\S]{0,60}isCompanyFeatureOn/.test(ms));
+  ok('Sampling off hides the menu item, the screen, the terminal sample button and refuses both sample saves',
+     shell.includes("if (item.id === 'sampling' && !isCompanyFeatureOn('sampling')) return false;") &&
+     app.includes("{activeTab === 'sampling' && isCompanyFeatureOn('sampling') && (") &&
+     app.includes("if (!isCompanyFeatureOn('sampling')) { notify('Sampling is switched off") &&
+     ms.includes("{!isCompanyFeatureOn('sampling') ? null : (!canOverrideGps") && ms.includes("if (!isCompanyFeatureOn('sampling')) return notify("));
+}
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

@@ -15,7 +15,7 @@ import UpdateStatus from './UpdateStatus.jsx';
 import MusicPlayer from '../MusicPlayer'; 
 
 // 🚀 IMPORT THE BRAIN
-import { hasClearance, canDecideOpname, canViewCompetitors } from '../config/permissions';
+import { hasClearance, canDecideOpname, canViewCompetitors, isCompanyFeatureOn } from '../config/permissions';
 import { tr } from '../config/lang';
 import { confirmAction } from './ConfirmGate.jsx';
 /* The tutorial book. It lives in the top bar because that bar is on EVERY screen, which is what
@@ -549,6 +549,7 @@ export default function BiohazardTheme({
         if (item.id === 'settings') return true;
         if (item.id === 'stock_opname' && canDecideOpname(userRole)) return true;   // the same exception as canOpenTab
         if (item.id === 'competitors') return canViewCompetitors(userRole);   // absence-means-tier-default (canOpenTab too)
+        if (item.id === 'sampling' && !isCompanyFeatureOn('sampling')) return false;   // company switch off (canOpenTab too)
         return hasClearance(userRole, item.feature);
     });
 

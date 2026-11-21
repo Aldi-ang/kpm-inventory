@@ -27,7 +27,7 @@ import CustomerAccessPanel from './CustomerAccessPanel.jsx';
 import { isTopTier } from '../utils/customerAccess.js';
 
 // 🚀 IMPORT THE MATRIX BRAIN
-import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions, CUSTOMER_EDIT_PERMS, FLEET_EDIT_PERMS, defaultFleetAccess, hasClearance, canSetOpnameDay } from '../config/permissions';
+import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions, CUSTOMER_EDIT_PERMS, FLEET_EDIT_PERMS, defaultFleetAccess, hasClearance, canSetOpnameDay, setCompanyFeatures } from '../config/permissions';
 import { WEEK_DAYS } from '../utils/period.js';
 import { confirmAction, promptAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
@@ -1667,6 +1667,9 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
     const [matrix, setMatrix] = React.useState(ROLE_PERMISSIONS);
     const [tiers, setTiers] = React.useState(DYNAMIC_TIERS.filter(t => t.id !== 'DEVELOPER'));
     const [isSaving, setIsSaving] = React.useState(false);
+    /* COMPANY FEATURE SWITCHES (rules CHANGE 31). Kept here because they live on the same doc: the matrix Deploy below
+       REPLACES the whole doc, so it must carry these too or one Deploy would quietly switch every feature back on. */
+    const [features, setFeatures] = React.useState({});
 
     React.useEffect(() => {
         if (!db || !appId || !userId) return;
@@ -1677,6 +1680,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                 
                 if (snap.exists()) {
                     const data = snap.data();
+                    if (data.companyFeatures && typeof data.companyFeatures === 'object') setFeatures(data.companyFeatures);
                     if (data.matrix && Object.keys(data.matrix).length > 0) setMatrix(data.matrix);
                     if (data.tiers && data.tiers.length > 0) {
                         setTiers(data.tiers.filter(t => t.id !== 'DEVELOPER'));
@@ -1904,7 +1908,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
             const godTiers = DYNAMIC_TIERS.filter(t => t.id === 'DEVELOPER');
             const fullTiers = [...godTiers, ...tiers];
 
-            const payload = { matrix, tiers: fullTiers, updatedAt: new Date().toISOString() };
+            const payload = { matrix, tiers: fullTiers, companyFeatures: features, updatedAt: new Date().toISOString() };
             await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'permission_matrix'), payload);
             /* The backup is a FULL replacement too, never a merge. A merge deep-merges `matrix`, so a
                tier deleted here kept its permission row in the backup, and any read that falls back
@@ -1930,6 +1934,48 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
             salesman the power to edit any customer in the country, and nothing about the app
             will look broken afterwards. */}
         <div className="kpm-band hazard">Authority · who is allowed to do what, company-wide</div>
+
+        {/* COMPANY FEATURE SWITCHES - saved at once (not on Deploy), merged into both copies of the doc. */}
+        <div className="kpm-mod">
+            <div className="kpm-head">
+                <span className="slot">Company features</span>
+                <div className="line"><h3>Features this company uses</h3><span className="kpm-read alert">Tier 1 only</span></div>
+                <p className="kpm-desc">
+                    Turn off what this company does not do. Off hides it from the menu and the Sales Terminal, and the server
+                    refuses new ones. <b>Nothing old is lost:</b> unpaid Titip can still be paid or returned, and goods already
+                    owed (IOU) can still be handed over. Saves at once.
+                </p>
+            </div>
+            {[['sampling', 'Sampling', 'Free samples given to shops, and the Sampling screen.'],
+              ['consignment', 'Consignment (Titip)', 'Selling goods now and getting paid later.'],
+              ['hutang', 'Goods owed (Utang Barang / IOU)', 'An exchange where the shop is owed goods you bring next visit.']].map(([key, label, hint]) => {
+                const on = features[key] !== false;
+                const saveFeature = async (next) => {
+                    if (next === on) return;
+                    if (!next && !await confirmAction(`Switch off ${label}? New ones will be refused for everyone in the company. Old records stay and can still be settled.`)) return;
+                    const merged = { ...features, [key]: next };
+                    try {
+                        const body = { companyFeatures: merged, updatedAt: new Date().toISOString() };
+                        await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'permission_matrix'), body, { merge: true });
+                        await setDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'permission_matrix'), body, { merge: true });
+                        setFeatures(merged);
+                        setCompanyFeatures(merged);
+                        notify(`${label} switched ${next ? 'on' : 'off'}.`);
+                    } catch (e) {
+                        notify(`Failed to switch ${label}: ` + (e.code === 'permission-denied' ? 'only the company owner can change this.' : e.message));
+                    }
+                };
+                return (
+                    <div className="kpm-shelf split" key={key}>
+                        <div><b>{label}</b><div className="kpm-desc">{hint}</div></div>
+                        <div className="kpm-switch" role="group" aria-label={label}>
+                            <button type="button" aria-pressed={on} onClick={() => saveFeature(true)}>On</button>
+                            <button type="button" aria-pressed={!on} onClick={() => saveFeature(false)}>Off</button>
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
 
         <div className="kpm-mod hazard">
             <div className="kpm-head">
