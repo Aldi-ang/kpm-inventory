@@ -1879,3 +1879,10 @@ Seen: 2026-11-14
 **Lesson:** grep the self-checks for the file's name and its folder, and run them, before bringing it back. A session that retires an asset and commits only its code leaves ` D <file>` in git status for days, and the check guarding the deletion stays green only while the file is gone. Aldi cannot answer "did you delete it?" - a session did it, for a job he asked for.
 **Would have prevented:** 2026-11-14 13:14 - capy-excited-6.mp3 (retired by the Jett voice job on 2026-11-11, guarded by "public/sounds holds exactly their phrase files ... no old syllable left") was put back on his "i dont remember deleting any of the file". The self-check went red (2952/2953), the Antigravity push had to wait, he was told "cause unknown", and deleting it again needed a second yes from him (the auto-mode guard refused `git rm`).
 Seen: 2026-11-14
+
+## 2026-11-21 — in a fresh cloud clone, a red gate is the clone until HEAD says otherwise
+**Status:** LIKELY
+**Trigger:** the first time a gate (undef.check, logicFixes, integration.audit) goes red in a cloud session, before touching the check or the code.
+**Lesson:** run the same gate on a clean `git worktree` of HEAD first. Three cloud-only causes are known: the folder is not `kpm-inventory-main` (undef.check keyed on it, now fixed), the `game-edition-v1` tag is missing (`git fetch origin tag game-edition-v1`), and the clock is UTC (run with `TZ=Asia/Jakarta`). Also: never `console.log` a regex match object while debugging a check; print `m && m[0]`, since the match carries the whole input string.
+**Would have prevented:** 2026-11-21 cloud Task 108: 9 logicFixes + 7 undef "failures" chased before the HEAD worktree showed they were pre-existing, and one debug print dumped about 10k characters of theme.css into context.
+Seen: 2026-11-21
