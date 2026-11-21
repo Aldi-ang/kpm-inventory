@@ -11915,7 +11915,7 @@ section('Customer access by folder - P2 (his 2026-10-20 "bandung team may only s
      /allow read: if isSalesman\(bossUid\) && !folderLimited\(bossUid\);/.test(custBlock) && /allow read: if folderReadOk\(bossUid, resource\.data\);/.test(custBlock));
   ok('the old update line holds only while folders are off; the folder line decides while on',
      /allow update: if isSalesman\(bossUid\) && !folderLimited\(bossUid\) && customerAccessLevel/.test(custBlock) &&
-     /allow update: if isSalesman\(bossUid\) && folderLimited\(bossUid\) && folderEditOk\(bossUid\)( && grosirUpdateOk\(\))?( && ownerFieldsUpdateOk\(\))?;/.test(custBlock));   // CHANGE 28 (2026-11-13) adds the last clause
+     /allow update: if isSalesman\(bossUid\) && folderLimited\(bossUid\) && folderEditOk\(bossUid\)( && grosirUpdateOk\(\))?( && ownerFieldsUpdateOk\(\))?( && iouListOk\(bossUid\))?;/.test(custBlock));   // CHANGE 28 (2026-11-13) and CHANGE 31 (2026-11-21) each add a clause
   /* the rules and the app must agree on WHO is never limited, or a T1/T2 phone asks for every shop and is refused */
   const exempt = rules.slice(rules.indexOf('function folderLimited'), rules.indexOf('function folderReadOk'));
   /* his 2026-10-20 "tier 3 should be able to see evrything on default actually same like tier 1 and 2" */
@@ -12112,8 +12112,8 @@ section('P3: a new shop is seen by its team at once; Grosir waits for the region
   /* REGRESSION - the server side (CHANGE 18; rules-test/test-customer-access.mjs runs it) */
   const custBlock = code(rules.slice(rules.indexOf('match /customers/{customerId} {'), rules.indexOf('match /benchmarks/{benchmarkId}')));
   ok('REGRESSION: rules CHANGE 18 - create and BOTH update lines end in the Grosir check (CHANGE 28 follows it)',
-     /allow create: if isSalesman\(bossUid\) && customerAccessLevel\(bossUid\) != 'view_only' && grosirCreateOk\(\) && ownerFieldsCreateOk\(\);/.test(custBlock) &&
-     (custBlock.match(/&& grosirUpdateOk\(\) && ownerFieldsUpdateOk\(\);/g) || []).length === 2 &&
+     /allow create: if isSalesman\(bossUid\) && customerAccessLevel\(bossUid\) != 'view_only' && grosirCreateOk\(\) && ownerFieldsCreateOk\(\)( && iouCreateOk\(bossUid\))?;/.test(custBlock) &&
+     (custBlock.match(/&& grosirUpdateOk\(\) && ownerFieldsUpdateOk\(\)( && iouListOk\(bossUid\))?;/g) || []).length === 2 &&
      /function grosirAdmin\(\)[\s\S]{0,300}role == 'AREA_ADMIN' \|\| role == 'FLEET_CAPTAIN'/.test(rules));
   /* CHANGE 28 (2026-11-13): a shop's salesman and its package-count reset are T1-T4's in the database too, not only on screen -
      his "paintbrush ... tier 4 and above" and "tier 4 and above can refresh that". rules-test/test-shop-owner-fields.mjs, 22 cases. */
@@ -15002,6 +15002,25 @@ section('COMPETITORS GLOBAL SCREEN (Task 108)');
      /html\.lite-mode \.kpm-comp \*[^{]*\{ animation: none !important; transition: none !important; \}/.test(block) &&
      /@media \(prefers-reduced-motion: reduce\)[\s\S]{0,120}\.kpm-comp \*/.test(block) && /max-width: 760px[\s\S]*min-height: 44px/.test(block) &&
      !/\b(blue|green|emerald|sky|teal)-\d/.test(view));
+}
+/* ── RULES CHANGE 31: COMPANY FEATURE SWITCHES (2026-11-21) ──────────────────────────────────────────────────────
+   Proven 41/0 in rules-test/test-company-features.mjs (latest emulator). The traps: a switch must be read from the
+   DATA (paymentType or the older method field, the IOU list itself) - never from a flag the app could leave out; the
+   IOU list test must come before the switch read or the folder update line passes Firestore's 1000-step ceiling. */
+section('RULES CHANGE 31: COMPANY FEATURE SWITCHES');
+{ const rules = read('firestore.rules');
+  const cust = rules.slice(rules.indexOf('match /customers/{customerId}'), rules.indexOf('match /benchmarks/{benchmarkId}'));
+  ok('absence means ON: a missing doc, a missing companyFeatures map or a non-false value keeps the feature',
+     /function companyFeatureOn\(bossUid, key\) \{[\s\S]{0,260}feats\.get\(key, true\) != false;/.test(rules));
+  ok('the shop create line and BOTH update lines carry the IOU check; the list test runs before the switch is read',
+     /ownerFieldsCreateOk\(\) && iouCreateOk\(bossUid\);/.test(cust) && (cust.match(/ownerFieldsUpdateOk\(\) && iouListOk\(bossUid\);/g) || []).length === 2 &&
+     /function iouListOk\(bossUid\) \{\s*return resource\.data\.get\('pendingIOUs', \[\]\)\.hasAll\(request\.resource\.data\.get\('pendingIOUs', \[\]\)\) \|\|\s*companyFeatureOn\(bossUid, 'hutang'\);/.test(rules));
+  ok('a new Titip sale is read from paymentType OR method and a missing type is a SALE; payments and returns pass',
+     /d\.get\('type', 'SALE'\) == 'SALE' && \(d\.get\('paymentType', ''\) == 'Titip' \|\| d\.get\('method', ''\) == 'Titip'\)/.test(rules) &&
+     /match \/transactions\/\{transactionId\} \{\s*allow read: if isSalesman\(bossUid\);\s*allow create: if isSalesman\(bossUid\) && txFeatureOk\(bossUid\);/.test(rules) &&
+     !/hasNewIou|paymentType', ''\) == 'Hutang'/.test(rules));
+  ok('a new sample hand-out needs the Sampling switch',
+     /match \/samplings\/\{sampleId\} \{\s*allow read: if isSalesman\(bossUid\);\s*allow create: if isSalesman\(bossUid\) && companyFeatureOn\(bossUid, 'sampling'\);/.test(rules));
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

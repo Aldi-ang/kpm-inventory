@@ -211,6 +211,33 @@ service cloud.firestore {
       return role != 'NONE' && compHas(compSaved(bossUid), role, 'report_competitor_price', ['DEVELOPER', 'COMPANY_OWNER', 'AREA_ADMIN', 'FLEET_CAPTAIN', 'FIELD_OPERATIVE', 'ROOKIE']);
     }
 
+    // [CHANGE 31] COMPANY FEATURE SWITCHES (Sampling, Hutang = goods owed / IOU, Consignment = Titip). Stored on
+    // settings/permission_matrix as companyFeatures { sampling, hutang, consignment }. ABSENCE MEANS ON: a company that
+    // never saved the switches (KPM today) keeps all three. OFF refuses only NEW records; old ones stay payable.
+    function companyFeatureOn(bossUid, key) {
+      let m = getPermissionMatrixDoc(bossUid);
+      let feats = m != null && ('companyFeatures' in m) && (m.companyFeatures is map) ? m.companyFeatures : {};
+      return feats.get(key, true) != false;
+    }
+    // Hutang OFF: a shop's pendingIOUs may only keep or drop lines it already had (fulfilling an old IOU still works).
+    // The list test comes FIRST: an edit that leaves the list alone never reads the switch, which keeps the folder
+    // update line under Firestore's 1000-step ceiling (rules-test/test-customer-access.mjs, Alex confirms Grosir).
+    function iouListOk(bossUid) {
+      return resource.data.get('pendingIOUs', []).hasAll(request.resource.data.get('pendingIOUs', [])) ||
+        companyFeatureOn(bossUid, 'hutang');
+    }
+    function iouCreateOk(bossUid) {
+      return companyFeatureOn(bossUid, 'hutang') || request.resource.data.get('pendingIOUs', []).size() == 0;
+    }
+    // Consignment OFF: no new Titip sale. A sale with no type is a SALE (revenueRule.js); Titip is read from paymentType
+    // or the older method field, the same two isTitip() reads. CONSIGNMENT_PAYMENT / RETURN are not sales, so old
+    // Titip stays payable and returnable.
+    function txFeatureOk(bossUid) {
+      let d = request.resource.data;
+      let titip = d.get('type', 'SALE') == 'SALE' && (d.get('paymentType', '') == 'Titip' || d.get('method', '') == 'Titip');
+      return !titip || companyFeatureOn(bossUid, 'consignment');
+    }
+
     function isSalesman(bossUid) {
       let profile = getEmployeeProfile();
       return isAuthenticated() && profile != null && profile.bossUid == bossUid;
@@ -867,16 +894,16 @@ service cloud.firestore {
         allow read: if folderReadOk(bossUid, resource.data);
         // [CHANGE 18] each of the three lines below also ends in a Grosir check (only T1-T4 make a shop Grosir)
         // [CHANGE 28 — LIVE 2026-11-13] the create line and both update lines also end in the owner-fields check (T1-T4 only)
-        allow create: if isSalesman(bossUid) && customerAccessLevel(bossUid) != 'view_only' && grosirCreateOk() && ownerFieldsCreateOk();
+        allow create: if isSalesman(bossUid) && customerAccessLevel(bossUid) != 'view_only' && grosirCreateOk() && ownerFieldsCreateOk() && iouCreateOk(bossUid);
         // [CHANGE 17] the old update line, now only while folders are off (or for T1/T2) ...
         allow update: if isSalesman(bossUid) && !folderLimited(bossUid) && customerAccessLevel(bossUid) != 'view_only' && (
           customerAccessLevel(bossUid) != 'own_region' ||
           isUnclassifiedRegion(resource.data.get('region', '')) ||
           isOwnRegionMatch(bossUid)
-        ) && grosirUpdateOk() && ownerFieldsUpdateOk();
+        ) && grosirUpdateOk() && ownerFieldsUpdateOk() && iouListOk(bossUid);
         // ... and while on: a shop he can see; a visit by anyone, a real edit only with his switch on, and the
         // shop may land only in his own folders (from his temporary folder, or between his folders).
-        allow update: if isSalesman(bossUid) && folderLimited(bossUid) && folderEditOk(bossUid) && grosirUpdateOk() && ownerFieldsUpdateOk();
+        allow update: if isSalesman(bossUid) && folderLimited(bossUid) && folderEditOk(bossUid) && grosirUpdateOk() && ownerFieldsUpdateOk() && iouListOk(bossUid);
         allow delete: if false;
         match /benchmarks/{benchmarkId} {
           allow read, write: if isSalesman(bossUid);
@@ -894,7 +921,7 @@ service cloud.firestore {
       // behavior; see "carried-forward gap" in the report.
       match /transactions/{transactionId} {
         allow read: if isSalesman(bossUid);
-        allow create: if isSalesman(bossUid);
+        allow create: if isSalesman(bossUid) && txFeatureOk(bossUid);
         allow update, delete: if false;
       }
 
@@ -1034,7 +1061,7 @@ service cloud.firestore {
 
       match /samplings/{sampleId} {
         allow read: if isSalesman(bossUid);
-        allow create: if isSalesman(bossUid);
+        allow create: if isSalesman(bossUid) && companyFeatureOn(bossUid, 'sampling');
         allow update, delete: if false;
       }
       match /eod_reports/{reportId} {
