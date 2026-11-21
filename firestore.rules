@@ -167,6 +167,50 @@ service cloud.firestore {
         (known ? key in saved.get(role, []) : (role == 'AREA_ADMIN' || role == 'FLEET_CAPTAIN'));
     }
 
+    // [CHANGE 30] COMPETITORS GLOBAL CATALOG, REGION PRICES & FIELD REPORTS.
+    // Firestore stops a request after 1000 evaluated expressions, so the profile and the matrix are read ONCE per
+    // rule (compCan) instead of once per small helper - the first draft hit that ceiling on T3/T4 writes.
+    function compRoleOf(bossUid) {
+      let p = getEmployeeProfile();
+      return isAuthenticated() && p != null && p.bossUid == bossUid ? p.get('userRole', 'NONE') : 'NONE';
+    }
+    function compSaved(bossUid) {
+      let m = getPermissionMatrixDoc(bossUid);
+      return m != null && ('matrix' in m) ? m.matrix : {};
+    }
+    // ABSENCE-MEANS-TIER-DEFAULT: a key no role holds is "unknown" and the tier default applies.
+    function compHas(saved, role, key, defaultRoles) {
+      let known = key in saved.get('DEVELOPER', []) || key in saved.get('COMPANY_OWNER', []) || key in saved.get('AREA_ADMIN', []) ||
+        key in saved.get('FLEET_CAPTAIN', []) || key in saved.get('FIELD_OPERATIVE', []) || key in saved.get('ROOKIE', []);
+      return known ? key in saved.get(role, []) : role in defaultRoles;
+    }
+    function compTop(bossUid, role) {
+      return isVaultOwner(bossUid) || role == 'COMPANY_OWNER' || role == 'ADMIN';
+    }
+    function compOwnRegion(bossUid, regionKey) {
+      let p = getEmployeeProfile();
+      let raw = isAuthenticated() && p != null && p.bossUid == bossUid ? p.get('location', '') : '';
+      let loc = raw is string ? raw.lower().trim() : '';
+      let rk = regionKey is string ? regionKey.lower().trim() : '';
+      return loc != '' && rk != '' && loc == rk;
+    }
+    // needManage=true: may change competitor data. Region rule: own region, or the all-regions right.
+    function compCan(bossUid, regionKey, needManage) {
+      let role = compRoleOf(bossUid);
+      let saved = compSaved(bossUid);
+      let top = compTop(bossUid, role);
+      return (top || !needManage || compHas(saved, role, 'manage_competitors', ['AREA_ADMIN', 'FLEET_CAPTAIN'])) &&
+        (top || compOwnRegion(bossUid, regionKey) || compHas(saved, role, 'see_all_competitor_regions', ['AREA_ADMIN']));
+    }
+    function compManage(bossUid) {
+      let role = compRoleOf(bossUid);
+      return compTop(bossUid, role) || compHas(compSaved(bossUid), role, 'manage_competitors', ['AREA_ADMIN', 'FLEET_CAPTAIN']);
+    }
+    function compReporter(bossUid) {
+      let role = compRoleOf(bossUid);
+      return role != 'NONE' && compHas(compSaved(bossUid), role, 'report_competitor_price', ['DEVELOPER', 'COMPANY_OWNER', 'AREA_ADMIN', 'FLEET_CAPTAIN', 'FIELD_OPERATIVE', 'ROOKIE']);
+    }
+
     function isSalesman(bossUid) {
       let profile = getEmployeeProfile();
       return isAuthenticated() && profile != null && profile.bossUid == bossUid;
@@ -697,6 +741,41 @@ service cloud.firestore {
           request.resource.data.name is string && request.resource.data.name.size() > 0 &&
           request.resource.data.subs is list;
         allow delete: if isCompanyTopTier(bossUid) || categoryManager(bossUid);
+      }
+      // [CHANGE 30] Competitors global catalog, region-isolated prices, and approval queue.
+      match /competitors/{rivalId} {
+        allow read: if isSalesman(bossUid);
+        allow create, update: if compManage(bossUid) &&
+          request.resource.data.keys().hasOnly(['name', 'brand', 'normName', 'categoryId', 'subCategoryId', 'pairedProductId', 'createdAt', 'updatedAt', 'updatedBy', 'updatedByUid']) &&
+          request.resource.data.name is string && request.resource.data.name.size() > 0;
+        // Deleting a whole rival (every region) needs all-region authority, so a T4 cannot erase prices he cannot see.
+        allow delete: if compCan(bossUid, '', true);
+
+        match /region_prices/{regionKey} {
+          allow read: if compCan(bossUid, regionKey, false);
+          allow create, update: if compCan(bossUid, regionKey, true) &&
+            request.resource.data.keys().hasOnly(['region', 'Retail', 'Grosir', 'Ecer', 'updatedAt', 'updatedBy', 'updatedByUid', 'sourceReportId']) &&
+            request.resource.data.region is string && request.resource.data.region.lower().trim() == regionKey.lower().trim();
+          allow delete: if compCan(bossUid, regionKey, true);
+        }
+      }
+      match /competitor_reports/{reportId} {
+        allow read: if (isSalesman(bossUid) && resource.data.get('reportedByUid', '') == request.auth.uid) ||
+          compCan(bossUid, resource.data.get('region', ''), false);
+        allow create: if compReporter(bossUid) &&
+          request.resource.data.keys().hasOnly(['rivalId', 'newRivalName', 'categoryId', 'subCategoryId', 'newCategoryName', 'newSubCategoryName',
+            'region', 'shopId', 'shopName', 'customerType', 'price', 'shelf', 'promo', 'speed', 'note', 'photo', 'status',
+            'reportedByUid', 'reportedByName', 'createdAt']) &&
+          request.resource.data.get('status', '') == 'pending' &&
+          request.resource.data.get('reportedByUid', '') == request.auth.uid &&
+          request.resource.data.price is number && request.resource.data.price > 0 &&
+          request.resource.data.customerType in ['Retail', 'Grosir', 'Ecer'] &&
+          request.resource.data.region is string && request.resource.data.region.size() > 0;
+        allow update: if resource.data.get('status', '') == 'pending' &&
+          request.resource.data.status in ['approved_price', 'approved_note', 'rejected'] &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'priceAction', 'rejectReason', 'reviewedBy', 'reviewedByUid', 'reviewedAt']) &&
+          compCan(bossUid, resource.data.get('region', ''), true);
+        allow delete: if isCompanyTopTier(bossUid);
       }
       // [CHANGE 24 — DRAFT] the Sell Again holder writes its own line in the quarantine history, method SELL only. Reading the history
       // stays the owner's (the users/{bossUid} catch-all above).

@@ -36,7 +36,8 @@ const MATCH_3B = `
 `;
 
 function spliceDraft(src) {
-  let out = src;
+  let out = src.split('\r\n').join('\n');
+  if (out.includes("function categoryManager(bossUid)")) return out; // Change 29 is already in firestore.rules (published 2026-11-20)
   const a1 = '    function isSalesman(bossUid) {';
   if (!out.includes(a1)) throw new Error('Anchor 3a missing');
   out = out.replace(a1, HELPER_3A + a1);
