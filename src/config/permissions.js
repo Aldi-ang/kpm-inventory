@@ -238,10 +238,11 @@ export const TAB_FEATURE = {
     agent_profile: 'view_agent_profile', dashboard: 'view_dashboard', map_war_room: 'view_map', journey: 'view_journey',
     fleet: 'view_fleet', inventory: 'view_master_vault', agent_inventory: 'view_agent_inventory', restock_vault: 'view_restock_vault',
     sales: 'view_sales', receivables: 'view_receivables', eod: 'view_eod', stock_opname: 'view_stock_opname',
-    customers: 'view_customers', sampling: 'view_sampling', transactions: 'view_reports', audit: 'view_audit_logs', settings: 'view_settings'
+    customers: 'view_customers', competitors: 'view_competitors', sampling: 'view_sampling', transactions: 'view_reports', audit: 'view_audit_logs', settings: 'view_settings'
 };
 export const canOpenTab = (role, tab) => {
     if (tab === 'settings') return true;   // every tier (his 2026-11-02)
+    if (tab === 'competitors') return canViewCompetitors(role);   // absence-means-tier-default, not a plain hasClearance
     if (tab === 'stock_opname' && canDecideOpname(role)) return true;   // the worklist: view_stock_opname is who COUNTS (his 2026-11-04)
     const f = TAB_FEATURE[tab];
     if (f === 'view_reports') return ['view_reports_global', 'view_reports_regional', 'view_reports_personal'].some((p) => hasClearance(role, p));
@@ -445,6 +446,28 @@ export const canManageCategories = (userRole) => {
         || role === CORPORATE_TIERS.TIER_3
         || role === CORPORATE_TIERS.TIER_4;
 };
+
+/* COMPETITORS (Step 2, firestore.rules CHANGE 30). Four keys, all ABSENCE-MEANS-TIER-DEFAULT like the one above: never
+   in the ROLE_PERMISSIONS defaults, so a saved matrix that predates them cannot lock a tier out. The rules' compHas()
+   reads the same way (a key no role holds = the tier default). */
+const compFlag = (userRole, key, defaults) => {
+    const role = translateLegacyRole(userRole);
+    if (role === CORPORATE_TIERS.TIER_1) return true;
+    const matrixKnowsKey = Object.values(ROLE_PERMISSIONS).some(list => Array.isArray(list) && list.includes(key));
+    if (matrixKnowsKey) return hasClearance(userRole, key);
+    return defaults.includes(role);
+};
+const T = CORPORATE_TIERS;
+/* the sidebar item: every tier by default */
+export const canViewCompetitors = (userRole) => compFlag(userRole, 'view_competitors', [T.TIER_2, T.TIER_3, T.TIER_4, T.TIER_5, T.TIER_6]);
+/* every region's prices and reports: T1-T3 (T2 always - the rules treat the owner as top) */
+export const canSeeAllCompetitorRegions = (userRole) => translateLegacyRole(userRole) === T.TIER_2
+    || compFlag(userRole, 'see_all_competitor_regions', [T.TIER_3]);
+/* add / edit / delete rivals and prices, approve or reject reports: T1-T4 (a T4 only in his own region) */
+export const canManageCompetitors = (userRole) => translateLegacyRole(userRole) === T.TIER_2
+    || compFlag(userRole, 'manage_competitors', [T.TIER_3, T.TIER_4]);
+/* send a field report: every tier */
+export const canReportCompetitor = (userRole) => compFlag(userRole, 'report_competitor_price', [T.TIER_2, T.TIER_3, T.TIER_4, T.TIER_5, T.TIER_6]);
 
 /* THE PREDICATE. Returns a reason, never a bare false — "every action must report" is a design
    law here, and a name that silently vanishes from a list is the thing that made the picker read

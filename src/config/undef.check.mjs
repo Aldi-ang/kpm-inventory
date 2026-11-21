@@ -42,7 +42,8 @@ const results = await eslint.lintFiles(['src']);
 
 const found = [];
 for (const file of results) {
-  const rel = file.filePath.replace(/\\/g, '/').split('/kpm-inventory-main/').pop();
+  // the PC folder is kpm-inventory-main; a cloud clone has another name, so strip the working folder too
+  const rel = file.filePath.replace(/\\/g, '/').split('/kpm-inventory-main/').pop().replace(process.cwd().replace(/\\/g, '/') + '/', '');
   for (const m of file.messages) {
     if (m.ruleId !== 'no-undef') continue;
     const name = (m.message.match(/'([^']+)'/) || [])[1] || '?';

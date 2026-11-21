@@ -1722,6 +1722,10 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         { id: 'decide_opname_product', label: 'Stock Opname: accept or reject a counted product (Tier 4 and above only)' },
         { id: 'sell_damaged', label: 'Quarantine: sell damaged packs again and set their price (Tier 4 and above only)' },
         { id: 'manage_product_categories', label: 'Master Vault & Competitors: add, rename or delete shared categories (default Tier 4 and above)' },
+        { id: 'view_competitors', label: 'Competitors: open the Competitors screen (default every tier)' },
+        { id: 'see_all_competitor_regions', label: 'Competitors: see rival prices and reports in every region (default Tier 3 and above)' },
+        { id: 'manage_competitors', label: 'Competitors: add rivals, edit prices, approve reports (default Tier 4 and above; Tier 4 own region only)' },
+        { id: 'report_competitor_price', label: 'Competitors: send a field report of a rival price (default every tier)' },
         { id: 'edit_agent_roles', label: '[GOD] Promote Agents' },
         { id: 'edit_rank_config', label: '[GOD] Edit Ranks' }
     ];

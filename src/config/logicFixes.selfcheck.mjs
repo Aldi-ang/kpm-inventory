@@ -13247,7 +13247,7 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
   const dyn = [...menu, 'ALL', 'MISC', 'BUNDLES', 'Ecer Price', 'Retail Price', 'Grosir Price',
     'No promo goods with a retur. Give them on a new deal.', 'No promo goods in the Master Vault. Restock them in Restock Vault.',
     'No promo goods in this van. Load them in Fleet & Canvas → PROMO.'].filter((k) => !ID[k]);
-  ok(`every menu label (${menu.length}, the vault unlock too), ware chip, tier price and give-box line has its Indonesian word`, menu.length === 18 && !dyn.length,
+  ok(`every menu label (${menu.length}, the vault unlock too), ware chip, tier price and give-box line has its Indonesian word`, menu.length === 19 && !dyn.length,
      'missing: ' + dyn.join(' | '));
   ok('BEHAVIOUR: a fill-in lands after the lookup, in both languages; a name not in the fill stays as {key}',
      tr('Visit saved: {shop} - {tag}', { shop: 'Toko Lancar', tag: tr('Routine Check') }) === 'Kunjungan tersimpan: Toko Lancar - Cek Rutin' &&
@@ -13348,13 +13348,14 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
   const { canOpenTab, TAB_FEATURE, CORPORATE_TIERS: T } = perms;
   const theme = read('src/components/BiohazardTheme.jsx');
   const menu = [...theme.matchAll(/\{ id: '(\w+)', label: '[^']+', feature: '(\w+)'/g)].map((x) => [x[1], x[2]]);
-  ok('the tab list the switch asks is the sidebar\'s own list - same 17 tabs, same matrix key each',
-     !!TAB_FEATURE && menu.length === 17 && menu.every(([id, f]) => TAB_FEATURE[id] === f) && Object.keys(TAB_FEATURE).length === 17);
+  ok('the tab list the switch asks is the sidebar\'s own list - same 18 tabs, same matrix key each',
+     !!TAB_FEATURE && menu.length === 18 && menu.every(([id, f]) => TAB_FEATURE[id] === f) && Object.keys(TAB_FEATURE).length === 18);
   ok('BEHAVIOUR: Settings opens for every tier, an unknown tab for none, the owner opens every tab',
      typeof canOpenTab === 'function' && Object.values(T).every((r) => canOpenTab(r, 'settings')) && !canOpenTab(T.TIER_1, 'no_such_tab') &&
      menu.every(([id]) => canOpenTab(T.TIER_1, id)));
   ok('BEHAVIOUR: a tab is open to a tier exactly when the sidebar shows it (the Reports tab: any of the 3 report modes)',
      typeof canOpenTab === 'function' && Object.values(T).every((r) => menu.every(([id, f]) => canOpenTab(r, id) === (id === 'settings' || (id === 'stock_opname' && perms.canDecideOpname(r)) ? true
+       : id === 'competitors' ? perms.canViewCompetitors(r)
        : f === 'view_reports' ? ['view_reports_global', 'view_reports_regional', 'view_reports_personal'].some((p) => perms.hasClearance(r, p)) : perms.hasClearance(r, f)))));
   ok('wearing a costume keeps the tab when that tier may open it, else its own landing tab; taking it off keeps the tab when the owner may',
      /setActiveTab\(\(t\) => \(canOpenTab\(account\.tier, t\) \? t : hasClearance\(account\.tier, 'view_dashboard'\) \? 'dashboard' : 'journey'\)\);/.test(app) &&
@@ -14432,7 +14433,7 @@ section('THE MENU TOUR, AND A RING ONLY ON WHAT IS DRAWN (2026-11-17)');
   const from = shell.indexOf('allMenuItems = [');
   const menuIds = [...shell.slice(from, shell.indexOf('];', from)).matchAll(/id: '([a-z_]+)', label: '/g)].map((m) => m[1]);
   ok(`BEHAVIOUR: every menu item has its tour line (${menuIds.length} items); each names the item the way the menu shows it and never says aku / kamu`,
-     menuIds.length === 17 && menuIds.every((id) => typeof TOUR[id] === 'function' && TOUR[id]('XLABELX').includes('XLABELX') && !/\b(aku|kamu)\b/i.test(TOUR[id]('X'))));
+     menuIds.length === 18 && menuIds.every((id) => typeof TOUR[id] === 'function' && TOUR[id]('XLABELX').includes('XLABELX') && !/\b(aku|kamu)\b/i.test(TOUR[id]('X'))));
   const b0 = tourBeat('sales', 'Terminal Penjualan', true), b1 = tourBeat('eod', 'EOD Setoran', false);
   ok('BEHAVIOUR: a tour beat rings the item inside the menu, else the PC\'s corner circle, else the phone\'s edge key, each with its own line; only the first item opens with "Ini menu utama"',
      b0.at.join() === '[data-kpm-rail] [data-mark="sales"],.kpm-rail-totem,[aria-label="Open navigation"]' && b0.say.length === 3 &&
@@ -14939,6 +14940,68 @@ section('NEW COUNT PRO IN REAL APP (Task 100, 2026-11-20)');
      !/\.kpm-oc-hand\s*\{\s*animation:/.test(css) &&
      /html\.lite-mode[\s\S]{0,160}\.animate-fade-in[\s\S]{0,160}animation: none;/.test(css) &&
      /@media \(prefers-reduced-motion: reduce\)[\s\S]{0,200}\.animate-fade-in[\s\S]{0,200}animation: none;/.test(css));
+}
+/* ── COMPETITORS GLOBAL SCREEN (Task 108, firestore.rules CHANGE 30) ─────────────────────────────────────────────
+   The traps that would only show on a live phone: a T4-T6 listener that lists a whole collection is refused by the rules
+   (the screen just stays empty), a report carrying one field too many is refused, a new permission key that reads as
+   "no" when his saved matrix predates it, a price per stick, and a delete that writes before its 8 s Undo is over. */
+section('COMPETITORS GLOBAL SCREEN (Task 108)');
+{ const C = await import('../utils/competitors.js'), P = await import('./permissions.js');
+  const T = P.CORPORATE_TIERS;
+  const view = read('src/components/CompetitorsView.jsx'), hook = read('src/hooks/useDatabaseSync.js'), app = read('src/App.jsx');
+  const rules = read('firestore.rules');
+  const p4 = C.listenerPlan({ seesAll: false, myRegion: ' Bandung ', uid: 'u4' }), p2 = C.listenerPlan({ seesAll: true, myRegion: '', uid: 'u2' });
+  const p0 = C.listenerPlan({ seesAll: false, myRegion: '', uid: 'u6' });
+  ok('BEHAVIOUR: T4-T6 open ONE own-region price doc and query reports by region / own uid only; T1-T3 list all; no region = no price listener',
+     p4.prices.doc === 'BANDUNG' && p4.reports.length === 2 && p4.reports.every((q) => q.kind === 'where') &&
+     p4.reports[0].field === 'region' && p4.reports[0].value === 'BANDUNG' && p4.reports[1].field === 'reportedByUid' && p4.reports[1].value === 'u4' &&
+     p2.prices === 'all' && p2.reports[0].kind === 'all' && p0.prices === 'none' && p0.reports.length === 1 && p0.reports[0].field === 'reportedByUid');
+  ok('the data hook follows listenerPlan: whole region_prices list only in "all" mode, otherwise doc(..., region_prices, own region); reports via where()',
+     hook.includes("plan.prices === 'all'") && hook.includes('doc(db, `${base}/${id}/region_prices`, plan.prices.doc)') &&
+     hook.includes("query(col, where(q.field, '==', q.value))") && !hook.includes("collectionGroup"));
+  ok('BEHAVIOUR: permission defaults with the keys absent - view & report every tier, all regions T1-T3, manage T1-T4',
+     [T.TIER_1, T.TIER_2, T.TIER_3, T.TIER_4, T.TIER_5, T.TIER_6].every((r) => P.canViewCompetitors(r) && P.canReportCompetitor(r)) &&
+     P.canSeeAllCompetitorRegions(T.TIER_3) && !P.canSeeAllCompetitorRegions(T.TIER_4) && P.canSeeAllCompetitorRegions(T.TIER_2) &&
+     P.canManageCompetitors(T.TIER_4) && !P.canManageCompetitors(T.TIER_5) && !P.canManageCompetitors(T.TIER_6) &&
+     P.canOpenTab(T.TIER_6, 'competitors'));
+  ok('the 4 keys stay OUT of the default ROLE_PERMISSIONS (absence = tier default) and each has its Settings toggle',
+     ['view_competitors', 'see_all_competitor_regions', 'manage_competitors', 'report_competitor_price'].every((k) =>
+       !Object.values(P.ROLE_PERMISSIONS).some((l) => Array.isArray(l) && l.includes(k)) && read('src/components/SettingsView.jsx').includes(`id: '${k}'`)));
+  const ruleCreate = (rules.match(/match \/competitor_reports\/\{reportId\}[\s\S]*?allow create[\s\S]*?hasOnly\(\[([\s\S]*?)\]\)/) || [])[1] || '';
+  const ruleKeys = [...ruleCreate.matchAll(/'(\w+)'/g)].map((m) => m[1]);
+  const built = C.buildReport({ rivalId: 'r1', customerType: 'Grosir', price: '10500', shelf: 'Top shelf', promo: 'Poster', speed: 'Fast' },
+    { region: 'bandung', uid: 'u5', name: 'Budi', createdAt: 1 });
+  ok('BEHAVIOUR: a field report carries exactly the fields the rule allows, status pending, own uid, upper-case region, a whole number price',
+     ruleKeys.length === 20 && C.REPORT_FIELDS.length === 20 && C.REPORT_FIELDS.every((k) => ruleKeys.includes(k)) &&
+     Object.keys(built.data).sort().join() === [...ruleKeys].sort().join() &&
+     built.data.status === 'pending' && built.data.reportedByUid === 'u5' && built.data.region === 'BANDUNG' && built.data.price === 10500 &&
+     C.buildReport({ price: 0, customerType: 'Retail', rivalId: 'r' }, { region: 'X', uid: 'u' }).error &&
+     C.buildReport({ price: 5, customerType: 'Per stick', rivalId: 'r' }, { region: 'X', uid: 'u' }).error &&
+     C.buildReport({ price: 5, customerType: 'Retail' }, { region: 'X', uid: 'u' }).error &&
+     C.buildReport({ price: 5, customerType: 'Retail', rivalId: 'r' }, { region: '', uid: 'u' }).error);
+  const ruleReview = (rules.slice(rules.indexOf('match /competitor_reports/')).match(/affectedKeys\(\)\.hasOnly\(\[([^\]]*)\]\)/) || [])[1] || '';
+  ok('an approval / rejection writes only the review fields the rule allows; three customer types only, never a price per stick',
+     C.REVIEW_FIELDS.every((k) => ruleReview.includes(`'${k}'`)) && C.CUST_TYPES.join() === 'Retail,Grosir,Ecer' &&
+     JSON.stringify(C.cleanPriceEntry({ Retail: '9000', Grosir: 0, Ecer: -1, perStick: 500 })) === '{"Retail":9000}' &&
+     !/per.?stick|perBatang|pricePerStick/i.test(view));
+  const ops = C.restoreOps(C.withRegionPrices([{ id: 'r1', name: 'A' }], { r1: { BANDUNG: { id: 'BANDUNG', Retail: 9000, region: 'BANDUNG' } } }));
+  ok('BEHAVIOUR: backup keeps each rival\'s region prices and restore puts them back under competitors/<id>/region_prices/<REGION>',
+     ops.length === 2 && ops[0].path === 'competitors' && !('regionPrices' in ops[0].data) && ops[1].path === 'competitors/r1/region_prices' && ops[1].id === 'BANDUNG' &&
+     ops[1].data.Retail === 9000 && !('id' in ops[1].data) &&
+     (app.match(/withRegionPrices\(competitors, rivalPrices\)/g) || []).length === 2 && (app.match(/restoreOps\(data\.competitors\)/g) || []).length === 2 &&
+     app.includes('/competitor_reports`, rep.id) })'));
+  ok('deleting a price, a rival or rejecting a report waits 8 s with Undo (scheduleDelayedWrite); deleted rivals hide on every screen meanwhile',
+     /key: `rivalPrice:\$\{f\.rid\}:\$\{f\.region\}:\$\{f\.ct\}`/.test(view) && /key: `rival:\$\{r\.id\}`/.test(view) && /key: `report:\$\{rep\.id\}`/.test(view) &&
+     hook.includes('!isPendingUndo(`rival:${c.id}`)') && view.includes('isPendingUndo(`rivalPrice:${rid}:${reg}:${ct}`)'));
+  ok('BEHAVIOUR: duplicate rival names match after case, spaces, dots and dashes; region gaps count a rival priced differently in 2 regions',
+     C.findNearRival([{ id: 'a', name: 'Rival Kretek 12' }], 'rival-kretek.12')?.id === 'a' && !C.findNearRival([{ id: 'a', name: 'Rival Kretek 12' }], 'rival-kretek.12', 'a') &&
+     C.regionGapCount([{ id: 'a' }, { id: 'b' }], { a: { X: { Retail: 1 }, Y: { Retail: 2 } }, b: { X: { Retail: 3 }, Y: { Retail: 3 } } }) === 1);
+  const css = read('src/styles/theme.css'), block = css.slice(css.indexOf('.kpm-comp {'), css.indexOf('THE CONTROL SYSTEM')).replace(/\/\*[\s\S]*?\*\//g, '');
+  ok('palette law: the Competitors styles use no blue / green / raw colour except the scrim; Lite mode and reduced motion stop its motion; phone targets 44px',
+     css.includes('COMPETITORS GLOBAL SCREEN') && !/#[0-9a-f]{3,6}\b|\b(blue|green|sky|emerald|teal|cyan)\b/i.test(block) &&
+     /html\.lite-mode \.kpm-comp \*[^{]*\{ animation: none !important; transition: none !important; \}/.test(block) &&
+     /@media \(prefers-reduced-motion: reduce\)[\s\S]{0,120}\.kpm-comp \*/.test(block) && /max-width: 760px[\s\S]*min-height: 44px/.test(block) &&
+     !/\b(blue|green|emerald|sky|teal)-\d/.test(view));
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

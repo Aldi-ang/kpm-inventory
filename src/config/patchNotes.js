@@ -3,6 +3,9 @@
    Every finished job that changes what people see adds a line here before its push (CLAUDE.md, Publishing).
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
+  { date: '2026-11-21', items: [
+    { kind: 'new', en: 'Competitors: a new screen in the menu. See rival products by category, their Retail, Grosir and Ecer price in each region next to our paired product, compare side by side, and send a price you saw in a shop for your admin to approve. Owners and HQ see every region; others see their own region.', id: 'Pesaing: layar baru di menu. Lihat produk pesaing per kategori, harga Retail, Grosir dan Ecer di tiap wilayah di samping produk pasangan kita, bandingkan berdampingan, dan kirim harga yang Anda lihat di toko untuk disetujui admin. Pemilik dan HQ melihat semua wilayah; yang lain melihat wilayahnya sendiri.' },
+  ] },
   { date: '2026-11-20', items: [
     { kind: 'new', en: 'Master Vault & Sales Terminal: added shared two-level categories (Category › Sub-category), a Categories manager in Master Vault with Undo on empty delete, and sub-category filter tabs on the Sales Terminal.', id: 'Master Vault & Terminal Penjualan: menambah kategori dua tingkat (Kategori › Sub-kategori), pengelola Kategori di Master Vault dengan Undo saat menghapus kategori kosong, dan tab filter sub-kategori di Terminal Penjualan.' },
     { kind: 'new', en: 'Stock Opname (New Count): added a live progress bar, Cigarettes/Promo sections, a 3-cell System/Counted/Difference comparison, direct cause & damage pills, and a cleaner mobile sheet.', id: 'Stock Opname (Hitung Baru): menambah bilah progres, pemisahan Cigarettes/Promo, perbandingan 3 kolom System/Counted/Difference, pilihan sebab & kerusakan langsung, dan lembar bawah yang lebih rapi di HP.' },

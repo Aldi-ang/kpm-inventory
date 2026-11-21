@@ -7,6 +7,8 @@ import { isPromo, setPromoBrand } from '../utils/helpers';
 import { offersFromDocs } from '../utils/vanBay';
 import { isNonBranch, setMasterVaultPlace } from '../utils/supply.js';
 import { isPendingUndo, usePendingUndo } from '../utils/delayedWrite.js';
+import { listenerPlan } from '../utils/competitors.js';
+import { canSeeAllCompetitorRegions } from '../config/permissions.js';
 
 const NO_SHOPS = [];   // one stable empty list, so screens keyed on `customers` do not re-run every render
 
@@ -57,6 +59,9 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
     const [adminPromo, setAdminPromo] = useState([]);   // the boss vehicle's promo goods, pcs - the terminal's give row (stage 4)
     const [branchStock, setBranchStock] = useState({});
     const [productCategories, setProductCategories] = useState([]);
+    const [competitors, setCompetitors] = useState([]);
+    const [rivalPrices, setRivalPrices] = useState({});        // { rivalId: { REGION: priceDoc } } - only what the rules let this viewer read
+    const [competitorReports, setCompetitorReports] = useState([]);
     const [appSettings, setAppSettings] = useState({ mascotImage: '', companyName: 'Distribution and Sales Management', mascotMessages: [] });
     setMasterVaultPlace(appSettings?.masterVaultPlace);
     setPromoBrand(appSettings?.companyName);   // a promo item with no word of its own prints the company name
@@ -284,6 +289,52 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
         }
     };
 
+    /* COMPETITORS (Change 30). The catalog is readable by everyone in the company. Prices and reports follow
+       listenerPlan(): T1-T3 list everything; T4-T6 open ONE region_prices doc per rival (their own region) and query
+       reports by their region / their uid - a whole-collection list from them is refused by the rules. */
+    const compSeesAll = canSeeAllCompetitorRegions(userRole);
+    const compUid = user?.uid || '';
+    useEffect(() => {
+        if (!db || !appId || !user || !userId || userId === 'default') return;
+        return onSnapshot(collection(db, `artifacts/${appId}/users/${userId}/competitors`),
+            (snap) => setCompetitors(snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')))),
+            (err) => console.warn("Competitors listener:", err.code));
+    }, [db, appId, user, userId]);
+    const rivalIdKey = competitors.map(c => c.id).sort().join('|');
+    useEffect(() => {
+        if (!db || !appId || !userId || userId === 'default' || !rivalIdKey) return;
+        const plan = listenerPlan({ seesAll: compSeesAll, myRegion: location, uid: compUid });
+        if (plan.prices === 'none') return;
+        const base = `artifacts/${appId}/users/${userId}/competitors`;
+        const unsubs = rivalIdKey.split('|').map(id => plan.prices === 'all'
+            ? onSnapshot(collection(db, `${base}/${id}/region_prices`), (snap) => setRivalPrices(prev => ({
+                ...prev, [id]: Object.fromEntries(snap.docs.map(d => [d.id, { id: d.id, ...d.data() }])),
+            })), (err) => console.warn("Rival prices listener:", err.code))
+            : onSnapshot(doc(db, `${base}/${id}/region_prices`, plan.prices.doc), (snap) => setRivalPrices(prev => ({
+                ...prev, [id]: snap.exists() ? { [snap.id]: { id: snap.id, ...snap.data() } } : {},
+            })), (err) => console.warn("Rival price listener:", err.code)));
+        return () => { unsubs.forEach(u => u()); setRivalPrices({}); };
+    }, [db, appId, userId, rivalIdKey, compSeesAll, location, compUid]);
+    useEffect(() => {
+        if (!db || !appId || !userId || userId === 'default') return;
+        const col = collection(db, `artifacts/${appId}/users/${userId}/competitor_reports`);
+        const plan = listenerPlan({ seesAll: compSeesAll, myRegion: location, uid: compUid });
+        const parts = {};
+        const publish = () => {
+            const byId = new Map();
+            Object.values(parts).flat().forEach(r => byId.set(r.id, r));
+            setCompetitorReports([...byId.values()].sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
+        };
+        const unsubs = plan.reports.map((q, i) => onSnapshot(q.kind === 'all' ? col : query(col, where(q.field, '==', q.value)),
+            (snap) => { parts[i] = snap.docs.map(d => ({ id: d.id, ...d.data() })); publish(); },
+            (err) => console.warn("Competitor reports listener:", err.code)));
+        return () => { unsubs.forEach(u => u()); setCompetitorReports([]); };
+    }, [db, appId, userId, compSeesAll, location, compUid]);
+    const visibleCompetitors = useMemo(
+        () => competitors.filter(c => !isPendingUndo(`rival:${c.id}`)),
+        [competitors, undoVersion]
+    );
+
     const visibleCustomers = useMemo(
         () => (noFolders ? NO_SHOPS : customers).filter(c => !isPendingUndo(`cust:${c.id}`)),
         [noFolders, customers, undoVersion]
@@ -296,6 +347,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
     return {
         fetchHistoricalTransactions, // 🚀 EXPORT THE ENGINE
         inventory, setInventory: setProducts, promoItems, productCategories: visibleCategories,
+        competitors: visibleCompetitors, rivalPrices, competitorReports,
         customers: visibleCustomers, setCustomers, customerAccess,
         transactions, setTransactions, consignmentTx,
         samplings, setSamplings,

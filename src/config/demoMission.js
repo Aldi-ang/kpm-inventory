@@ -126,6 +126,7 @@ export const TOUR = {
     eod: (L) => `Di ${L}, Anda menutup hari: hitung uang tunai, sisa barang, dan kirim laporan ke atasan.`,
     stock_opname: (L) => `${L} dipakai untuk menghitung stok fisik gudang dan mencocokkannya dengan catatan sistem.`,
     customers: (L) => `Di ${L}, Anda mengelola daftar toko terdaftar, alamat, dan batas harganya.`,
+    competitors: (L) => `${L} membandingkan harga produk pesaing per wilayah dengan produk kita, dan menerima laporan harga dari lapangan.`,
     sampling: (L) => `${L} mencatat pembagian rokok contoh gratis ke toko beserta pita cukainya.`,
     transactions: (L) => `${L} menyimpan semua riwayat nota penjualan, retur, dan ringkasan hasil kerja.`,
     audit: (L) => `${L} merekam setiap perubahan penting di sistem agar semua catatan bisa ditelusuri.`,

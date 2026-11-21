@@ -1,3 +1,10 @@
+# The one job - Company Feature Switches (Task 111 plan + Change 31 draft rules)
+
+**Status 2026-11-21 (Claude, cloud):** Task 108 Competitors screen BUILT and pushed (see PROGRESS top). Next, in the agreed order: (1) Claude reviews the Change 31 draft rules in Task 111's Result (`.claude/ANTIGRAVITY-TASK.md`) - they cannot be emulator-tested in the cloud, so the rules proof + Console publish wait for the PC; the app side can be built after the rules are published. (2) Then the customizable packing ladder (Task 113 inventory feeds it). (3) Redesign the remaining game-look screens worst first (Task 110 list), a picture first each time.
+**Cloud session traps:** run logicFixes with `TZ=Asia/Jakarta`; a fresh clone needs `git fetch origin tag game-edition-v1`; `npm ci` first. Lab for Competitors: `npx vite --config tools/ponder-lab.config.mjs` then `/tools/comp-lab.html?as=T4&tab=reports&open=approve`.
+**Competitors traps (stay true):** T4-T6 read ONE region_prices doc per rival (own region) and query reports by region / own uid; a report create carries only the 20 rule fields; an approval changes only the 6 review fields; no price per stick; palette law.
+
+---
 # The one job - Step 2 Competitors global screen (from approved competitors-pro.html)
 
 **Claude leads again (2026-11-21 20:13 WIB).** Next: Change 30 PUBLISHED by Aldi on BOTH projects (2026-11-21 20:27 WIB, his "published both"). Build Task 108 (Competitors screen, plan = Task 105 Result in `.claude/ANTIGRAVITY-TASK.md`). Trap: the app code must query `region_prices` ONE doc per own region for T4-T6 (a whole-collection list is refused) and query `competitor_reports` with `where("region","==",myRegion)` or `where("reportedByUid","==",uid)`.

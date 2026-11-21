@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 /* `Menu` and `X` went with the three-line square — nothing else in this file drew either. */
 import { Lock, LogOut, LogIn, ArrowRight, Trophy, Sun, Moon, Zap,
          User, LayoutGrid, Map, Route, Truck, Package, Boxes, PackagePlus, Store,
-         Receipt, Wallet, ClipboardList, Users, Gift, BarChart3, ScrollText, Settings } from 'lucide-react';
+         Receipt, Wallet, ClipboardList, Users, Scale, Gift, BarChart3, ScrollText, Settings } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth, IS_DEMO } from '../config/firebase';
 import { DemoDoor, DemoBar } from './DemoFrontDoor.jsx';
@@ -15,7 +15,7 @@ import UpdateStatus from './UpdateStatus.jsx';
 import MusicPlayer from '../MusicPlayer'; 
 
 // 🚀 IMPORT THE BRAIN
-import { hasClearance, canDecideOpname } from '../config/permissions';
+import { hasClearance, canDecideOpname, canViewCompetitors } from '../config/permissions';
 import { tr } from '../config/lang';
 import { confirmAction } from './ConfirmGate.jsx';
 /* The tutorial book. It lives in the top bar because that bar is on EVERY screen, which is what
@@ -528,6 +528,7 @@ export default function BiohazardTheme({
         { id: 'eod', label: 'EOD Setoran', feature: 'view_eod', icon: Wallet },
         { id: 'stock_opname', label: 'Stock Opname', feature: 'view_stock_opname', icon: ClipboardList },
         { id: 'customers', label: 'Customers', feature: 'view_customers', icon: Users },
+        { id: 'competitors', label: 'Competitors', feature: 'view_competitors', icon: Scale },
         { id: 'sampling', label: 'Sampling', feature: 'view_sampling', icon: Gift },
         { id: 'transactions', label: 'Reports', feature: 'view_reports', icon: BarChart3 },
         { id: 'audit', label: 'Audit Logs', feature: 'view_audit_logs', icon: ScrollText },
@@ -547,6 +548,7 @@ export default function BiohazardTheme({
            phone's own Language and Graphics; view_settings now only decides who may unlock the company tabs inside */
         if (item.id === 'settings') return true;
         if (item.id === 'stock_opname' && canDecideOpname(userRole)) return true;   // the same exception as canOpenTab
+        if (item.id === 'competitors') return canViewCompetitors(userRole);   // absence-means-tier-default (canOpenTab too)
         return hasClearance(userRole, item.feature);
     });
 

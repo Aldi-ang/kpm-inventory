@@ -98,6 +98,11 @@ export const SECTIONS = [
     entries: [{ title: 'Menambah pelanggan', desc: 'Data yang wajib, dan kenapa.', icon: 'Users', soon: true }],
   },
   {
+    id: 'competitors', label: 'Competitors', short: 'Rivals', icon: 'Scale',
+    blurb: 'Harga produk pesaing per wilayah, dibandingkan dengan produk kita.',
+    entries: [{ title: 'Melaporkan harga pesaing', desc: 'Laporan dari toko, dan siapa yang menyetujuinya.', icon: 'Scale', soon: true }],
+  },
+  {
     id: 'sampling', label: 'Sampling', short: 'Sampling', icon: 'Gift',
     blurb: 'Barang yang keluar tanpa dibayar, dan siapa yang menanggungnya.',
     entries: [{ title: 'Mencatat sampling', desc: 'Stok tetap berkurang walau tidak ada uang masuk.', icon: 'Gift', soon: true }],

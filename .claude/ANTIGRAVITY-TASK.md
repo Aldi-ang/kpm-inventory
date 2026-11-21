@@ -4139,12 +4139,32 @@ Scanned every `deleteDoc` and `confirmAction(...Delete/Remove/Hapus...)` site in
 **Result:** Claude wrote `rules-test/test-competitors.mjs`: 68 passed, 0 failed. The Task 105 draft hit Firestore's 1000-expression limit on T3/T4 writes (emulator: "maximum of 1000 expressions") - rewritten so the profile + matrix are read once per rule (`compCan`), plus 2 tightenings: report create carries only report fields, approval only touches review fields. Full-size 40-key matrix tested. Change 30 is now IN `firestore.rules` (1,287 lines); `test-product-categories.mjs` still 30/0.
 
 ## Task 108 - BUILD (local only): Build Step 2 Competitors global screen matching `.claude/drafts/competitors-pro.html` [WAIT FOR CONSOLE CHANGE 30]
-**Status:** OPEN
+**Status:** DONE (by Claude in the cloud session, 2026-11-21)
 **Written:** 2026-11-20 12:38 WIB (Alucard-Lead). Runs AFTER Task 107 emulator proof passes AND Aldi confirms publishing Change 30 on demo/main Console.
 **Touch only:** `src/config/permissions.js`, `src/components/SettingsView.jsx`, `src/components/BiohazardTheme.jsx`, `src/config/demoMission.js`, `src/hooks/useDatabaseSync.js`, `src/components/CompetitorsView.jsx`, `src/App.jsx`, `src/config/patchNotes.js`, `src/config/logicFixes.selfcheck.mjs`, this file.
 1. Execute Steps 2–5 from Task 105 Result, matching `.claude/drafts/competitors-pro.html` (no green, no blue, 44px phone targets, 8s Undo for price/rival delete, dual-region query safety for T4–T6).
 2. Run all 5 gates (`undef.check.mjs`, all `*.selfcheck.mjs`, `npm run build`, `integration.audit.mjs`, `graphify update .`) + render PC 1440 & Phone 390 in `ponder-lab` (`ERRORS: []`), commit locally, NEVER push without Aldi's `"push"`.
 **Done when:** all gates green, lab screenshots verified, Result written.
+**Result:** Built by Claude. New `src/components/CompetitorsView.jsx` (4 tabs, pickers, approve / reject / merge, 8 s Undo on price delete, rival delete, reject) + `src/utils/competitors.js` (pure: `listenerPlan`, `buildReport`, `cleanPriceEntry`, `withRegionPrices` / `restoreOps`). Listeners in `useDatabaseSync.js` follow `listenerPlan` (T4-T6: one own-region doc per rival + `where` queries). 4 permission keys absence-means-tier-default in `permissions.js`; Settings toggles; sidebar item + tour line + guide-book chapter; backup / export / restore / wipe in `App.jsx`. Gates: undef clean, logicFixes 3050/0 (10 new Competitors checks), every selfcheck exit 0, build ok, integration 726/0. Lab `tools/comp-lab.html` (real component, fixtures): 11 frames PC 1440 + phone 390, both themes, ERRORS [], no sideways scroll, phone buttons >= 44 px. Cloud notes: `undef.check.mjs` now strips the working folder (cloud clone is not `kpm-inventory-main`); logicFixes needs `TZ=Asia/Jakarta` and the `game-edition-v1` tag fetched in a fresh clone.
+
+## Task 112 - READ-ONLY: Review the Competitors build (Task 108) against firestore.rules CHANGE 30
+**Status:** OPEN
+**Written:** 2026-11-21 (Claude). The build could not be emulator-tested from the cloud.
+**Touch only:** this file.
+1. For every Firestore write in `src/components/CompetitorsView.jsx` (setDoc / updateDoc / addDoc / writeBatch set/update/delete / deleteDoc), list file:line, the path, the exact keys written, and whether `firestore.rules` CHANGE 30 (`match /competitors`, `/region_prices`, `/competitor_reports`) allows it for T2, T3, T4 (own region and other region), T5, T6. Flag any key outside a `hasOnly([...])` list and any write a tier can press but the rule refuses.
+2. Same for the listeners in `src/hooks/useDatabaseSync.js` (the Competitors block): which query each tier runs and whether the rule allows it.
+3. Name anything the screen shows a tier that the tier cannot act on (UI says yes, server says no).
+**Done when:** a table per write and per listener, file:line each, with OK / REFUSED / CAN'T TELL, written under Result.
+**Result:**
+
+## Task 113 - READ-ONLY: Inventory of every fixed Bal / Slop / Bks assumption (for the packing-ladder project)
+**Status:** OPEN
+**Written:** 2026-11-21 (Claude). Next feature after Company Feature Switches: a customizable packing ladder (base unit + any-length ladder + own price per selling unit; Bks stays the cigarette base). Plan source: A-Brain `Brainstorm/2026-11-20_general-product-packing-units.md` (read it if you have the vault; else work from code only).
+**Touch only:** this file.
+1. List every place in `src/` that hard-codes the ladder (Bal = N Slop, Slop = N Bks, `sticksPerPack`, `convertToBks`, unit pickers, receipts, EOD counts, opname Bal/Slop/Bks display), file:line, and what it assumes.
+2. Group them: money (price x unit), stock (counts / conversions), display only. Rank the money ones first.
+3. Say which helper(s) most call sites already go through, so the change could be made in one place.
+**Done when:** grouped, ranked table under Result.
 **Result:**
 
 ## Task 109 - FIX (from Aldi, local only): Make `fade-in` 0.2s ease-out, un-nest StockOpnameView fades, off in Lite/reduced-motion

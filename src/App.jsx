@@ -22,7 +22,7 @@ import MusicPlayer from './MusicPlayer';
 import { injectDynamicPermissions, hasClearance, canOpenTab, handoffEligibility, canApproveHandoffFrom, handoffApprovers, normalizeRegion, canSetBundlePrice, canSwitchBundle, canSetBundleRules, canReadSalesTotals, canManageCategories } from './config/permissions';
 import { POV_OWNER_EMAIL, previewIdentity, testAccountDoc, testAccountName, canUsePovSwitch, testAccountFor } from './config/povPreview';
 import { tr } from './config/lang';
-import { warehouseList, vanUsesBranch, moveWithGoodsMessage } from './utils/supply';
+import { warehouseList, vanUsesBranch, moveWithGoodsMessage, isNonBranch } from './utils/supply';
 import { accessFor, canConfirmGrosir, ASK_NOTICE_TYPES } from './utils/customerAccess.js';
 import { tallySaleOp, statsPath } from './utils/salesRollupWrite';
 import { syncOfflineSale, canvasWithPending } from './utils/vanSync';
@@ -166,6 +166,8 @@ import { isLowStock } from './utils/stockThreshold';
 import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES, DEFAULT_RANKS } from './config/career';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
+import CompetitorsView from './components/CompetitorsView.jsx';
+import { withRegionPrices, restoreOps } from './utils/competitors.js';
 import VaultGate, { gateHoldMs, gateIsRich, gateCanvasOn } from './components/VaultGate.jsx';
 import UpdateStatus from './components/UpdateStatus.jsx';
 import { readGrace, touchGrace, clearGrace } from './utils/vaultGrace.js';
@@ -604,6 +606,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   const {
       fetchHistoricalTransactions, // 🚀 THE TIME MACHINE ENGINE PLUGGED IN
       inventory, setInventory, promoItems, productCategories, customers, customerAccess, transactions, setTransactions, consignmentTx,
+      competitors, rivalPrices, competitorReports,
       samplings, setSamplings, auditLogs, setAuditLogs, procurements, setProcurements,
       motorists, setMotorists, regionOffers, agentInventories, setAgentInventories, eodReports, setEodReports,
       transferRequests, setTransferRequests,
@@ -773,7 +776,8 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
 
       return {
           meta: { type, ts: getCurrentTimestamp(), user: user.email },
-          inventory, transactions, customers: deepCustomers, samplings, auditLogs, procurements, appSettings, tierSettings, mapBorders, productCategories
+          inventory, transactions, customers: deepCustomers, samplings, auditLogs, procurements, appSettings, tierSettings, mapBorders, productCategories,
+          competitors: withRegionPrices(competitors, rivalPrices), competitorReports
       };
   };
 
@@ -999,6 +1003,13 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                 operations.push({ type: 'delete', ref: doc(db, `artifacts/${appId}/users/${user.uid}/product_categories`, cat.id) });
                 deleteCount++;
             });
+            // Competitors (Change 30): every rival's region prices, the rival, and the field reports
+            competitors.forEach(r => {
+                Object.keys(rivalPrices[r.id] || {}).forEach(reg => operations.push({ type: 'delete', ref: doc(db, `artifacts/${appId}/users/${user.uid}/competitors/${r.id}/region_prices`, reg) }));
+                operations.push({ type: 'delete', ref: doc(db, `artifacts/${appId}/users/${user.uid}/competitors`, r.id) });
+                deleteCount++;
+            });
+            competitorReports.forEach(rep => operations.push({ type: 'delete', ref: doc(db, `artifacts/${appId}/users/${user.uid}/competitor_reports`, rep.id) }));
         }
 
         if (type === 'customers' || type === 'both') {
@@ -1039,6 +1050,8 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
         exportData.inventory = [...inventory, ...promoItems];   // the promo items are products too - a backup without them loses them
         exportData.appSettings = appSettings; 
         exportData.productCategories = productCategories;
+        exportData.competitors = withRegionPrices(competitors, rivalPrices);
+        exportData.competitorReports = competitorReports;
     }
     
     if (type === 'customers' || type === 'both') {
@@ -1103,6 +1116,11 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                 data.productCategories.forEach(cat => {
                     operations.push({ type: 'set', ref: doc(db, `artifacts/${appId}/users/${userId}/product_categories`, cat.id), data: cat });
                 });
+            }
+            if (targetType === 'products' || targetType === 'both') {
+                restoreOps(data.competitors).forEach(o => operations.push({ type: 'set', ref: doc(db, `artifacts/${appId}/users/${userId}/${o.path}`, o.id), data: o.data }));
+                (Array.isArray(data.competitorReports) ? data.competitorReports : []).filter(r => r && r.id)
+                    .forEach(r => operations.push({ type: 'set', ref: doc(db, `artifacts/${appId}/users/${userId}/competitor_reports`, r.id), data: r }));
             }
             if ((targetType === 'customers' || targetType === 'both') && data.customers) {
                 data.customers.forEach(c => {
@@ -4417,6 +4435,8 @@ const handleGitHubMirror = async () => {
               // 1. Restore Standard Collections
               queueToBatch('products', data.inventory);
               queueToBatch('product_categories', data.productCategories);
+              restoreOps(data.competitors).forEach(o => safeSet(doc(db, `artifacts/${appId}/users/${userId}/${o.path}`, o.id), o.data));
+              queueToBatch('competitor_reports', data.competitorReports);
               queueToBatch('transactions', data.transactions);
               queueToBatch('samplings', data.samplings);
               queueToBatch('procurement', data.procurements);
@@ -5775,6 +5795,17 @@ const handleGitHubMirror = async () => {
 
           )}
 
+
+          {activeTab === 'competitors' && canOpenTab(userRole, 'competitors') && (
+              <CompetitorsView
+                  db={db} appId={appId} userId={userId} user={user} userRole={userRole} logAudit={logAudit}
+                  competitors={competitors} rivalPrices={rivalPrices} reports={competitorReports}
+                  inventory={inventory} productCategories={productCategories}
+                  regions={[...new Set(motorists.map(m => m && m.location).filter(loc => loc && !isNonBranch(loc)))]}
+                  myRegion={user?.location || ''}
+                  onSaveCategory={handleSaveCategory}
+              />
+          )}
 
           {activeTab === 'customers' && (
               <CustomerManagement

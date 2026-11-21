@@ -27,7 +27,7 @@ import { createPortal } from 'react-dom';
 import { tr } from '../config/lang';
 import { X, ChevronLeft, ChevronRight, Lock,
          LayoutGrid, Map, Route, Truck, Package, Boxes, PackagePlus, Store, Receipt,
-         Wallet, ClipboardList, Users, Gift, BarChart3, ScrollText, Settings, User } from 'lucide-react';
+         Wallet, ClipboardList, Users, Scale, Gift, BarChart3, ScrollText, Settings, User } from 'lucide-react';
 import { SECTIONS, getScene } from './registry.js';
 import { buildPages, asLeaves, maxTurnOf, turnFor, facingPage,
          TURN_FULL_MS, RIFFLE_MIN_MS } from './pageModel.js';
@@ -67,7 +67,7 @@ const BOOT_MS = 575 * PACE;
 /* The SIDEBAR's own icons, so a chapter looks like the thing you click to reach it. Any name the
    nav uses can be added here; a name that is not here falls back rather than crashing. */
 const ICONS = { LayoutGrid, Map, Route, Truck, Package, Boxes, PackagePlus, Store, Receipt,
-                Wallet, ClipboardList, Users, Gift, BarChart3, ScrollText, Settings, User };
+                Wallet, ClipboardList, Users, Scale, Gift, BarChart3, ScrollText, Settings, User };
 const Icon = ({ name, ...rest }) => {
   const C = ICONS[name] || Package;
   return <C {...rest} />;

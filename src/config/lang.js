@@ -252,6 +252,7 @@ export const ID = {
     'EOD Setoran': 'Setoran Sore',
     'Stock Opname': 'Stok Opname',
     'Customers': 'Pelanggan',
+    'Competitors': 'Pesaing',
     'Sampling': 'Sampel',
     'Reports': 'Laporan',
     'Audit Logs': 'Catatan Audit',
