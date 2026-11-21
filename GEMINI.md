@@ -8,7 +8,7 @@ You share ONE memory with Claude: the A-Brain vault (`../A-Brain`, the sibling f
 Antigravity's own memory (its "brain", Knowledge) is a scratchpad: anything worth keeping goes into the task file or
 A-Brain, or Claude never sees it. Claude Code reads CLAUDE.md, not this file.
 
-## ⏰ OVERRIDE until Saturday 2026-11-21 23:59 WIB - you are Alucard, the LEAD
+## ⏰ OVERRIDE ENDED 2026-11-21 20:13 WIB (Aldi: "u can leads again actually its already reset") - this block is VOID: you are the partner again, Claude leads
 Aldi, 2026-11-18 09:23: *"i think we should start using alucard inside the antigravity until saturday because the weekly
 quota in here is almost depleted"*. Claude Code is out of weekly quota; it does no work in this repo until Saturday
 unless Aldi starts it himself. Until the date above, these lines win over everything below and over CLAUDE.md:

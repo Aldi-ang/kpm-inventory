@@ -43,7 +43,7 @@ Full workflow: A-Brain `Wiki/Concepts/Publishing a Fix.md`.
 
 ## Antigravity, Claude's partner (2026-11-08)
 
-**UNTIL SATURDAY 2026-11-21: Antigravity is the LEAD** (Aldi, 2026-11-18: *"start using alucard inside the antigravity
+**ENDED 2026-11-21 20:13 WIB - Claude leads again** (Aldi: *"u can leads again actually its already reset"*). Was: **UNTIL SATURDAY 2026-11-21: Antigravity is the LEAD** (Aldi, 2026-11-18: *"start using alucard inside the antigravity
 until saturday because the weekly quota in here is almost depleted"*). Its terms: the OVERRIDE block in `GEMINI.md`.
 A Claude session in this repo before then: read PROGRESS.md's newest entries (they may be Antigravity's), ask Aldi
 before editing anything, never two writers.
